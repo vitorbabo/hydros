@@ -1,0 +1,285 @@
+# Hydros Core System
+
+Unified architecture for WTP simulation and edge gateway functionality with standardized MQTT data publishing.
+
+## Architecture Overview
+
+```
+hydros/
+├── config/                          # Configuration files
+│   ├── plant_config.yaml           # Plant definitions (modules, sensors, etc.)
+│   ├── protocol_config.yaml        # Protocol server/client configurations  
+│   ├── wtp-porto-01_*              # Auto-generated address mappings
+│   └── mapping_config.yaml         # Manual address mappings (if needed)
+├── core/                           # Core system components
+│   ├── plant_model.py             # Unified plant model (digital twin)
+│   ├── component_factory.py       # Factory for creating plant components
+│   ├── wtp_components.py          # WTP component definitions
+│   ├── protocol_manager.py        # Dynamic protocol management
+│   └── address_allocator.py       # Dynamic address allocation
+├── simulation/                    # Simulation engine
+│   ├── simulator.py              # Simulation engine and orchestration
+│   ├── components.py             # Simulated component wrappers
+│   └── process_models.py         # Physical process simulation models
+├── gateway/                       # Edge gateway functionality
+│   ├── edge_gateway.py           # Production edge gateway with MQTT publishing
+│   ├── plc_readers.py            # Real PLC communication (async)
+│   └── data_mapper.py            # Data transformation utilities
+├── protocols/                     # Protocol handlers
+│   ├── modbus_handler.py         # Unified async Modbus implementation
+│   └── protocol_registry.py      # Protocol registration system
+└── hydros_system.py              # Main unified entry point
+```
+
+## Operation Modes
+
+The unified system supports multiple operation modes:
+
+### 1. Simulation Mode
+Pure simulation for testing and development:
+```bash
+python core/hydros_system.py --mode simulation
+```
+
+- Generates mock plant data using physics-based models
+- Serves data via Modbus TCP on port 5020
+- No real PLC connections required
+- Ideal for development and testing
+
+### 2. Gateway Mode  
+Production edge gateway for real PLC data collection:
+```bash
+python core/hydros_system.py --mode gateway
+```
+
+- Connects to real PLCs via Modbus, OPC UA, S7
+- Collects and serves data via standardized protocols
+- Handles connection failures and retries
+- Production-ready data collection
+
+### 3. Hybrid Mode
+Combined simulation and gateway functionality:
+```bash
+python core/hydros_system.py --mode hybrid
+```
+
+- Runs simulation for missing/offline PLCs
+- Connects to available real PLCs
+- Seamless fallback between real and simulated data
+- Ideal for staged deployments
+
+## Key Features
+
+## Key Features
+
+### Unified Parameter ID Format
+- Consistent `site.component.parameter` format throughout system
+- PlantModel: `wtp-porto-01.raw_intake.level`
+- Modbus mappings: `wtp-porto-01.raw_intake.level`
+- MQTT topics: `wtp/wtp-porto-01/raw_intake/level/observation`
+- No parameter ID conversion needed between components
+
+### Real-Time MQTT Publishing
+- Standardized observation format with comprehensive metadata
+- Clean, hierarchical topic structure for easy subscription
+- Quality indicators and sequence numbers for data integrity
+- Timestamp precision with UTC timezone support
+
+### Dynamic Address Allocation
+- Automatic generation of protocol-specific address mappings
+- Eliminates hardcoded addresses
+- Supports multiple protocols from single plant configuration
+- Generated mappings stored in `config/` directory
+
+### Unified Plant Model
+- Central digital twin managing all component states
+- Real-time parameter synchronization between simulation and protocols
+- Component lifecycle management
+- State persistence and recovery
+
+### Protocol Abstraction
+- Protocol Registry for managing multiple protocol handlers
+- Unified interface for read/write operations
+- Pluggable protocol implementations
+- Automatic capability discovery
+
+### Physics-Based Simulation
+- Realistic hydraulic and water quality models
+- Sensor noise and drift simulation
+- Equipment-specific behavior modeling
+- Configurable process parameters
+
+## Configuration
+
+### Plant Configuration (`plant_config.yaml`)
+Defines the plant structure, modules, and components:
+```yaml
+plant:
+  id: "wtp-porto-01"
+  name: "Porto Water Treatment Plant"
+  modules:
+    - id: "raw_intake"
+      template: "intake_station"
+    - id: "treatment_01" 
+      template: "treatment_train"
+```
+
+### Protocol Configuration (`protocol_config.yaml`)
+Configures protocol servers and PLC connections:
+```yaml
+protocol_servers:
+  modbus_tcp:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5020
+    
+protocol_clients:
+  - plc_id: "primary_plc"
+    protocol: "modbus"
+    host: "192.168.1.100"
+    port: 502
+```
+
+### Generated Mappings
+Address mappings are automatically generated by the address allocator:
+- `wtp-porto-01_modbus_mapping.json` - Modbus TCP mappings
+- `wtp-porto-01_opcua_mapping.json` - OPC UA mappings
+- `wtp-porto-01_edge_gateway_config.yaml` - Edge gateway configuration
+
+## Usage Examples
+
+### Basic Simulation
+```bash
+# Start simulation with default configuration
+python hydros_system.py --mode simulation
+
+# Start with debug logging
+python hydros_system.py --mode simulation --log-level DEBUG
+
+# Use custom configuration directory
+python hydros_system.py --mode simulation --config-dir /path/to/config
+```
+
+### Production Gateway
+```bash
+# Start edge gateway for production data collection
+python hydros_system.py --mode gateway
+
+# Hybrid mode for development with some real PLCs
+python hydros_system.py --mode hybrid
+```
+
+### MQTT Data Monitoring
+```bash
+# Monitor all MQTT observations
+mosquitto_sub -h localhost -t "wtp/+/+/+/observation"
+
+# Monitor specific asset
+mosquitto_sub -h localhost -t "wtp/wtp-porto-01/raw_intake/+/observation"
+```
+
+### Generating New Mappings
+```bash
+# Generate fresh address mappings
+cd core
+python address_allocator.py
+```
+
+## Development Workflow
+
+1. **Plant Configuration**: Define plant structure in `plant_config.yaml`
+2. **Generate Mappings**: Run address allocator to create protocol mappings
+3. **Test Simulation**: Start in simulation mode to verify component behavior
+4. **Configure Gateway**: Update protocol configuration for PLC connections
+5. **Deploy Hybrid**: Test with hybrid mode using available PLCs
+6. **Production**: Deploy in gateway mode for full production operation
+
+## Protocol Support
+
+### Modbus TCP ✅
+- Full async read/write support
+- Dynamic address allocation with unified parameter ID format
+- Server and client modes
+- Error handling and retries
+- Consistent `site.component.parameter` addressing
+
+### MQTT ✅
+- Real-time data publishing to standardized topics
+- JSON observation format with metadata
+- Clean topic structure: `wtp/{site_id}/{asset_id}/{measurement}/observation`
+- Sequence numbers and quality indicators
+
+### OPC UA 🚧
+- Implementation in progress
+- Client functionality planned
+- UA server capabilities planned
+
+### Siemens S7 🚧
+- Implementation planned
+- S7 client for older PLCs
+- Integration with TIA Portal
+
+## Monitoring and Diagnostics
+
+The system provides comprehensive monitoring:
+- Real-time parameter values via PlantModel
+- Connection status for all PLCs with async client management
+- Protocol handler statistics and performance metrics
+- Simulation performance metrics (cycle time, component count)
+- MQTT publishing statistics and success rates
+- Error logging and diagnostics with component-level detail
+
+### Example Monitoring Commands
+```bash
+# Monitor system logs
+tail -f hydros.log
+
+# Monitor MQTT data publishing
+mosquitto_sub -h localhost -t "wtp/+/+/+/observation" -C 10
+
+# Check specific parameter values
+grep "parameter_values" hydros.log
+
+# Monitor connection status
+grep "Connected\|Disconnected" hydros.log
+```
+
+## Extending the System
+
+### Adding New Components
+1. Implement component class with `update()` and `get_parameters()` methods
+2. Add component template to component factory
+3. Reference template in plant configuration
+
+### Adding New Protocols
+1. Implement `BaseProtocolHandler` interface
+2. Register protocol with `ProtocolRegistry`
+3. Add configuration template
+4. Update address allocator for new protocol
+
+### Custom Process Models
+1. Extend physics models in `process_models.py`
+2. Integrate with component implementations
+3. Add configuration parameters
+
+## Troubleshooting
+
+### Common Issues
+- **Configuration not found**: Ensure all required config files exist
+- **Port conflicts**: Check that protocol ports are available
+- **PLC connection failures**: Verify network connectivity and PLC settings
+- **Missing dependencies**: Install required packages (`pip install -r requirements.txt`)
+
+### Debugging
+- Use `--log-level DEBUG` for detailed logging
+- Check `hydros.log` for error messages
+- Verify configuration files are valid YAML/JSON
+- Test individual components in isolation
+
+## Performance Considerations
+
+- Simulation update interval: 1-2 seconds for real-time operation
+- PLC read interval: 2-5 seconds depending on network latency
+- Protocol server capacity: ~100 concurrent connections
+- Memory usage: ~50MB base + ~1MB per 100 parameters
+- CPU usage: <5% on modern hardware for typical plant sizes

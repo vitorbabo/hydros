@@ -42,16 +42,25 @@ services:
     networks:
       - hydros
 
-  plc-sim:
-    build: ./plc-sim
-    container_name: hydros-plc-sim
+  hydros-system:
+    build: ./hydros
+    container_name: hydros-system
     environment:
-      - SITE_ID=wtp-porto-01
+      - SITE_ID=${SITE_ID:-wtp-porto-01}
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
+      - PLC_HOST=${PLC_HOST:-localhost}
+      - PLC_PORT=${PLC_PORT:-5020}
+      - MODE=${HYDROS_MODE:-hybrid}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "5020:5020"  # Modbus TCP server port
     depends_on:
       - mosquitto
     restart: unless-stopped
+    command: python hydros_system.py --mode ${HYDROS_MODE:-hybrid} --log-level ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./hydros/config:/app/config:ro  # Mount config directory
     networks:
       - hydros
 

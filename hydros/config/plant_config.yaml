@@ -1,0 +1,417 @@
+# Water Treatment Plant Configuration
+
+site_configurations:
+  # Small Municipal Plant
+  wtp-porto-01:
+    name: "Porto Municipal WTP"
+    design_capacity: 50000  # m3/day
+    treatment_train: "conventional"
+    modules:
+      - raw_intake
+      - intake_pump_1
+      - coagulation_tank
+      - coagulant_dosing
+      - clarifier_1
+      - filter_bed_1
+      - chlorination
+      - finished_water_pump_1
+      - finished_water_tank
+    
+    # Operational parameters
+    parameters:
+      normal_flow_rate: 35.0  # m3/h
+      raw_water_quality:
+        turbidity_range: [2.0, 15.0]  # NTU
+        ph_range: [7.2, 8.1]
+        temperature_range: [12.0, 20.0]  # °C
+    
+    # Protocol servers for this site
+    protocol_servers:
+      - protocol: "modbus_tcp"
+        enabled: true
+        host: "0.0.0.0"
+        port: 5020
+        device_id: 1
+      - protocol: "opcua" 
+        enabled: true
+        host: "0.0.0.0"
+        port: 4840
+      
+  # Large Regional Plant  
+  wtp-regional-02:
+    name: "Regional WTP North"
+    design_capacity: 200000  # m3/day
+    treatment_train: "advanced"
+    modules:
+      - raw_intake
+      - intake_pump_1
+      - intake_pump_2
+      - screening_system
+      - coagulation_tank
+      - flocculation_tank
+      - coagulant_dosing
+      - ph_adjustment_dosing
+      - clarifier_1
+      - clarifier_2
+      - filter_bed_1
+      - filter_bed_2
+      - filter_bed_3
+      - gac_filter_1  # Granular Activated Carbon
+      - uv_disinfection
+      - chlorination
+      - fluoridation
+      - finished_water_pump_1
+      - finished_water_pump_2
+      - finished_water_tank
+    
+    parameters:
+      normal_flow_rate: 140.0  # m3/h
+      raw_water_quality:
+        turbidity_range: [1.0, 25.0]
+        ph_range: [6.8, 8.3]
+        temperature_range: [8.0, 24.0]
+    
+    # Multiple protocol servers for larger plant
+    protocol_servers:
+      - protocol: "modbus_tcp"
+        enabled: true
+        host: "0.0.0.0"
+        port: 5020
+        device_id: 1
+        description: "Main plant PLC"
+      - protocol: "modbus_tcp"
+        enabled: true
+        host: "0.0.0.0" 
+        port: 5021
+        device_id: 2
+        description: "Chemical dosing PLC"
+      - protocol: "opcua"
+        enabled: true
+        host: "0.0.0.0"
+        port: 4840
+        description: "Advanced monitoring server"
+      - protocol: "s7_server"
+        enabled: false  # Not implemented yet
+        host: "0.0.0.0"
+        port: 10200
+        description: "Future S7 server"
+
+# Module Templates for different WTP components
+module_templates:
+  
+  # INTAKE MODULES
+  raw_intake:
+    type: "intake"
+    description: "Raw water intake with basic quality monitoring"
+    required_sensors:
+      - level
+      - flow_rate 
+      - turbidity
+      - ph
+      - temperature
+      - conductivity
+    optional_sensors:
+      - dissolved_oxygen
+      - chlorophyll_a
+      - blue_green_algae
+  
+  screening_system:
+    type: "pretreatment"
+    description: "Mechanical screening for large debris removal"
+    required_sensors:
+      - differential_pressure
+      - motor_current
+      - run_status
+    actuators:
+      - screen_speed
+      - cleaning_frequency
+  
+  # PUMPING MODULES
+  intake_pump:
+    type: "pump"
+    description: "Raw water intake pump with VFD control"
+    required_sensors:
+      - flow_rate
+      - pressure
+      - motor_current
+      - motor_temperature
+      - vibration
+      - power_consumption
+      - run_status
+    actuators:
+      - pump_speed
+    alarms:
+      - high_vibration
+      - motor_overtemperature
+      - low_flow
+  
+  # CHEMICAL TREATMENT MODULES
+  coagulation_tank:
+    type: "chemical_treatment"
+    description: "Rapid mixing for coagulant distribution"
+    required_sensors:
+      - level
+      - ph
+      - turbidity
+      - temperature
+    optional_sensors:
+      - alkalinity
+      - streaming_current
+      - zeta_potential
+    actuators:
+      - mixer_speed
+  
+  flocculation_tank:
+    type: "chemical_treatment"
+    description: "Slow mixing for floc formation"
+    required_sensors:
+      - level
+      - turbidity
+      - ph
+    actuators:
+      - mixer_speed
+      - retention_time
+  
+  # CHEMICAL DOSING MODULES
+  coagulant_dosing:
+    type: "chemical_dosing"
+    description: "Automated coagulant dosing system"
+    chemicals: ["alum", "ferric_chloride", "pac"]
+    required_sensors:
+      - chemical_tank_level
+      - flow_rate
+      - run_status
+    actuators:
+      - dose_rate
+    control_logic: "turbidity_based"
+  
+  ph_adjustment_dosing:
+    type: "chemical_dosing"
+    description: "pH adjustment dosing (caustic soda/acid)"
+    chemicals: ["caustic_soda", "sulfuric_acid"]
+    required_sensors:
+      - chemical_tank_level
+      - ph_feedback
+      - flow_rate
+    actuators:
+      - dose_rate
+    control_logic: "ph_feedback"
+  
+  # SEDIMENTATION MODULES
+  clarifier:
+    type: "sedimentation"
+    description: "Gravity settling tank for floc removal"
+    required_sensors:
+      - level
+      - turbidity
+      - flow_rate
+      - ph
+    optional_sensors:
+      - sludge_blanket_level
+      - sludge_density
+    actuators:
+      - sludge_removal_rate
+      - overflow_weir_level
+  
+  # FILTRATION MODULES
+  rapid_sand_filter:
+    type: "filtration"
+    description: "Conventional rapid sand filtration"
+    required_sensors:
+      - differential_pressure
+      - turbidity
+      - flow_rate
+      - level
+      - run_status
+    optional_sensors:
+      - particle_count
+    actuators:
+      - backwash_initiation
+      - filter_to_waste
+    control_logic: "differential_pressure_or_time"
+  
+  gac_filter:
+    type: "filtration"
+    description: "Granular Activated Carbon filter"
+    required_sensors:
+      - differential_pressure
+      - turbidity
+      - toc
+      - flow_rate
+    actuators:
+      - backwash_initiation
+    replacement_indicators:
+      - carbon_bed_life
+      - toc_breakthrough
+  
+  membrane_filter:
+    type: "filtration"
+    description: "Membrane filtration (MF/UF)"
+    required_sensors:
+      - transmembrane_pressure
+      - turbidity
+      - flow_rate
+      - temperature
+    actuators:
+      - cleaning_cycle
+      - backwash_pressure
+    maintenance:
+      - chemical_cleaning_frequency
+      - membrane_replacement
+  
+  # DISINFECTION MODULES
+  chlorination:
+    type: "disinfection" 
+    description: "Chlorine disinfection system"
+    required_sensors:
+      - chlorine_residual
+      - ph
+      - temperature
+      - chemical_tank_level
+    actuators:
+      - dose_rate
+    control_logic: "ct_value_calculation"
+    safety_systems:
+      - chlorine_leak_detection
+      - emergency_shutdown
+  
+  uv_disinfection:
+    type: "disinfection"
+    description: "UV disinfection system"
+    required_sensors:
+      - uv_transmittance
+      - uv_intensity
+      - flow_rate
+      - lamp_status
+    actuators:
+      - lamp_power
+      - cleaning_cycle
+    maintenance:
+      - lamp_replacement_hours
+      - quartz_sleeve_cleaning
+  
+  fluoridation:
+    type: "chemical_treatment"
+    description: "Fluoride dosing for dental health"
+    required_sensors:
+      - fluoride_residual
+      - chemical_tank_level
+      - flow_rate
+    actuators:
+      - dose_rate
+    regulatory: "public_health_requirement"
+  
+  # STORAGE MODULES
+  finished_water_tank:
+    type: "storage"
+    description: "Finished water storage reservoir"
+    required_sensors:
+      - level
+      - chlorine_residual
+      - ph
+      - temperature
+    optional_sensors:
+      - water_age
+      - heterotrophic_plate_count
+    alarms:
+      - low_level
+      - high_level
+      - low_chlorine_residual
+
+# Process Control Strategies
+control_strategies:
+  
+  turbidity_based_coagulation:
+    description: "Adjust coagulant dose based on raw water turbidity"
+    inputs: ["raw_turbidity", "raw_ph", "temperature"]
+    outputs: ["coagulant_dose_rate"]
+    algorithm: "pid_with_feedforward"
+    parameters:
+      base_dose: 8.0  # mg/L
+      turbidity_factor: 0.5  # mg/L per NTU
+      ph_correction: true
+  
+  differential_pressure_backwash:
+    description: "Initiate filter backwash based on headloss"
+    inputs: ["differential_pressure", "filter_runtime"]
+    outputs: ["backwash_trigger"]
+    parameters:
+      max_pressure: 350  # mbar
+      max_runtime: 24    # hours
+      min_runtime: 8     # hours
+  
+  ct_value_disinfection:
+    description: "Maintain CT value for pathogen inactivation"
+    inputs: ["chlorine_residual", "contact_time", "ph", "temperature"]
+    outputs: ["chlorine_dose_rate"]
+    requirements:
+      giardia_ct: 0.5    # mg*min/L
+      virus_ct: 6.0      # mg*min/L
+      crypto_ct: 15.0    # mg*min/L (requires additional treatment)
+
+# Alarm and Alert Definitions
+alarm_definitions:
+  
+  water_quality:
+    high_turbidity:
+      parameter: "turbidity"
+      threshold: 4.0  # NTU
+      severity: "high"
+      action: "reduce_production_rate"
+    
+    ph_out_of_range:
+      parameter: "ph"
+      low_threshold: 6.5
+      high_threshold: 8.5
+      severity: "medium"
+      action: "adjust_chemical_dosing"
+    
+    low_chlorine_residual:
+      parameter: "chlorine_residual"
+      threshold: 0.2  # mg/L
+      severity: "high"
+      action: "increase_chlorine_dose"
+  
+  equipment:
+    high_pump_vibration:
+      parameter: "vibration"
+      threshold: 4.0  # mm/s
+      severity: "medium"
+      action: "schedule_maintenance"
+    
+    motor_overtemperature:
+      parameter: "motor_temperature"
+      threshold: 70  # °C
+      severity: "high"
+      action: "shutdown_equipment"
+    
+    filter_clogged:
+      parameter: "differential_pressure"
+      threshold: 400  # mbar
+      severity: "medium"
+      action: "initiate_backwash"
+
+# Data Quality Rules
+data_quality:
+  sensor_validation:
+    turbidity:
+      range: [0.0, 1000.0]  # NTU
+      change_rate_limit: 50  # NTU/hour
+      
+    ph:
+      range: [4.0, 12.0]
+      change_rate_limit: 1.0  # pH/hour
+      
+    chlorine_residual:
+      range: [0.0, 10.0]  # mg/L
+      change_rate_limit: 2.0  # mg/L/hour
+  
+  sensor_maintenance:
+    calibration_frequency:
+      turbidity: 30  # days
+      ph: 7       # days
+      chlorine: 7  # days
+    
+    replacement_frequency:
+      ph_probe: 365      # days
+      turbidity_sensor: 730  # days
