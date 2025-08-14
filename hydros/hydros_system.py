@@ -3,6 +3,14 @@
 Unified Hydros System
 
 Main entry point for the unified WTP simulation and edge gateway system.
+
+Operation Modes:
+- simulation: Starts simulation engine + modbus servers + edge gateway (for testing and development)
+- normal: Starts only the edge gateway (for production data collection)
+
+Usage:
+- Normal mode (default): python hydros_system.py
+- Simulation mode: python hydros_system.py --mode simulation
 """
 
 import argparse
@@ -21,13 +29,12 @@ from simulation.simulator import SimulationEngine, SimulationMode
 
 class HydrosSystem:
     """
-    Unified Hydros system that can operate in multiple modes:
-    - Pure simulation mode (for testing and development)
-    - Pure edge gateway mode (for production data collection)
-    - Hybrid mode (simulation + protocol serving)
+    Unified Hydros system that can operate in two modes:
+    - Simulation mode: Starts simulation engine + modbus servers + edge gateway (for testing and development)
+    - Normal mode: Starts only the edge gateway (for production data collection)
     """
 
-    def __init__(self, mode: str = "simulation"):
+    def __init__(self, mode: str = "normal"):
         self.mode = mode.lower()
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -55,7 +62,11 @@ class HydrosSystem:
         """Validate that required configuration files exist"""
         required_files = [self.plant_config_file]
 
-        if self.mode in ["gateway", "edge_gateway", "hybrid"]:
+        if self.mode == "simulation":
+            # Simulation mode needs both plant and gateway config
+            required_files.append(self.gateway_config_file)
+        elif self.mode == "normal":
+            # Normal mode needs gateway config
             required_files.append(self.gateway_config_file)
 
         missing_files = []
@@ -70,7 +81,7 @@ class HydrosSystem:
         return True
 
     def initialize_simulation_mode(self):
-        """Initialize pure simulation mode"""
+        """Initialize simulation mode (simulation engine + modbus servers + edge gateway)"""
         self.logger.info("Initializing simulation mode")
 
         # Create simulation engine
@@ -91,9 +102,13 @@ class HydrosSystem:
             )
             modbus_server.initialize_server()
 
-    def initialize_gateway_mode(self):
-        """Initialize pure edge gateway mode"""
-        self.logger.info("Initializing edge gateway mode")
+        # Create edge gateway in hybrid mode (for testing with real PLCs + simulation fallback)
+        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.DEVELOPMENT)
+        self.edge_gateway.load_gateway_configuration(str(self.gateway_config_file))
+
+    def initialize_normal_mode(self):
+        """Initialize normal mode (edge gateway only)"""
+        self.logger.info("Initializing normal mode")
 
         # Create edge gateway
         self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.PRODUCTION)
@@ -101,56 +116,8 @@ class HydrosSystem:
         # Load configuration
         self.edge_gateway.load_gateway_configuration(str(self.gateway_config_file))
 
-    def initialize_hybrid_mode(self):
-        """Initialize hybrid mode (simulation + edge gateway)"""
-        self.logger.info("Initializing hybrid mode")
-
-        # Initialize both simulation and gateway components
-        self.initialize_simulation_mode()
-
-        # Create edge gateway in hybrid mode (for testing with real PLCs + simulation fallback)
-        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.HYBRID)
-        self.edge_gateway.load_gateway_configuration(str(self.gateway_config_file))
-
     async def run_simulation_mode(self):
-        """Run in pure simulation mode"""
-        self.simulation_engine.start_simulation()
-
-        # Get Modbus server
-        modbus_server = self.protocol_registry.get_handler("sim_modbus_server")
-
-        # Start Modbus server
-        if modbus_server:
-            asyncio.create_task(modbus_server.start_server())
-
-        # Allow server to start
-        await asyncio.sleep(1.0)
-
-        # Run simulation loop
-        asyncio.create_task(self.simulation_engine.run_simulation_loop())
-
-        # Update Modbus server with simulation data
-        while self.running:
-            try:
-                # Get current parameter values
-                parameter_values = self.plant_model.get_all_parameters()
-
-                # Update Modbus server
-                if modbus_server and hasattr(modbus_server, "update_server_parameters"):
-                    modbus_server.update_server_parameters(parameter_values)
-
-                await asyncio.sleep(1.0)
-
-            except Exception as e:
-                self.logger.error(f"Error in simulation mode loop: {e}")
-                await asyncio.sleep(1.0)
-
-    async def run_gateway_mode(self):
-        """Run in pure edge gateway mode"""
-        await self.edge_gateway.start()
-
-    async def run_hybrid_mode(self):
-        """Run in hybrid mode"""
+        """Run in simulation mode (simulation + edge gateway)"""
         # Start simulation
         self.simulation_engine.start_simulation()
 
@@ -177,6 +144,10 @@ class HydrosSystem:
 
         # Wait for all tasks
         await asyncio.gather(simulation_task, modbus_update_task, gateway_task)
+
+    async def run_normal_mode(self):
+        """Run in normal mode (edge gateway only)"""
+        await self.edge_gateway.start()
 
     async def _update_modbus_server_loop(self, modbus_server):
         """Update Modbus server with simulation data"""
@@ -220,18 +191,13 @@ class HydrosSystem:
                 self.running = True
                 await self.run_simulation_mode()
 
-            elif self.mode in ["gateway", "edge_gateway"]:
-                self.initialize_gateway_mode()
+            elif self.mode == "normal":
+                self.initialize_normal_mode()
                 self.running = True
-                await self.run_gateway_mode()
-
-            elif self.mode == "hybrid":
-                self.initialize_hybrid_mode()
-                self.running = True
-                await self.run_hybrid_mode()
+                await self.run_normal_mode()
 
             else:
-                raise ValueError(f"Unknown mode: {self.mode}")
+                raise ValueError(f"Unknown mode: {self.mode}. Use 'simulation' or 'normal'.")
 
         except Exception as e:
             self.logger.error(f"Failed to start Hydros system: {e}")
@@ -295,13 +261,25 @@ def setup_logging(level: str = "INFO"):
 
 async def main():
     """Main entry point"""
-    parser = argparse.ArgumentParser(description="Unified Hydros WTP System")
+    parser = argparse.ArgumentParser(
+        description="Unified Hydros WTP System",
+        epilog="""
+Operation Modes:
+  normal      Production mode - runs only the edge gateway (default)
+  simulation  Development mode - runs simulation engine + modbus servers + edge gateway
+
+Examples:
+  python hydros_system.py                    # Normal mode (gateway only)
+  python hydros_system.py --mode simulation  # Simulation mode (full stack)
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     parser.add_argument(
         "--mode",
-        choices=["simulation", "gateway", "edge_gateway", "hybrid"],
-        default="simulation",
-        help="Operation mode",
+        choices=["simulation", "normal"],
+        default="normal",
+        help="Operation mode: 'simulation' (sim engine + modbus + gateway) or 'normal' (gateway only)",
     )
 
     parser.add_argument(

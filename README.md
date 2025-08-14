@@ -77,10 +77,7 @@ python hydros/hydros_system.py --mode simulation --log-level DEBUG
 #### Edge Gateway Mode (Production)
 ```bash
 # Production data collection from real PLCs
-python hydros/hydros_system.py --mode gateway
-
-# Hybrid mode (simulation + real PLCs)
-python hydros/hydros_system.py --mode hybrid
+python hydros/hydros_system.py
 ```
 
 ## 🎯 Operation Modes
@@ -96,12 +93,6 @@ python hydros/hydros_system.py --mode hybrid
 - **Data Source**: Real PLCs (Modbus, OPC UA, S7)
 - **Protocols**: Collects from PLCs, serves via standardized protocols
 - **Use Case**: Industrial deployment
-
-### 3. **Hybrid Mode**
-- **Purpose**: Development with partial real data
-- **Data Source**: Mix of real PLCs + simulation fallback
-- **Protocols**: Seamless real/simulated data integration
-- **Use Case**: Staged deployment, testing
 
 ## 📊 Features
 

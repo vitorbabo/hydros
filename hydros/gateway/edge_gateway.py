@@ -37,7 +37,7 @@ class GatewayMode(Enum):
     """Edge gateway operation modes"""
 
     PRODUCTION = "production"  # Real PLC connections only
-    HYBRID = "hybrid"  # Mix of real and simulated (for testing)
+    DEVELOPMENT = "development"  # Simulated connections (for testing)
 
 
 @dataclass
@@ -94,7 +94,7 @@ class EdgeGateway:
 
         # Configuration
         self.site_id = "unknown-site"
-        self.read_interval = 2.0  # seconds
+        self.read_interval = 5.0  # seconds
         self.sequence_number = 1
 
         # PLC connections and mappings
