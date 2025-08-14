@@ -1,0 +1,116 @@
+# WTP Porto-01 Plant Configuration
+# Small Municipal Water Treatment Plant
+
+site_info:
+  site_id: wtp-porto-01
+  name: "Porto Municipal WTP"
+  design_capacity: 50000 # m3/day
+  treatment_train: "conventional"
+  location:
+    region: "Porto"
+    country: "Portugal"
+    coordinates: [ 41.1579, -8.6291 ]
+
+# Plant module configuration - references templates from config/templates/
+modules:
+- raw_intake
+- intake_pump_1
+- coagulation_tank
+- coagulant_dosing
+- clarifier_1
+- filter_bed_1
+- chlorination
+- finished_water_pump_1
+- finished_water_tank
+
+# Operational parameters
+operational_parameters:
+  normal_flow_rate: 35.0 # m3/h
+  design_flow_rate: 45.0 # m3/h
+  raw_water_quality:
+    turbidity_range: [ 2.0, 15.0 ] # NTU
+    ph_range: [ 7.2, 8.1 ]
+    temperature_range: [ 12.0, 20.0 ] # °C
+  treatment_targets:
+    finished_turbidity: 0.3 # NTU
+    finished_ph: [ 7.0, 8.0 ]
+    chlorine_residual: [ 0.5, 2.0 ] # mg/L
+
+# Protocol client configurations for this site
+protocol_clients:
+- client_id: main_plc
+  protocol: modbus_tcp
+  description: "Main plant PLC - process control"
+  connection:
+    host: "${PLC_HOST:localhost}"
+    port: "${PLC_PORT:5020}"
+    unit_id: 1
+    timeout: 5.0
+    retry_count: 3
+  enabled: true
+  modules_assigned:
+  - raw_intake
+  - intake_pump_1
+  - coagulation_tank
+  - coagulant_dosing
+  - clarifier_1
+  - filter_bed_1
+  - chlorination
+  - finished_water_pump_1
+  - finished_water_tank
+
+# Site-specific process control strategies
+control_strategies:
+  turbidity_based_coagulation:
+    description: "Adjust coagulant dose based on raw water turbidity"
+    inputs: [ "raw_intake.turbidity", "raw_intake.ph", "raw_intake.temperature" ]
+    outputs: [ "coagulant_dosing.dose_rate" ]
+    algorithm: "pid_with_feedforward"
+    parameters:
+      base_dose: 8.0 # mg/L
+      turbidity_factor: 0.5 # mg/L per NTU
+      ph_correction: true
+
+  differential_pressure_backwash:
+    description: "Initiate filter backwash based on headloss"
+    inputs: [ "filter_bed_1.differential_pressure", "filter_bed_1.runtime" ]
+    outputs: [ "filter_bed_1.backwash_trigger" ]
+    parameters:
+      max_pressure: 350 # mbar
+      max_runtime: 24 # hours
+      min_runtime: 8 # hours
+
+# Site-specific alarm definitions
+alarm_definitions:
+  water_quality:
+    high_raw_turbidity:
+      parameter: "raw_intake.turbidity"
+      threshold: 25.0 # NTU
+      severity: "high"
+      action: "reduce_production_rate"
+
+    low_chlorine_residual:
+      parameter: "finished_water_tank.chlorine_residual"
+      threshold: 0.2 # mg/L
+      severity: "critical"
+      action: "increase_chlorine_dose"
+
+  equipment:
+    pump_high_vibration:
+      parameter: "intake_pump_1.vibration"
+      threshold: 4.0 # mm/s
+      severity: "medium"
+      action: "schedule_maintenance"
+
+    filter_clogged:
+      parameter: "filter_bed_1.differential_pressure"
+      threshold: 400 # mbar
+      severity: "medium"
+      action: "initiate_backwash"
+
+# MQTT configuration for this site
+mqtt_config:
+  topic_prefix: "wtp/wtp-porto-01"
+  publish_interval: 2.0 # seconds
+  retain_messages: true
+  qos: 1

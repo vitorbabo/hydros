@@ -1,6 +1,0 @@
-# Hydros Water Treatment Plant System Requirements
-pymodbus==3.11.1
-PyYAML>=6.0
-aiofiles>=23.0.0
-paho-mqtt>=1.6.0
-asyncio-mqtt>=0.13.0

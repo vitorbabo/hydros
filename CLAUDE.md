@@ -14,7 +14,7 @@ Hydros is a unified water treatment plant (WTP) simulation and edge gateway syst
 The system follows a modular architecture with clear separation of concerns:
 
 ```
-hydros/
+backend/
 ├── core/                    # Core system components
 │   ├── plant_model.py      # Central digital twin managing component states
 │   ├── component_factory.py# Factory for creating plant components
@@ -32,7 +32,7 @@ hydros/
 ├── protocols/              # Protocol abstraction layer
 │   ├── modbus_handler.py   # Unified async Modbus implementation
 │   └── protocol_registry.py# Protocol registration system
-└── hydros_system.py        # Main unified entry point
+└── main.py        # Main unified entry point
 ```
 
 ## Key Concepts
@@ -61,7 +61,7 @@ The address_allocator.py automatically generates protocol-specific mappings:
 ### Generate Address Mappings
 **IMPORTANT**: Always run this after modifying plant configuration:
 ```bash
-cd hydros/core
+cd backend/core
 python address_allocator.py
 ```
 This generates the required mapping files that both simulation and gateway modes depend on.
@@ -71,16 +71,16 @@ This generates the required mapping files that both simulation and gateway modes
 #### Simulation Mode (Development)
 ```bash
 # Start simulation with Modbus TCP server on port 5020
-python hydros/hydros_system.py --mode simulation
+python backend/main.py --mode simulation
 
 # With debug logging
-python hydros/hydros_system.py --mode simulation --log-level DEBUG
+python backend/main.py --mode simulation --log-level DEBUG
 ```
 
 #### Gateway Mode (Production)
 ```bash
 # Connect to real PLCs and publish to MQTT
-python hydros/hydros_system.py
+python backend/main.py
 ```
 
 ### Docker Development
@@ -142,13 +142,13 @@ npm run preview          # Preview production build
 ## Configuration Management
 
 ### Plant Configuration
-Edit `hydros/config/plant_config.yaml` to define:
+Edit `backend/config/plant_config.yaml` to define:
 - Site configurations and plant layouts
 - Module templates (intake, pumps, filters, etc.)
 - Component relationships and parameters
 
 ### Protocol Configuration
-Edit `hydros/config/protocol_config.yaml` for:
+Edit `backend/config/protocol_config.yaml` for:
 - Protocol server settings (Modbus TCP, OPC UA)
 - PLC client connections
 - Communication parameters
@@ -163,7 +163,7 @@ The address allocator generates these files automatically:
 ## Development Workflow
 
 1. **Modify Plant Configuration**: Update `plant_config.yaml` for new components
-2. **Generate Mappings**: Run `python hydros/core/address_allocator.py`
+2. **Generate Mappings**: Run `python backend/core/address_allocator.py`
 3. **Test in Simulation**: Start with `--mode simulation`
 4. **Validate Components**: Check component creation and parameter updates
 5. **Deploy**: Use Docker Compose for complete stack deployment
@@ -194,7 +194,7 @@ The address allocator generates these files automatically:
 mosquitto_sub -h localhost -t "wtp/+/+/+/observation"
 
 # Check system status via logs
-tail -f hydros/hydros.log
+tail -f backend/hydros.log
 ```
 
 ### Configuration Validation
@@ -222,12 +222,12 @@ The system validates configuration files at startup:
 
 ## Key File References
 
-- Main entry point: `hydros/hydros_system.py:342` (main function)
-- Plant model core: `hydros/core/plant_model.py:46` (PlantModel class)
-- Address generation: `hydros/core/address_allocator.py:459` (generate_mapping_files)
-- Protocol registry: `hydros/protocols/protocol_registry.py`
-- Simulation engine: `hydros/simulation/simulator.py`
-- Edge gateway: `hydros/gateway/edge_gateway.py`
+- Main entry point: `backend/main.py:342` (main function)
+- Plant model core: `backend/core/plant_model.py:46` (PlantModel class)
+- Address generation: `backend/core/address_allocator.py:459` (generate_mapping_files)
+- Protocol registry: `backend/protocols/protocol_registry.py`
+- Simulation engine: `backend/simulation/simulator.py`
+- Edge gateway: `backend/gateway/edge_gateway.py`
 
 ## Services and Ports
 

@@ -1,19 +1,24 @@
-# Hydros - Unified Water Treatment Plant System
+# Hydros - Multi-Site Water Treatment Plant IoT System
 
-[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
-[![Industrial IoT](https://img.shields.io/badge/Industrial-IoT-green.svg)](https://www.industrialiot.org/)
-[![Modbus](https://img.shields.io/badge/Protocol-Modbus%20TCP-orange.svg)](https://modbus.org/)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)![Mosquitto](https://img.shields.io/badge/mosquitto-%233C5280.svg?style=for-the-badge&logo=eclipsemosquitto&logoColor=white)![InfluxDB](https://img.shields.io/badge/InfluxDB-22ADF6?style=for-the-badge&logo=InfluxDB&logoColor=white)
 
-Unified architecture for water treatment plant simulation and edge gateway functionality. Supports both development simulation and production data collection from real PLCs.
+**Scalable multi-site architecture** for water treatment plant simulation and edge gateway functionality. Supports multiple plants with centralized templates, structured protocol clients, and dynamic site selection. Perfect for both development simulation and production data collection from real PLCs.
+
 
 ## 🏗️ Architecture Overview
 
 ```
-hydros/
-├── config/                          # Configuration management
-│   ├── plant_config.yaml           # Plant definitions and site configurations
-│   ├── protocol_config.yaml        # Protocol server/client settings
-│   └── wtp-porto-01_*              # Auto-generated address mappings
+backend/
+├── config/                          # Multi-site configuration management
+│   ├── sites/                      # Individual site configurations
+│   │   ├── wtp-porto-01/
+│   │   │   └── plant.yaml          # Porto plant configuration
+│   │   └── wtp-regional-02/
+│   │       └── plant.yaml          # Regional plant configuration
+│   ├── templates/                  # Centralized templates
+│   │   ├── modules.yaml            # Module templates (58 types)
+│   │   └── parameters.yaml         # Parameter specifications (30+ types)
+│   └── wtp-*_edge_gateway_config.yaml # Auto-generated gateway configs
 ├── core/                           # Core system components
 │   ├── plant_model.py             # Unified plant model (digital twin)
 │   ├── component_factory.py       # Factory for creating plant components
@@ -32,7 +37,7 @@ hydros/
 │   ├── modbus_handler.py         # Unified Modbus implementation
 │   ├── protocol_registry.py      # Protocol registration system
 │   └── __init__.py               # Protocol package initialization
-├── hydros_system.py              # Main unified entry point
+├── main.py              # Main unified entry point
 └── README.md                     # Core system documentation
 ```
 
@@ -50,34 +55,8 @@ hydros/
 git clone https://github.com/vitorbabo/hydros.git
 cd hydros
 
-# Option 1: Docker (Recommended)
+# Docker compose (Recommended)
 docker compose up -d --build
-
-# Option 2: Local Python Installation
-# Install dependencies
-pip install -r requirements.txt
-
-# Generate address mappings (first time)
-cd hydros/core
-python address_allocator.py
-cd ../..
-```
-
-### Basic Usage
-
-#### Simulation Mode (Development)
-```bash
-# Start pure simulation mode
-python hydros/hydros_system.py --mode simulation
-
-# Simulation with debug logging
-python hydros/hydros_system.py --mode simulation --log-level DEBUG
-```
-
-#### Edge Gateway Mode (Production)
-```bash
-# Production data collection from real PLCs
-python hydros/hydros_system.py
 ```
 
 ## 🎯 Operation Modes
@@ -96,11 +75,17 @@ python hydros/hydros_system.py
 
 ## 📊 Features
 
+### ✅ **Multi-Site Architecture**
+- Individual site configurations with centralized templates
+- Dynamic site selection: `--site-id wtp-porto-01` or `--site-id wtp-regional-02`
+- Scalable to unlimited sites without code changes
+- Site-specific protocol client configurations
+
 ### ✅ **Dynamic Address Allocation**
-- Automatic generation of protocol-specific mappings
+- Automatic generation per site with structured client IDs
 - Eliminates hardcoded addresses completely
-- Supports multiple protocols from single plant configuration
-- Scalable for any plant size
+- Supports multiple protocols per site (Modbus, OPC UA, S7)
+- Scalable for any plant size (9-20+ modules tested)
 
 ### ✅ **Unified Plant Model (Digital Twin)**
 - Central state management for all plant components
@@ -133,85 +118,116 @@ python hydros/hydros_system.py
 - Sensor noise and drift simulation
 - Configurable process parameters
 
-## 🔧 Configuration
+## 🔧 Multi-Site Configuration
 
-### Plant Configuration (`hydros/config/plant_config.yaml`)
+### Site Configuration (`backend/config/sites/wtp-porto-01/plant.yaml`)
 ```yaml
-site_configurations:
-  wtp-porto-01:
-    name: "Porto Municipal WTP"
-    design_capacity: 50000  # m3/day
-    modules:
+site_info:
+  site_id: wtp-porto-01
+  name: "Porto Municipal WTP"
+  design_capacity: 50000  # m3/day
+  location:
+    region: "Porto"
+    coordinates: [41.1579, -8.6291]
+
+# Modules reference centralized templates
+modules:
+  - raw_intake
+  - intake_pump_1
+  - coagulation_tank
+  - clarifier_1
+  - filter_bed_1
+  - finished_water_tank
+
+# Site-specific protocol client definitions
+protocol_clients:
+  - client_id: main_plc
+    protocol: modbus_tcp
+    connection:
+      host: "${PLC_HOST:192.168.1.100}"
+      port: "${PLC_PORT:502}"
+      unit_id: 1
+    modules_assigned:
       - raw_intake
       - intake_pump_1
       - coagulation_tank
-      - clarifier_1
-      - filter_bed_1
-      - finished_water_tank
 ```
 
-### Protocol Configuration (`hydros/config/protocol_config.yaml`)
+### Centralized Templates (`backend/config/templates/modules.yaml`)
 ```yaml
-protocol_servers:
-  modbus_tcp:
-    enabled: true
-    host: "0.0.0.0"
-    port: 5020
-
-protocol_clients:
-  - plc_id: "primary_plc"
-    protocol: "modbus"
-    host: "192.168.1.100"
-    port: 502
+module_templates:
+  raw_intake:
+    type: "intake"
+    description: "Raw water intake with quality monitoring"
+    required_sensors:
+      - level
+      - flow_rate
+      - turbidity
+      - ph
+      - temperature
+    optional_sensors:
+      - dissolved_oxygen
+      - chlorophyll_a
 ```
 
-### Auto-Generated Mappings
-Address mappings are automatically generated:
-- `wtp-porto-01_modbus_mapping.json` - Modbus TCP mappings
-- `wtp-porto-01_opcua_mapping.json` - OPC UA mappings  
-- `wtp-porto-01_edge_gateway_config.yaml` - Gateway configuration
+### Auto-Generated Mappings (Per Site)
+Address mappings are automatically generated for each site:
+- `wtp-porto-01_modbus_mapping.json` - Modbus TCP mappings (54 parameters)
+- `wtp-regional-02_modbus_mapping.json` - Regional plant mappings (106 parameters)
+- `{site-id}_opcua_mapping.json` - OPC UA mappings
+- `{site-id}_edge_gateway_config.yaml` - Gateway configuration with protocol clients
 
 ## 📈 Performance & Scalability
 
 ### **Tested Capabilities**
-- **37+ parameters** with dynamic allocation
+- **Multi-site support**: Porto (54 parameters), Regional (106 parameters)
 - **Real-time simulation** at 1-2 second intervals
-- **Multiple protocol servers** simultaneously
+- **Multiple protocol clients** per site (up to 5 tested)
 - **~100 concurrent connections** per protocol server
+- **Centralized templates**: 58 module types, 30+ parameter specifications
 
 ### **Resource Usage**
 - **Memory**: ~50MB base + ~1MB per 100 parameters
 - **CPU**: <5% on modern hardware for typical plants
 - **Network**: Optimized for industrial network constraints
 
-## 🛠 Development Workflow
+## 🛠 Multi-Site Development Workflow
 
-1. **Define Plant Structure**
+1. **Create New Site Configuration**
    ```bash
-   # Edit plant configuration
-   vim hydros/config/plant_config.yaml
+   # Create site directory
+   mkdir backend/config/sites/wtp-new-site
+   
+   # Copy template and customize
+   cp backend/config/sites/wtp-porto-01/plant.yaml backend/config/sites/wtp-new-site/
+   vim backend/config/sites/wtp-new-site/plant.yaml
    ```
 
 2. **Generate Address Mappings**
    ```bash
-   cd hydros/core
-   python address_allocator.py
+   cd backend/core
+   # Generate for specific site
+   python address_allocator.py wtp-new-site
+   
+   # Or generate for all sites
+   python address_allocator.py wtp-porto-01
+   python address_allocator.py wtp-regional-02
    ```
 
 3. **Test in Simulation**
    ```bash
-   python hydros/hydros_system.py --mode simulation
+   python backend/main.py --mode simulation --site-id wtp-new-site
    ```
 
-4. **Configure PLC Connections**
+4. **Configure Protocol Clients** 
    ```bash
-   # Edit protocol configuration for real PLCs
-   vim hydros/config/protocol_config.yaml
+   # Protocol clients are configured per site in plant.yaml
+   vim backend/config/sites/wtp-new-site/plant.yaml
    ```
 
 5. **Deploy to Production**
    ```bash
-   python hydros/hydros_system.py --mode gateway
+   python backend/main.py --site-id wtp-new-site
    ```
 
 ## 🔌 Protocol Integration
@@ -271,53 +287,25 @@ mosquitto_sub -h localhost -t "wtp/+/+/level/observation"
 }
 ```
 
-## 📊 Monitoring & Diagnostics
-
-### Real-Time Monitoring
-```bash
-# System status
-curl http://localhost:8080/api/status
-
-# Parameter values  
-curl http://localhost:8080/api/parameters
-
-# Connection status
-curl http://localhost:8080/api/connections
-```
-
 ### Log Analysis
 ```bash
 # View system logs
-tail -f hydros/hydros.log
+tail -f backend/hydros.log
 
 # Filter by component
-grep "SimulationEngine" hydros/hydros.log
+grep "SimulationEngine" backend/hydros.log
 
 # Monitor protocol activity
-grep "ModbusHandler" hydros/hydros.log
+grep "ModbusHandler" backend/hydros.log
 
 # Watch MQTT publishing
-grep "mqtt_publishes" hydros/hydros.log
-```
-
-## 🧪 Testing & Validation
-
-### Unit Tests
-```bash
-# Run component tests
-python -m pytest tests/test_components.py
-
-# Protocol handler tests
-python -m pytest tests/test_protocols.py
-
-# Integration tests
-python -m pytest tests/test_integration.py
+grep "mqtt_publishes" backend/hydros.log
 ```
 
 ### Simulation Validation
 ```bash
 # Test with mock PLC client
-cd hydros/core
+cd backend/core
 python test_modbus_readback.py
 
 # Performance testing
@@ -341,15 +329,6 @@ docker compose logs -f hydros-system
 docker compose logs -f | grep mqtt
 ```
 
-### Development Mode
-```bash
-# Start in development mode with live code reloading
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-
-# Follow MQTT observations
-docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f mqtt-client
-```
-
 ### Configuration
 ```bash
 # Copy environment template
@@ -363,29 +342,44 @@ vim .env
 - **Hydros System**: Unified simulation/gateway on `localhost:5020` (Modbus TCP)
 - **Mosquitto**: MQTT `localhost:1883`, WebSocket `ws://localhost:9001`
 - **InfluxDB**: http://localhost:8086 (org: hydros, bucket: wtp)
-- **Dashboard**: http://localhost:5173
+- **React UI**: http://localhost:5173
 
 **Environment Variables:**
-- `HYDROS_MODE`: `simulation`, `gateway`, or `hybrid` (default: `hybrid`)
-- `LOG_LEVEL`: `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: `INFO`)
+- `HYDROS_MODE`: `simulation`, `normal` (default: `normal`)
+- `LOG_LEVEL`: `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: `INFO`) 
 - `SITE_ID`: Plant site identifier (default: `wtp-porto-01`)
 - `PLC_HOST`: PLC IP address for gateway mode (default: `localhost`)
+- Site-specific variables: `MAIN_PLC_HOST`, `CHEM_PLC_HOST`, etc.
 
 ## 🔧 Extending the System
 
-### Adding New Components
-```python
-# 1. Implement component class
-class NewTankComponent(WTPComponent):
-    def update(self):
-        # Component simulation logic
-        pass
-    
-    def get_parameters(self):
-        return {"level": self.level, "volume": self.volume}
+### Adding New Module Templates
+```yaml
+# 1. Add to backend/config/templates/modules.yaml
+module_templates:
+  new_tank_type:
+    type: "storage"
+    description: "New tank component"
+    required_sensors:
+      - level
+      - volume
+      - temperature
+    actuators:
+      - inlet_valve
+      - outlet_valve
 
-# 2. Add to component factory template
-# 3. Reference in plant configuration
+# 2. Add parameters to backend/config/templates/parameters.yaml
+parameter_specifications:
+  volume:
+    measurement_type: "volume"
+    unit: "m³"
+    data_type: "REAL"
+    ranges:
+      normal: [0.0, 1000.0]
+
+# 3. Reference in any site configuration
+modules:
+  - new_tank_type
 ```
 
 ### Adding New Protocols
@@ -406,10 +400,14 @@ registry.register_protocol(ProtocolType.S7, S7Handler, [...])
 
 ### Common Issues
 
-**Configuration not found**
+**Site configuration not found**
 ```bash
-# Ensure config files exist
-ls -la core/config/
+# Check site directory structure
+ls -la backend/config/sites/
+ls -la backend/config/sites/wtp-porto-01/
+
+# Verify templates exist
+ls -la backend/config/templates/
 ```
 
 **Port conflicts**
@@ -434,10 +432,10 @@ pip install -r requirements.txt
 ### Debug Mode
 ```bash
 # Enable detailed logging
-python hydros/hydros_system.py --mode simulation --log-level DEBUG
+python backend/main.py --mode simulation --log-level DEBUG
 
 # Check specific component
-grep "PlantModel" hydros/hydros.log
+grep "PlantModel" backend/hydros.log
 
 # Monitor MQTT publishing
 mosquitto_sub -h localhost -t "wtp/+/+/+/observation"
@@ -445,7 +443,7 @@ mosquitto_sub -h localhost -t "wtp/+/+/+/observation"
 
 ## 📚 Documentation
 
-- **[Core Architecture](hydros/README.md)** - Detailed technical documentation
+- **[Core Architecture](backend/README.md)** - Detailed technical documentation
 - **[Configuration Guide](#-configuration)** - Plant and protocol configuration
 - **[Operation Modes](#-operation-modes)** - Simulation, Gateway, and Hybrid modes
 - **[MQTT Integration](#mqtt-data-streaming)** - Real-time data streaming guide

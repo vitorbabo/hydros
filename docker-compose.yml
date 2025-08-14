@@ -42,31 +42,31 @@ services:
     networks:
       - hydros
 
-  hydros-system:
-    build: ./hydros
-    container_name: hydros-system
+  backend:
+    build: ./backend
+    container_name: hydros-backend
     environment:
       - SITE_ID=${SITE_ID:-wtp-porto-01}
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
       - PLC_HOST=${PLC_HOST:-localhost}
       - PLC_PORT=${PLC_PORT:-5020}
-      - MODE=${HYDROS_MODE:-hybrid}
+      - MODE=${HYDROS_MODE:-simulation}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     ports:
       - "5020:5020"  # Modbus TCP server port
     depends_on:
       - mosquitto
     restart: unless-stopped
-    command: python hydros_system.py --mode ${HYDROS_MODE:-hybrid} --log-level ${LOG_LEVEL:-INFO}
+    command: python main.py --mode ${HYDROS_MODE:-simulation} --log-level ${LOG_LEVEL:-INFO}
     volumes:
-      - ./hydros/config:/app/config:ro  # Mount config directory
+      - ./backend/config:/app/config:ro  # Mount config directory
     networks:
       - hydros
 
-  dashboard:
-    build: ./dashboard
-    container_name: hydros-dashboard
+  frontend:
+    build: ./frontend
+    container_name: hydros-frontend
     ports:
       - "5173:5173"
     environment:

@@ -35,7 +35,7 @@ core/
 │   ├── modbus_handler.py                    # Unified Modbus implementation
 │   ├── opcua_handler.py                     # Unified OPC UA (TODO)
 │   └── protocol_registry.py                 # Protocol registration system
-├── hydros_system.py                         ✅ COMPLETE (Main entry point)
+├── main.py                         ✅ COMPLETE (Main entry point)
 └── README.md                                ✅ COMPLETE (Complete documentation)
 ```
 
@@ -76,7 +76,7 @@ core/
 The unified system has been **successfully tested** and demonstrates:
 
 ```bash
-$ python core/hydros_system.py --mode simulation --log-level INFO
+$ python core/main.py --mode simulation --log-level INFO
 
 ✅ Loaded plant configuration with site configurations
 ✅ Created 7 components from site definition
@@ -118,13 +118,13 @@ $ python core/hydros_system.py --mode simulation --log-level INFO
 ### **Deployment Options**
 ```bash
 # Pure simulation for development
-python core/hydros_system.py --mode simulation
+python core/main.py --mode simulation
 
 # Production edge gateway 
-python core/hydros_system.py --mode gateway
+python core/main.py --mode gateway
 
 # Hybrid development with real PLCs
-python core/hydros_system.py --mode hybrid
+python core/main.py --mode hybrid
 ```
 
 ### **Monitoring & Diagnostics**

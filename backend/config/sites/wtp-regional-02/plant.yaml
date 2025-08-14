@@ -1,0 +1,200 @@
+# WTP Regional-02 Plant Configuration
+# Large Regional Water Treatment Plant
+
+site_info:
+  site_id: wtp-regional-02
+  name: "Regional WTP North"
+  design_capacity: 200000 # m3/day
+  treatment_train: "advanced"
+  location:
+    region: "Northern Region"
+    country: "Portugal"
+    coordinates: [ 41.6977, -8.83 ]
+
+# Plant module configuration - references templates from config/templates/
+modules:
+- raw_intake
+- intake_pump_1
+- intake_pump_2
+- screening_system
+- coagulation_tank
+- flocculation_tank
+- coagulant_dosing
+- ph_adjustment_dosing
+- clarifier_1
+- clarifier_2
+- filter_bed_1
+- filter_bed_2
+- filter_bed_3
+- gac_filter_1 # Granular Activated Carbon
+- uv_disinfection
+- chlorination
+- fluoridation
+- finished_water_pump_1
+- finished_water_pump_2
+- finished_water_tank
+
+# Operational parameters
+operational_parameters:
+  normal_flow_rate: 140.0 # m3/h
+  design_flow_rate: 180.0 # m3/h
+  raw_water_quality:
+    turbidity_range: [ 1.0, 25.0 ] # NTU
+    ph_range: [ 6.8, 8.3 ]
+    temperature_range: [ 8.0, 24.0 ] # °C
+  treatment_targets:
+    finished_turbidity: 0.1 # NTU (stricter for larger plant)
+    finished_ph: [ 7.2, 7.8 ]
+    chlorine_residual: [ 0.8, 2.5 ] # mg/L
+    fluoride_residual: [ 0.7, 1.2 ] # mg/L
+
+# Multiple protocol clients for larger plant
+protocol_clients:
+- client_id: main_plc
+  protocol: modbus_tcp
+  description: "Main plant PLC - primary process control"
+  connection:
+    host: "${MAIN_PLC_HOST:192.168.1.100}"
+    port: "${MAIN_PLC_PORT:502}"
+    unit_id: 1
+    timeout: 5.0
+    retry_count: 3
+  enabled: true
+  modules_assigned:
+  - raw_intake
+  - intake_pump_1
+  - intake_pump_2
+  - screening_system
+  - coagulation_tank
+  - flocculation_tank
+  - clarifier_1
+  - clarifier_2
+
+- client_id: chemical_plc
+  protocol: modbus_tcp
+  description: "Chemical dosing PLC"
+  connection:
+    host: "${CHEM_PLC_HOST:192.168.1.101}"
+    port: "${CHEM_PLC_PORT:502}"
+    unit_id: 1
+    timeout: 5.0
+    retry_count: 3
+  enabled: true
+  modules_assigned:
+  - coagulant_dosing
+  - ph_adjustment_dosing
+  - chlorination
+  - fluoridation
+
+- client_id: filtration_plc
+  protocol: modbus_tcp
+  description: "Filtration and advanced treatment PLC"
+  connection:
+    host: "${FILT_PLC_HOST:192.168.1.102}"
+    port: "${FILT_PLC_PORT:502}"
+    unit_id: 1
+    timeout: 5.0
+    retry_count: 3
+  enabled: true
+  modules_assigned:
+  - filter_bed_1
+  - filter_bed_2
+  - filter_bed_3
+  - gac_filter_1
+  - uv_disinfection
+
+- client_id: distribution_plc
+  protocol: s7
+  description: "Distribution system PLC (Siemens S7)"
+  connection:
+    host: "${DIST_PLC_HOST:192.168.1.103}"
+    rack: "${S7_RACK:0}"
+    slot: "${S7_SLOT:1}"
+    timeout: 5.0
+    retry_count: 3
+  enabled: true
+  modules_assigned:
+  - finished_water_pump_1
+  - finished_water_pump_2
+  - finished_water_tank
+
+- client_id: advanced_monitoring
+  protocol: opcua
+  description: "Advanced monitoring and analytics server"
+  connection:
+    endpoint_url: "${OPCUA_ENDPOINT:opc.tcp://192.168.1.104:4840}"
+    security_policy: "None"
+    timeout: 10.0
+  enabled: true
+  modules_assigned:
+  - uv_disinfection
+  - gac_filter_1
+  - finished_water_tank
+
+# Advanced process control strategies for larger plant
+control_strategies:
+  advanced_coagulation_control:
+    description: "Multi-parameter coagulant optimization"
+    inputs: [ "raw_intake.turbidity", "raw_intake.ph", "raw_intake.temperature", "raw_intake.alkalinity" ]
+    outputs: [ "coagulant_dosing.dose_rate", "ph_adjustment_dosing.dose_rate" ]
+    algorithm: "model_predictive_control"
+    parameters:
+      base_dose: 12.0 # mg/L
+      turbidity_factor: 0.4
+      ph_correction: true
+      alkalinity_compensation: true
+
+  multi_filter_optimization:
+    description: "Optimize flow distribution across multiple filters"
+    inputs: [ "filter_bed_1.differential_pressure", "filter_bed_2.differential_pressure", "filter_bed_3.differential_pressure" ]
+    outputs: [ "filter_bed_1.flow_rate", "filter_bed_2.flow_rate", "filter_bed_3.flow_rate" ]
+    algorithm: "dynamic_flow_balancing"
+
+  uv_dose_control:
+    description: "UV dose optimization based on water quality"
+    inputs: [ "uv_disinfection.uv_transmittance", "gac_filter_1.turbidity", "coagulation_tank.flow_rate" ]
+    outputs: [ "uv_disinfection.lamp_power" ]
+    requirements:
+      log_reduction: 4.0 # 4-log virus reduction
+      min_dose: 40 # mJ/cm²
+
+# Comprehensive alarm system for larger plant
+alarm_definitions:
+  water_quality:
+    high_raw_turbidity:
+      parameter: "raw_intake.turbidity"
+      threshold: 35.0 # NTU
+      severity: "high"
+      action: "reduce_production_rate"
+
+    gac_breakthrough:
+      parameter: "gac_filter_1.toc"
+      threshold: 2.0 # mg/L
+      severity: "medium"
+      action: "schedule_carbon_replacement"
+
+    uv_low_transmittance:
+      parameter: "uv_disinfection.uv_transmittance"
+      threshold: 85.0 # %
+      severity: "high"
+      action: "increase_uv_power"
+
+  equipment:
+    multi_pump_failure:
+      parameters: [ "intake_pump_1.run_status", "intake_pump_2.run_status" ]
+      condition: "both_false"
+      severity: "critical"
+      action: "emergency_shutdown"
+
+    filter_differential_high:
+      parameters: [ "filter_bed_1.differential_pressure", "filter_bed_2.differential_pressure", "filter_bed_3.differential_pressure" ]
+      threshold: 450 # mbar
+      severity: "medium"
+      action: "initiate_sequential_backwash"
+
+# MQTT configuration for this site
+mqtt_config:
+  topic_prefix: "wtp/wtp-regional-02"
+  publish_interval: 1.0 # seconds (faster for larger plant)
+  retain_messages: true
+  qos: 1
