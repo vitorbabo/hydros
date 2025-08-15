@@ -112,6 +112,23 @@ class ProtocolRegistry:
         except ImportError:
             self.logger.warning("Modbus handler not available")
 
+        try:
+            # Register MQTT handler
+            from .mqtt_handler import MQTTHandler
+            
+            self.register_protocol(
+                ProtocolType.MQTT,
+                MQTTHandler,
+                [
+                    ProtocolCapability.PUBLISH,
+                    ProtocolCapability.CLIENT,
+                ],
+                {"host": "localhost", "port": 1883, "client_id": "hydros-mqtt"}
+            )
+            
+        except ImportError:
+            self.logger.warning("MQTT handler not available")
+
         # TODO: Add other protocol handlers when implemented
         # self.register_protocol(ProtocolType.OPCUA, OPCUAHandler, ...)
         # self.register_protocol(ProtocolType.S7, S7Handler, ...)

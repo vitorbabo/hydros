@@ -21,9 +21,11 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from core.config_publisher import ConfigurationPublisher
 from core.config_validator import ConfigurationValidationError, ConfigValidator
 from core.digital_twin import DigitalTwin
 from gateway.edge_gateway import EdgeGateway, GatewayMode
+from protocols.mqtt_handler import MQTTHandler
 from protocols.protocol_registry import ProtocolRegistry
 from simulation.simulator import SimulationEngine, SimulationMode
 
@@ -43,6 +45,8 @@ class HydrosSystem:
         # Core components
         self.plant_model = DigitalTwin()
         self.protocol_registry = ProtocolRegistry()
+        self.mqtt_handler: Optional[MQTTHandler] = None
+        self.config_publisher: Optional[ConfigurationPublisher] = None
 
         # Mode-specific components
         self.simulation_engine: Optional[SimulationEngine] = None
@@ -144,6 +148,60 @@ class HydrosSystem:
             self.logger.info("Continuing with basic file existence validation")
             return True  # Fall back to basic validation if schema validation fails
 
+    async def initialize_mqtt_handler(self):
+        """Initialize shared MQTT handler for all system components"""
+        self.logger.info("Initializing shared MQTT handler")
+        
+        self.mqtt_handler = MQTTHandler(
+            site_id=self.site_id,
+            gateway_config_file=str(self.gateway_config_file)
+        )
+        
+        # Connect to MQTT broker
+        connected = await self.mqtt_handler.connect()
+        if connected:
+            self.logger.info("MQTT handler connected successfully")
+            return True
+        else:
+            self.logger.warning("MQTT handler failed to connect - continuing without MQTT")
+            return False
+
+    def initialize_config_publisher(self):
+        """Initialize MQTT configuration publisher using shared MQTT handler"""
+        self.logger.info("Initializing configuration publisher")
+        
+        self.config_publisher = ConfigurationPublisher(
+            site_id=self.site_id,
+            mqtt_handler=self.mqtt_handler
+        )
+        
+        self.logger.info(f"Configuration publisher initialized for site {self.site_id}")
+
+    async def start_config_publishing(self):
+        """Start configuration publishing service"""
+        if not self.config_publisher:
+            self.logger.warning("Configuration publisher not initialized")
+            return False
+            
+        self.logger.info("Starting configuration publishing...")
+        
+        # Connect to MQTT broker
+        if not await self.config_publisher.connect():
+            self.logger.error("Failed to connect configuration publisher to MQTT broker")
+            return False
+        
+        # Publish initial configurations
+        if not await self.config_publisher.publish_all_configurations():
+            self.logger.warning("Failed to publish initial configurations")
+        
+        # Start periodic publishing task
+        periodic_task = asyncio.create_task(
+            self.config_publisher.start_periodic_publishing(interval=300.0)
+        )
+        
+        self.logger.info("Configuration publishing started successfully")
+        return True
+
     def initialize_simulation_mode(self):
         """Initialize simulation mode (simulation engine + modbus servers + edge gateway)"""
         self.logger.info("Initializing simulation mode")
@@ -171,7 +229,7 @@ class HydrosSystem:
             modbus_server.initialize_server()
 
         # Create edge gateway in hybrid mode (for testing with real PLCs + simulation fallback)
-        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.DEVELOPMENT)
+        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.DEVELOPMENT, self.mqtt_handler)
         self.edge_gateway.load_gateway_configuration(str(self.gateway_config_file))
 
     def initialize_normal_mode(self):
@@ -179,7 +237,7 @@ class HydrosSystem:
         self.logger.info("Initializing normal mode")
 
         # Create edge gateway
-        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.PRODUCTION)
+        self.edge_gateway = EdgeGateway(self.plant_model, GatewayMode.PRODUCTION, self.mqtt_handler)
 
         # Load configuration
         self.edge_gateway.load_gateway_configuration(str(self.gateway_config_file))
@@ -207,6 +265,11 @@ class HydrosSystem:
             self._update_modbus_server_loop(modbus_server)
         )
 
+        # Start configuration publishing
+        config_publishing_started = await self.start_config_publishing()
+        if not config_publishing_started:
+            self.logger.warning("Configuration publishing failed to start")
+
         # Start edge gateway
         gateway_task = asyncio.create_task(self.edge_gateway.start())
 
@@ -215,6 +278,11 @@ class HydrosSystem:
 
     async def run_normal_mode(self):
         """Run in normal mode (edge gateway only)"""
+        # Start configuration publishing
+        config_publishing_started = await self.start_config_publishing()
+        if not config_publishing_started:
+            self.logger.warning("Configuration publishing failed to start")
+        
         await self.edge_gateway.start()
 
     async def _update_modbus_server_loop(self, modbus_server):
@@ -279,6 +347,12 @@ class HydrosSystem:
                 templates_dir=str(self.templates_dir),
             )
 
+            # Initialize shared MQTT handler
+            await self.initialize_mqtt_handler()
+
+            # Initialize configuration publisher (will use shared MQTT handler)
+            self.initialize_config_publisher()
+
             # Initialize based on mode
             if self.mode == "simulation":
                 self.initialize_simulation_mode()
@@ -299,10 +373,18 @@ class HydrosSystem:
             self.logger.error(f"Failed to start Hydros system: {e}")
             raise
 
-    def stop(self):
+    async def stop(self):
         """Stop the Hydros system"""
         self.logger.info("Stopping Hydros system")
         self.running = False
+
+        # Stop configuration publisher
+        if self.config_publisher:
+            await self.config_publisher.disconnect()
+
+        # Stop shared MQTT handler
+        if self.mqtt_handler:
+            await self.mqtt_handler.disconnect()
 
         # Stop simulation engine
         if self.simulation_engine:
@@ -325,6 +407,16 @@ class HydrosSystem:
             "plant_model": self.plant_model.get_plant_statistics(),
             "protocols": self.protocol_registry.get_all_statistics(),
         }
+
+        if self.mqtt_handler:
+            status["mqtt_handler"] = self.mqtt_handler.get_statistics()
+
+        if self.config_publisher:
+            status["config_publisher"] = {
+                "connected": self.config_publisher.connected,
+                "last_published": self.config_publisher.last_published,
+                "sequence_number": self.config_publisher.sequence_number
+            }
 
         if self.simulation_engine:
             status["simulation"] = self.simulation_engine.get_simulation_statistics()
@@ -400,6 +492,7 @@ Examples:
         action="store_true",
         help="Run address allocator to generate/update configuration mappings on startup",
     )
+
 
     args = parser.parse_args()
 

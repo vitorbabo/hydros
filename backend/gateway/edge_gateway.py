@@ -8,13 +8,12 @@ standardized observations to MQTT broker.
 """
 
 import asyncio
-import json
 import logging
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 try:
     import yaml
@@ -22,13 +21,6 @@ try:
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
-
-try:
-    import paho.mqtt.client as mqtt
-
-    MQTT_AVAILABLE = True
-except ImportError:
-    MQTT_AVAILABLE = False
 
 from core.digital_twin import DigitalTwin
 
@@ -85,10 +77,12 @@ class EdgeGateway:
     """
 
     def __init__(
-        self, plant_model: DigitalTwin, mode: GatewayMode = GatewayMode.PRODUCTION
+        self, plant_model: DigitalTwin, mode: GatewayMode = GatewayMode.PRODUCTION, 
+        mqtt_handler: Optional[Any] = None
     ):
         self.plant_model = plant_model
         self.mode = mode
+        self.mqtt_handler = mqtt_handler
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -101,15 +95,6 @@ class EdgeGateway:
         self.plc_connections: Dict[str, PLCConnection] = {}
         self.parameter_mappings: Dict[str, Dict] = {}  # param_id -> plc mapping info
         self.plc_readers: Dict[str, Any] = {}  # Protocol-specific readers
-
-        # MQTT client
-        self.mqtt_client = None
-        self.mqtt_config = {
-            "host": "localhost",
-            "port": 1883,
-            "client_id": "hydros-edge-gateway",
-            "keepalive": 60,
-        }
 
         # Runtime state
         self.running = False
@@ -157,10 +142,8 @@ class EdgeGateway:
 
             # Load MQTT configuration
             mqtt_cfg = config.get("mqtt", {})
-            # Ensure port is integer
-            if "port" in mqtt_cfg:
-                mqtt_cfg["port"] = int(mqtt_cfg["port"])
-            self.mqtt_config.update(mqtt_cfg)
+            # MQTT configuration is now handled by shared MQTT handler
+            self.logger.debug(f"MQTT config found in gateway config: {mqtt_cfg}")
 
             # Load PLC connections (handle both 'plc_connections' and 'plcs' formats)
             plc_configs = config.get("plc_connections", config.get("plcs", []))
@@ -219,41 +202,6 @@ class EdgeGateway:
             self.logger.error(f"Failed to load gateway configuration: {e}")
             raise
 
-    def initialize_mqtt(self):
-        """Initialize MQTT client"""
-        if not MQTT_AVAILABLE:
-            self.logger.warning("paho-mqtt not available, MQTT publishing disabled")
-            return False
-
-        try:
-            self.mqtt_client = mqtt.Client(client_id=self.mqtt_config["client_id"])
-
-            def on_connect(client, userdata, flags, rc):
-                if rc == 0:
-                    self.logger.info(
-                        f"Connected to MQTT broker {self.mqtt_config['host']}"
-                    )
-                else:
-                    self.logger.error(f"MQTT connection failed: {rc}")
-
-            def on_disconnect(client, userdata, rc):
-                self.logger.warning(f"Disconnected from MQTT broker: {rc}")
-
-            self.mqtt_client.on_connect = on_connect
-            self.mqtt_client.on_disconnect = on_disconnect
-
-            # Connect to MQTT broker
-            self.mqtt_client.connect(
-                self.mqtt_config["host"],
-                self.mqtt_config["port"],
-                self.mqtt_config["keepalive"],
-            )
-            self.mqtt_client.loop_start()
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to initialize MQTT: {e}")
-            return False
 
     async def initialize_plc_readers(self):
         """Initialize PLC readers using the plc_readers module"""
@@ -345,10 +293,10 @@ class EdgeGateway:
 
         return all_data
 
-    def publish_to_mqtt(self, parameter_data: Dict[str, Any]):
+    async def publish_to_mqtt(self, parameter_data: Dict[str, Any]):
         """Publish parameter data to MQTT as standardized observations"""
-        if not self.mqtt_client:
-            self.logger.warning("MQTT client not available")
+        if not self.mqtt_handler:
+            self.logger.warning("MQTT handler not available")
             return
 
         timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -373,13 +321,21 @@ class EdgeGateway:
                 component_type=mapping.get("component_type", "generic"),
             )
 
-            # Publish to standardized MQTT topic
-            topic = f"wtp/{observation.site_id}/{observation.asset_id}/{observation.measurement}/observation"
-            payload = json.dumps(asdict(observation))
-
+            # Publish using shared MQTT handler
             try:
-                self.mqtt_client.publish(topic, payload, qos=0)
-                self.stats["mqtt_publishes"] += 1
+                success = await self.mqtt_handler.publish_observation(
+                    observation.site_id,
+                    observation.asset_id,
+                    observation.measurement,
+                    asdict(observation),
+                    qos=0
+                )
+                
+                if success:
+                    self.stats["mqtt_publishes"] += 1
+                else:
+                    self.logger.warning(f"Failed to publish {param_id} to MQTT")
+                    
             except Exception as e:
                 self.logger.warning(f"Failed to publish {param_id} to MQTT: {e}")
 
@@ -406,7 +362,7 @@ class EdgeGateway:
                         self.plant_model.set_parameter_value(plant_param_id, value)
 
                     # Publish to MQTT
-                    self.publish_to_mqtt(parameter_data)
+                    await self.publish_to_mqtt(parameter_data)
 
                     self.stats["successful_reads"] += 1
                     self.logger.debug(
@@ -446,9 +402,9 @@ class EdgeGateway:
         try:
             self.logger.info("Starting edge gateway")
 
-            # Initialize MQTT
-            if not self.initialize_mqtt():
-                raise Exception("Failed to initialize MQTT")
+            # MQTT handler is now shared and managed by HydrosSystem
+            if self.mqtt_handler and not self.mqtt_handler.is_connected():
+                self.logger.warning("MQTT handler not connected - MQTT publishing will be disabled")
 
             # Initialize PLC readers
             await self.initialize_plc_readers()
@@ -480,14 +436,7 @@ class EdgeGateway:
             except Exception as e:
                 self.logger.warning(f"Error disconnecting PLC {plc_id}: {e}")
 
-        # Disconnect MQTT
-        if self.mqtt_client:
-            try:
-                self.mqtt_client.loop_stop()
-                self.mqtt_client.disconnect()
-                self.logger.info("Disconnected from MQTT broker")
-            except Exception as e:
-                self.logger.warning(f"Error disconnecting MQTT: {e}")
+        # MQTT handler is now shared and managed by HydrosSystem
 
         self._log_stats()
 

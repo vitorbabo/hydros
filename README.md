@@ -39,6 +39,7 @@ backend/
 │   └── data_mapper.py              # Data transformation utilities
 ├── protocols/                      # Industrial protocol handlers
 │   ├── modbus_handler.py           # Unified async Modbus implementation
+│   ├── mqtt_handler.py             # Centralized MQTT client for all components
 │   ├── protocol_registry.py        # Pluggable protocol system
 │   └── __init__.py                 # Protocol package initialization
 ├── main.py                         # Main unified system entry point
@@ -105,18 +106,26 @@ docker compose up -d --build
 - MQTT topics use: `wtp/wtp-porto-01/raw_intake/level/observation`
 - No parameter ID conversion needed between components
 
-### ✅ **MQTT Data Publishing**
-- Standardized observation format with metadata
-- Clean topic structure: `wtp/{site_id}/{asset_id}/{measurement}/observation`
-- Real-time data streaming with sequence numbers
-- JSON payload with quality indicators and timestamps
+### ✅ **Centralized MQTT Architecture**
+- **Unified Handler**: Single MQTT client serves all system components
+- **Message Types**: Observations, configurations, status, and future control commands
+- **Topic Structure**: 
+  - Sensor data: `wtp/{site_id}/{asset_id}/{measurement}/observation`
+  - Site configurations: `wtp/{site_id}/configuration/{type}`
+  - Global templates: `wtp/global/configuration/{templates|parameters}`
+  - System status: `wtp/{site_id}/status/{type}`
+- **Real-time Publishing**: Async message queuing with automatic reconnection
+- **Comprehensive Statistics**: Connection health, message counts, and performance metrics
 
-### ✅ **Protocol Abstraction**
+### ✅ **Unified Protocol Architecture**
 - **Modbus TCP**: Full async client/server implementation ✅
-- **MQTT**: Real-time data publishing ✅
+- **MQTT**: Centralized handler for all system components ✅
+  - Single connection for observations and configuration publishing
+  - Async message queuing with automatic reconnection
+  - Protocol registry integration with comprehensive statistics
 - **OPC UA**: Protocol mapper support ready 🚧
 - **Siemens S7**: Protocol mapper support ready 🚧
-- Pluggable protocol registry system with ProtocolMapper
+- Pluggable protocol registry system with shared connection management
 
 ### ✅ **Physics-Based Simulation**
 - SimulatedPlantComponent wrappers for realistic behavior
@@ -139,6 +148,7 @@ The Hydros system is built around intuitive, domain-specific components:
 - **SensorCatalog**: Centralized library of 49+ parameter specifications
 - **ProtocolMapper**: Dynamic address allocation for Modbus, OPC UA, S7 protocols
 - **ConfigValidator**: JSON schema validation for all configuration files
+- **MQTTHandler**: Unified MQTT client for real-time data and configuration publishing
 
 ### **Data Type System**
 - **ComponentRole**: Parameter classification (SENSOR, ACTUATOR, STATUS)
@@ -286,9 +296,11 @@ The system serves standard Modbus TCP, making it compatible with:
 - **Any Modbus-compatible SCADA**
 
 ### MQTT Data Streaming
-Real-time data publishing with standardized format:
+Unified MQTT handler publishes multiple data types with standardized format:
+
+**Sensor Observations:**
 ```bash
-# Subscribe to all observations
+# Subscribe to all sensor observations
 mosquitto_sub -h localhost -t "wtp/+/+/+/observation"
 
 # Subscribe to specific asset
@@ -298,7 +310,19 @@ mosquitto_sub -h localhost -t "wtp/wtp-porto-01/raw_intake/+/observation"
 mosquitto_sub -h localhost -t "wtp/+/+/level/observation"
 ```
 
-**Example MQTT Message:**
+**Configuration Updates:**
+```bash
+# Subscribe to all configuration updates
+mosquitto_sub -h localhost -t "wtp/+/configuration/+"
+
+# Subscribe to global templates and parameters
+mosquitto_sub -h localhost -t "wtp/global/configuration/+"
+
+# Subscribe to system status
+mosquitto_sub -h localhost -t "wtp/+/status/+"
+```
+
+**Example Sensor Observation:**
 ```json
 {
   "site_id": "wtp-porto-01",
@@ -317,6 +341,28 @@ mosquitto_sub -h localhost -t "wtp/+/+/level/observation"
 }
 ```
 
+**Example Configuration Message:**
+```json
+{
+  "site_id": "wtp-porto-01",
+  "config_type": "plant",
+  "version": "1.0",
+  "timestamp": "2025-08-15T13:28:04.217000+00:00",
+  "data": {
+    "site_info": {
+      "site_id": "wtp-porto-01",
+      "name": "Porto Municipal WTP",
+      "design_capacity": 50000
+    },
+    "modules": ["raw_intake", "intake_pump_1", "..."],
+    "protocol_clients": [...],
+    "control_strategies": [...]
+  },
+  "source": "hydros-backend",
+  "seq": 3
+}
+```
+
 ### Log Analysis
 ```bash
 # View system logs
@@ -326,10 +372,13 @@ tail -f backend/hydros.log
 grep "SimulationEngine" backend/hydros.log
 
 # Monitor protocol activity
-grep "ModbusHandler" backend/hydros.log
+grep "ModbusHandler\|MQTTHandler" backend/hydros.log
 
-# Watch MQTT publishing
-grep "mqtt_publishes" backend/hydros.log
+# Watch MQTT publishing and connections
+grep "MQTTHandler\|mqtt_publishes\|MQTT.*connected" backend/hydros.log
+
+# Monitor configuration publishing
+grep "ConfigurationPublisher" backend/hydros.log
 ```
 
 ### Simulation Validation
@@ -341,8 +390,14 @@ python test_modbus_readback.py
 # Performance testing
 python benchmark_simulation.py
 
-# MQTT data verification
+# MQTT sensor data verification
 mosquitto_sub -h localhost -t "wtp/+/+/+/observation" -C 10
+
+# MQTT configuration verification
+mosquitto_sub -h localhost -t "wtp/+/configuration/+" -C 5
+
+# MQTT system status verification
+mosquitto_sub -h localhost -t "wtp/+/status/+" -C 3
 ```
 
 ## 🐳 Docker Deployment
