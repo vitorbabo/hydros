@@ -3,7 +3,7 @@
 Simulation Components
 
 Wrapper classes that provide simulation behavior for WTP components.
-These classes wrap the WTPComponent dataclass to provide update() and get_parameters() methods.
+These classes wrap the PlantComponent dataclass to provide update() and get_parameters() methods.
 """
 
 import random
@@ -11,18 +11,18 @@ import time
 import math
 from typing import Dict, Any
 
-from core.wtp_components import WTPComponent, Parameter, ParameterType, MeasurementType
+from core.plant_elements import PlantComponent, PlantParameter, ComponentRole, SensorType
 
 
-class SimulatedWTPComponent:
+class SimulatedPlantComponent:
     """
-    Simulation wrapper for WTPComponent that provides dynamic behavior.
+    Simulation wrapper for PlantComponent that provides dynamic behavior.
 
-    This class wraps a WTPComponent dataclass and adds simulation logic
+    This class wraps a PlantComponent dataclass and adds simulation logic
     to make parameters change over time with realistic behavior patterns.
     """
 
-    def __init__(self, wtp_component: WTPComponent):
+    def __init__(self, wtp_component: PlantComponent):
         self.component = wtp_component
         self.current_values = {}
         self.last_update = time.time()
@@ -38,7 +38,7 @@ class SimulatedWTPComponent:
     def _initialize_values(self):
         """Initialize parameter values within realistic ranges"""
         for param in self.component.parameters:
-            if param.parameter_type == ParameterType.SENSOR:
+            if param.component_role == ComponentRole.SENSOR:
                 # Initialize sensors to mid-range with slight variation
                 mid_value = (param.min_value + param.max_value) / 2
                 variation = (param.max_value - param.min_value) * 0.1
@@ -47,24 +47,24 @@ class SimulatedWTPComponent:
                     param.min_value, min(param.max_value, initial_value)
                 )
 
-            elif param.parameter_type == ParameterType.ACTUATOR:
+            elif param.component_role == ComponentRole.ACTUATOR:
                 # Initialize actuators based on component type
-                if param.measurement == MeasurementType.PUMP_SPEED:
+                if param.sensor_type == SensorType.PUMP_SPEED:
                     initial_value = random.uniform(70, 90)  # Typical operating range
-                elif param.measurement == MeasurementType.VALVE_POSITION:
+                elif param.sensor_type == SensorType.VALVE_POSITION:
                     initial_value = random.uniform(30, 70)  # Partially open
                 else:
                     initial_value = random.uniform(
                         param.min_value * 0.7, param.max_value * 0.9
                     )
 
-            elif param.parameter_type == ParameterType.STATUS:
+            elif param.component_role == ComponentRole.STATUS:
                 # Status parameters are typically boolean or discrete
-                if param.measurement == MeasurementType.RUN_STATUS:
+                if param.sensor_type == SensorType.RUN_STATUS:
                     initial_value = 1 if self.operating else 0
-                elif param.measurement == MeasurementType.ALARM_STATUS:
+                elif param.sensor_type == SensorType.ALARM_STATUS:
                     initial_value = 0  # No alarms initially
-                elif param.measurement == MeasurementType.MAINTENANCE_MODE:
+                elif param.sensor_type == SensorType.MAINTENANCE_MODE:
                     initial_value = 0  # Not in maintenance
                 else:
                     initial_value = random.choice([0, 1])
@@ -81,35 +81,35 @@ class SimulatedWTPComponent:
             param_name = self._get_parameter_name(param)
             self.current_values[param_name] = initial_value
 
-    def _get_parameter_name(self, param: Parameter) -> str:
+    def _get_parameter_name(self, param: PlantParameter) -> str:
         """Get a clean parameter name from measurement type"""
         measurement_to_name = {
-            MeasurementType.LEVEL: "level",
-            MeasurementType.FLOW_RATE: "flow_rate",
-            MeasurementType.TURBIDITY: "turbidity",
-            MeasurementType.PH: "ph",
-            MeasurementType.TEMPERATURE: "temperature",
-            MeasurementType.PRESSURE: "pressure",
-            MeasurementType.DIFFERENTIAL_PRESSURE: "differential_pressure",
-            MeasurementType.CONDUCTIVITY: "conductivity",
-            MeasurementType.DISSOLVED_OXYGEN: "dissolved_oxygen",
-            MeasurementType.CHLORINE_RESIDUAL: "chlorine_residual",
-            MeasurementType.ALKALINITY: "alkalinity",
-            MeasurementType.TOC: "toc",
-            MeasurementType.MOTOR_CURRENT: "motor_current",
-            MeasurementType.MOTOR_TEMPERATURE: "motor_temperature",
-            MeasurementType.VIBRATION: "vibration",
-            MeasurementType.POWER_CONSUMPTION: "power_consumption",
-            MeasurementType.CHEMICAL_TANK_LEVEL: "chemical_tank_level",
-            MeasurementType.CHEMICAL_DOSE_RATE: "chemical_dose_rate",
-            MeasurementType.PUMP_SPEED: "pump_speed",
-            MeasurementType.VALVE_POSITION: "valve_position",
-            MeasurementType.RUN_STATUS: "run_status",
-            MeasurementType.ALARM_STATUS: "alarm_status",
-            MeasurementType.MAINTENANCE_MODE: "maintenance_mode",
+            SensorType.LEVEL: "level",
+            SensorType.FLOW_RATE: "flow_rate",
+            SensorType.TURBIDITY: "turbidity",
+            SensorType.PH: "ph",
+            SensorType.TEMPERATURE: "temperature",
+            SensorType.PRESSURE: "pressure",
+            SensorType.DIFFERENTIAL_PRESSURE: "differential_pressure",
+            SensorType.CONDUCTIVITY: "conductivity",
+            SensorType.DISSOLVED_OXYGEN: "dissolved_oxygen",
+            SensorType.CHLORINE_RESIDUAL: "chlorine_residual",
+            SensorType.ALKALINITY: "alkalinity",
+            SensorType.TOC: "toc",
+            SensorType.MOTOR_CURRENT: "motor_current",
+            SensorType.MOTOR_TEMPERATURE: "motor_temperature",
+            SensorType.VIBRATION: "vibration",
+            SensorType.POWER_CONSUMPTION: "power_consumption",
+            SensorType.CHEMICAL_TANK_LEVEL: "chemical_tank_level",
+            SensorType.DOSE_RATE: "dose_rate",
+            SensorType.PUMP_SPEED: "pump_speed",
+            SensorType.VALVE_POSITION: "valve_position",
+            SensorType.RUN_STATUS: "run_status",
+            SensorType.ALARM_STATUS: "alarm_status",
+            SensorType.MAINTENANCE_MODE: "maintenance_mode",
         }
         return measurement_to_name.get(
-            param.measurement, param.measurement.value.lower()
+            param.sensor_type, param.sensor_type.value.lower()
         )
 
     def update(self):
@@ -124,11 +124,11 @@ class SimulatedWTPComponent:
             param_name = self._get_parameter_name(param)
             current_value = self.current_values[param_name]
 
-            if param.parameter_type == ParameterType.SENSOR:
+            if param.component_role == ComponentRole.SENSOR:
                 new_value = self._simulate_sensor_behavior(param, current_value, dt)
-            elif param.parameter_type == ParameterType.ACTUATOR:
+            elif param.component_role == ComponentRole.ACTUATOR:
                 new_value = self._simulate_actuator_behavior(param, current_value, dt)
-            elif param.parameter_type == ParameterType.STATUS:
+            elif param.component_role == ComponentRole.STATUS:
                 new_value = self._simulate_status_behavior(param, current_value, dt)
             else:
                 new_value = current_value
@@ -143,7 +143,7 @@ class SimulatedWTPComponent:
             self.current_values[param_name] = new_value
 
     def _simulate_sensor_behavior(
-        self, param: Parameter, current_value: float, dt: float
+        self, param: PlantParameter, current_value: float, dt: float
     ) -> float:
         """Simulate realistic sensor behavior with noise and trends"""
         # Base noise (measurement uncertainty)
@@ -161,32 +161,32 @@ class SimulatedWTPComponent:
         # Equipment-specific behavior
         equipment_variation = 0.0
 
-        if param.measurement == MeasurementType.FLOW_RATE:
+        if param.sensor_type == SensorType.FLOW_RATE:
             # Flow rates vary with demand cycles
             demand_cycle = (
                 math.sin(self.simulation_time * 2 * math.pi / 7200) * 0.2
             )  # 2-hour cycle
             equipment_variation = current_value * demand_cycle
 
-        elif param.measurement == MeasurementType.LEVEL:
+        elif param.sensor_type == SensorType.LEVEL:
             # Tank levels change slowly
             level_change = random.uniform(-0.02, 0.02) * dt  # Slow level changes
             equipment_variation = level_change
 
-        elif param.measurement == MeasurementType.PRESSURE:
+        elif param.sensor_type == SensorType.PRESSURE:
             # Pressure fluctuates with pump operation
             if self.operating:
                 pressure_variation = random.uniform(-0.1, 0.1)
                 equipment_variation = pressure_variation
 
-        elif param.measurement == MeasurementType.TEMPERATURE:
+        elif param.sensor_type == SensorType.TEMPERATURE:
             # Temperature follows slow thermal cycles
             thermal_cycle = (
                 math.sin(self.simulation_time * 2 * math.pi / 3600) * 2.0
             )  # 1-hour cycle, ±2°C
             equipment_variation = thermal_cycle * 0.1  # Gradual change
 
-        elif param.measurement == MeasurementType.MOTOR_CURRENT:
+        elif param.sensor_type == SensorType.MOTOR_CURRENT:
             # Motor current varies with load
             if self.operating:
                 load_variation = random.uniform(-0.5, 0.5)
@@ -197,10 +197,10 @@ class SimulatedWTPComponent:
         return current_value + noise + trend * dt + equipment_variation * dt
 
     def _simulate_actuator_behavior(
-        self, param: Parameter, current_value: float, dt: float
+        self, param: PlantParameter, current_value: float, dt: float
     ) -> float:
         """Simulate actuator behavior (pumps, valves, etc.)"""
-        if param.measurement == MeasurementType.PUMP_SPEED:
+        if param.sensor_type == SensorType.PUMP_SPEED:
             if self.operating:
                 # Pump speed varies slightly around setpoint
                 variation = random.uniform(-2.0, 2.0) * dt
@@ -211,12 +211,12 @@ class SimulatedWTPComponent:
             else:
                 return 0.0  # Pump stopped
 
-        elif param.measurement == MeasurementType.VALVE_POSITION:
+        elif param.sensor_type == SensorType.VALVE_POSITION:
             # Valve position changes slowly for control
             position_change = random.uniform(-1.0, 1.0) * dt
             return current_value + position_change
 
-        elif param.measurement == MeasurementType.CHEMICAL_DOSE_RATE:
+        elif param.sensor_type == SensorType.DOSE_RATE:
             # Chemical dosing varies with water quality feedback
             dose_variation = random.uniform(-0.5, 0.5) * dt
             return current_value + dose_variation
@@ -224,16 +224,16 @@ class SimulatedWTPComponent:
         return current_value
 
     def _simulate_status_behavior(
-        self, param: Parameter, current_value: float, dt: float
+        self, param: PlantParameter, current_value: float, dt: float
     ) -> float:
         """Simulate status parameter behavior"""
-        if param.measurement == MeasurementType.RUN_STATUS:
+        if param.sensor_type == SensorType.RUN_STATUS:
             # Occasionally simulate start/stop events
             if random.random() < 0.001:  # 0.1% chance per update
                 return 1.0 if current_value == 0.0 else 0.0
             return current_value
 
-        elif param.measurement == MeasurementType.ALARM_STATUS:
+        elif param.sensor_type == SensorType.ALARM_STATUS:
             # Rarely trigger alarms
             if random.random() < 0.0005:  # 0.05% chance
                 return 1.0
@@ -243,7 +243,7 @@ class SimulatedWTPComponent:
                 return 0.0
             return current_value
 
-        elif param.measurement == MeasurementType.MAINTENANCE_MODE:
+        elif param.sensor_type == SensorType.MAINTENANCE_MODE:
             # Very rarely enter maintenance mode
             if random.random() < 0.0001:  # 0.01% chance
                 return 1.0 if current_value == 0.0 else 0.0
@@ -262,9 +262,9 @@ class SimulatedWTPComponent:
             for param in self.component.parameters:
                 param_name = self._get_parameter_name(param)
                 if param_name == parameter_name:
-                    if param.parameter_type in [
-                        ParameterType.ACTUATOR,
-                        ParameterType.STATUS,
+                    if param.component_role in [
+                        ComponentRole.ACTUATOR,
+                        ComponentRole.STATUS,
                     ]:
                         # Apply bounds
                         value = max(param.min_value, min(param.max_value, value))
@@ -293,7 +293,7 @@ class SimulatedWTPComponent:
         self.operating = operating
         # Update run_status parameter if it exists
         for param in self.component.parameters:
-            if param.measurement == MeasurementType.RUN_STATUS:
+            if param.sensor_type == SensorType.RUN_STATUS:
                 param_name = self._get_parameter_name(param)
                 self.current_values[param_name] = 1.0 if operating else 0.0
                 break

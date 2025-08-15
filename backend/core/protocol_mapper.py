@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """
-Dynamic Address Allocation System
+Protocol Mapper - Dynamic Address Allocation for Industrial Protocols
 
-Automatically allocates protocol-specific addresses (Modbus registers, OPC UA nodes, etc.)
+Automatically allocates protocol-specific addresses (Modbus registers, OPC UA nodes, S7 addresses)
 based on plant configuration and generates mapping files for edge gateway consumption.
+
+Key Features:
+- Dynamic address allocation for multiple protocols (Modbus TCP, OPC UA, S7)
+- Automatic scaling factor assignment for integer-based protocols
+- Protocol-specific mapping file generation for edge gateways
+- Support for both simulation and production deployments
+- Integration with centralized sensor catalog for parameter specifications
+
+This system eliminates hardcoded protocol addresses and enables flexible plant 
+configurations while maintaining consistent addressing across different protocols.
 """
 
 import yaml
@@ -11,43 +21,52 @@ import json
 from datetime import datetime
 from typing import List, Optional
 from dataclasses import dataclass, asdict
-from enum import Enum
 from pathlib import Path
 
-
-class DataType(Enum):
-    BOOL = "bool"
-    INT16 = "int16"
-    UINT16 = "uint16"
-    INT32 = "int32"
-    UINT32 = "uint32"
-    REAL = "real"
-    STRING = "string"
-
-
-class ParameterType(Enum):
-    SENSOR = "sensor"
-    ACTUATOR = "actuator"
-    STATUS = "status"
-    SETPOINT = "setpoint"
-    ALARM = "alarm"
+from .sensor_catalog import ParameterLibrary, ParameterSpecification
+from .plant_elements import ProtocolDataType, ComponentRole
 
 
 @dataclass
 class ParameterDefinition:
-    """Definition of a plant parameter (sensor, actuator, etc.)"""
+    """Definition of a plant parameter (sensor, actuator, etc.) - compatible with ParameterSpecification"""
 
     component_id: str
     parameter_name: str
     measurement: str
     unit: str
-    data_type: DataType
-    parameter_type: ParameterType
+    data_type: ProtocolDataType
+    parameter_type: ComponentRole
     description: str = ""
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     precision: int = 2
     access: str = "read"  # read, write, read_write
+    
+    @classmethod
+    def from_parameter_spec(
+        cls, 
+        component_id: str, 
+        parameter_name: str, 
+        param_spec: ParameterSpecification, 
+        parameter_type: ComponentRole
+    ) -> 'ParameterDefinition':
+        """Create ParameterDefinition from ParameterSpecification"""
+        min_val, max_val = param_spec.get_min_max()
+        
+        return cls(
+            component_id=component_id,
+            parameter_name=parameter_name,
+            measurement=param_spec.measurement_type,
+            unit=param_spec.unit,
+            data_type=param_spec.data_type,
+            parameter_type=parameter_type,
+            description=param_spec.description,
+            min_value=min_val,
+            max_value=max_val,
+            precision=param_spec.precision,
+            access=param_spec.access_mode
+        )
 
 
 @dataclass
@@ -59,8 +78,8 @@ class AddressMapping:
     parameter_name: str
     measurement: str
     unit: str
-    data_type: DataType
-    parameter_type: ParameterType
+    data_type: ProtocolDataType
+    parameter_type: ComponentRole
 
     # Protocol-specific addresses
     modbus_address: Optional[int] = None
@@ -77,11 +96,19 @@ class AddressMapping:
     access: str = "read"
 
 
-class AddressAllocator:
-    """Dynamically allocates protocol addresses for plant parameters"""
+class ProtocolMapper:
+    """Maps plant parameters to protocol-specific addresses for industrial communication"""
 
     def __init__(self, site_config_file: str = None, templates_dir: str = None, legacy_config_file: str = None):
         """Initialize allocator with either new site structure or legacy config"""
+        
+        # Initialize parameter library first
+        if templates_dir:
+            params_file = f"{templates_dir}/parameters.yaml"
+            self.parameter_library = ParameterLibrary(params_file)
+        else:
+            self.parameter_library = ParameterLibrary()
+        
         if site_config_file and templates_dir:
             self._load_site_configuration(site_config_file, templates_dir)
         elif legacy_config_file:
@@ -202,7 +229,7 @@ class AddressAllocator:
         # Required sensors
         for sensor in module_config.get("required_sensors", []):
             param = self._create_parameter_definition(
-                module_id, sensor, ParameterType.SENSOR, required=True
+                module_id, sensor, ComponentRole.SENSOR, required=True
             )
             if param:
                 parameters.append(param)
@@ -210,7 +237,7 @@ class AddressAllocator:
         # Optional sensors
         for sensor in module_config.get("optional_sensors", []):
             param = self._create_parameter_definition(
-                module_id, sensor, ParameterType.SENSOR, required=False
+                module_id, sensor, ComponentRole.SENSOR, required=False
             )
             if param:
                 parameters.append(param)
@@ -218,7 +245,7 @@ class AddressAllocator:
         # Actuators
         for actuator in module_config.get("actuators", []):
             param = self._create_parameter_definition(
-                module_id, actuator, ParameterType.ACTUATOR
+                module_id, actuator, ComponentRole.ACTUATOR
             )
             if param:
                 parameters.append(param)
@@ -226,7 +253,7 @@ class AddressAllocator:
         # Status indicators
         if "run_status" in str(module_config):
             param = self._create_parameter_definition(
-                module_id, "run_status", ParameterType.STATUS
+                module_id, "run_status", ComponentRole.STATUS
             )
             if param:
                 parameters.append(param)
@@ -237,199 +264,25 @@ class AddressAllocator:
         self,
         component_id: str,
         parameter_name: str,
-        param_type: ParameterType,
+        param_type: ComponentRole,
         required: bool = True,
     ) -> Optional[ParameterDefinition]:
         """Create a parameter definition with appropriate metadata"""
 
-        # Parameter specifications - this could be moved to config
-        param_specs = self._get_parameter_specs(parameter_name)
+        # Get parameter specification from parameter library
+        param_spec = self.parameter_library.get_parameter_spec(parameter_name)
 
-        if not param_specs:
+        if not param_spec:
+            print(f"Warning: Parameter specification not found for '{parameter_name}', skipping")
             return None
 
-        return ParameterDefinition(
+        return ParameterDefinition.from_parameter_spec(
             component_id=component_id,
             parameter_name=parameter_name,
-            measurement=param_specs["measurement"],
-            unit=param_specs["unit"],
-            data_type=param_specs["data_type"],
-            parameter_type=param_type,
-            description=param_specs.get(
-                "description", f"{parameter_name} for {component_id}"
-            ),
-            min_value=param_specs.get("min_value"),
-            max_value=param_specs.get("max_value"),
-            precision=param_specs.get("precision", 2),
-            access=param_specs.get("access", "read"),
+            param_spec=param_spec,
+            parameter_type=param_type
         )
 
-    def _get_parameter_specs(self, parameter_name: str) -> Optional[dict]:
-        """Get parameter specifications (units, ranges, etc.)"""
-
-        # This could be loaded from a parameter library config file
-        specs = {
-            # Water quality parameters
-            "turbidity": {
-                "measurement": "turbidity",
-                "unit": "NTU",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 1000.0,
-                "precision": 2,
-            },
-            "ph": {
-                "measurement": "ph",
-                "unit": "pH",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 14.0,
-                "precision": 2,
-            },
-            "temperature": {
-                "measurement": "temperature",
-                "unit": "°C",
-                "data_type": DataType.REAL,
-                "min_value": -10.0,
-                "max_value": 50.0,
-                "precision": 1,
-            },
-            "conductivity": {
-                "measurement": "conductivity",
-                "unit": "µS/cm",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 2000.0,
-                "precision": 1,
-            },
-            "dissolved_oxygen": {
-                "measurement": "dissolved_oxygen",
-                "unit": "mg/L",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 20.0,
-                "precision": 2,
-            },
-            "chlorine_residual": {
-                "measurement": "chlorine_residual",
-                "unit": "mg/L",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 10.0,
-                "precision": 2,
-            },
-            # Physical parameters
-            "level": {
-                "measurement": "level",
-                "unit": "m",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 10.0,
-                "precision": 2,
-            },
-            "flow_rate": {
-                "measurement": "flow_rate",
-                "unit": "m³/h",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 200.0,
-                "precision": 1,
-            },
-            "pressure": {
-                "measurement": "pressure",
-                "unit": "bar",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 10.0,
-                "precision": 2,
-            },
-            "differential_pressure": {
-                "measurement": "differential_pressure",
-                "unit": "mbar",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 1000.0,
-                "precision": 0,
-            },
-            # Equipment parameters
-            "motor_current": {
-                "measurement": "motor_current",
-                "unit": "A",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 100.0,
-                "precision": 1,
-            },
-            "motor_temperature": {
-                "measurement": "motor_temperature",
-                "unit": "°C",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 150.0,
-                "precision": 1,
-            },
-            "vibration": {
-                "measurement": "vibration",
-                "unit": "mm/s",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 10.0,
-                "precision": 2,
-            },
-            "power_consumption": {
-                "measurement": "power_consumption",
-                "unit": "kW",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 100.0,
-                "precision": 1,
-            },
-            # Chemical parameters
-            "chemical_tank_level": {
-                "measurement": "level",
-                "unit": "m",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 5.0,
-                "precision": 2,
-            },
-            "dose_rate": {
-                "measurement": "dose_rate",
-                "unit": "mg/L",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 50.0,
-                "precision": 2,
-                "access": "read_write",
-            },
-            # Status parameters
-            "run_status": {
-                "measurement": "run_status",
-                "unit": "bool",
-                "data_type": DataType.BOOL,
-                "access": "read_write",
-            },
-            "pump_speed": {
-                "measurement": "pump_speed",
-                "unit": "rpm",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 3000.0,
-                "precision": 0,
-                "access": "read_write",
-            },
-            "mixer_speed": {
-                "measurement": "mixer_speed",
-                "unit": "rpm",
-                "data_type": DataType.REAL,
-                "min_value": 0.0,
-                "max_value": 1000.0,
-                "precision": 0,
-                "access": "read_write",
-            },
-        }
-
-        return specs.get(parameter_name)
 
     def allocate_addresses(
         self, parameters: List[ParameterDefinition]
@@ -466,7 +319,7 @@ class AddressAllocator:
     def _allocate_modbus_address(self, mapping: AddressMapping):
         """Allocate Modbus address based on data type and access"""
 
-        if mapping.data_type == DataType.BOOL:
+        if mapping.data_type == ProtocolDataType.BOOL:
             if "write" in mapping.access:
                 # Writable boolean -> coil
                 mapping.modbus_address = self.modbus_registers["coils"]
@@ -485,7 +338,7 @@ class AddressAllocator:
                 self.modbus_registers["holding_registers"] += 1
 
                 # Apply scaling for float values in integer registers
-                if mapping.data_type in [DataType.REAL]:
+                if mapping.data_type in [ProtocolDataType.REAL]:
                     mapping.scale_factor = 100.0  # Store as integer * 100
             else:
                 # Read-only numeric -> input register
@@ -493,7 +346,7 @@ class AddressAllocator:
                 mapping.modbus_type = "input_register"
                 self.modbus_registers["input_registers"] += 1
 
-                if mapping.data_type in [DataType.REAL]:
+                if mapping.data_type in [ProtocolDataType.REAL]:
                     mapping.scale_factor = 100.0
 
     def _allocate_opcua_address(self, mapping: AddressMapping):
@@ -507,7 +360,7 @@ class AddressAllocator:
         db = self.s7_db_counter["db"]
         offset = self.s7_db_counter["offset"]
 
-        if mapping.data_type == DataType.BOOL:
+        if mapping.data_type == ProtocolDataType.BOOL:
             # Boolean -> DBX format
             mapping.s7_address = f"DB{db}.DBX{offset}.0"
             self.s7_db_counter["offset"] += 2  # Align to word boundary
@@ -526,6 +379,14 @@ class AddressAllocator:
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
 
+        # Create site-specific directory if it doesn't exist
+        site_output_path = output_path / "sites" / site_id
+        site_output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Create mappings output (if needed for future use)
+        mappings_output_path = site_output_path / "mappings"
+        mappings_output_path.mkdir(exist_ok=True)
+
         # Generate parameters
         parameters = self.generate_plant_parameters(site_id)
 
@@ -533,20 +394,15 @@ class AddressAllocator:
         mappings = self.allocate_addresses(parameters)
 
         # Generate unified mapping file
-        unified_mapping = {
-            "site_id": site_id,
-            "generated_at": str(datetime.now()),
-            "parameters": [asdict(param) for param in parameters],
-            "address_mappings": [asdict(mapping) for mapping in mappings],
-        }
-
-        with open(output_path / f"{site_id}_unified_mapping.json", "w") as f:
-            json.dump(unified_mapping, f, indent=2, default=str)
+        self._generate_unified_mapping(site_id, parameters, mappings, mappings_output_path)
 
         # Generate protocol-specific mapping files
-        self._generate_modbus_mapping(site_id, mappings, output_path)
-        self._generate_opcua_mapping(site_id, mappings, output_path)
-        self._generate_edge_gateway_config(site_id, mappings, output_path)
+        self._generate_modbus_mapping(site_id, mappings, mappings_output_path)
+        self._generate_opcua_mapping(site_id, mappings, mappings_output_path)
+        self._generate_s7_mapping(site_id, mappings, mappings_output_path)
+        
+        # Generate edge gateway configuration file
+        self._generate_edge_gateway_config(site_id, mappings, site_output_path)
 
         print(f"Generated mapping files for {site_id}:")
         print(f"  - {len(parameters)} parameters")
@@ -554,6 +410,20 @@ class AddressAllocator:
         print(f"  - Files saved to {output_path}")
 
         return mappings
+
+    def _generate_unified_mapping(
+        self, site_id: str, parameters: List[ParameterDefinition], mappings: List[AddressMapping], output_path: Path
+    ):
+        """Generate unified mapping file containing all parameters and address mappings"""
+        unified_mapping = {
+            "site_id": site_id,
+            "generated_at": str(datetime.now()),
+            "parameters": [asdict(param) for param in parameters],
+            "address_mappings": [asdict(mapping) for mapping in mappings],
+        }
+
+        with open(output_path / "unified.json", "w") as f:
+            json.dump(unified_mapping, f, indent=2, default=str)
 
     def _generate_modbus_mapping(
         self, site_id: str, mappings: List[AddressMapping], output_path: Path
@@ -575,7 +445,7 @@ class AddressAllocator:
                     "access": mapping.access,
                 }
 
-        with open(output_path / f"{site_id}_modbus_mapping.json", "w") as f:
+        with open(output_path / "modbus.json", "w") as f:
             json.dump(modbus_mapping, f, indent=2)
 
     def _generate_opcua_mapping(
@@ -595,8 +465,29 @@ class AddressAllocator:
                     "access": mapping.access,
                 }
 
-        with open(output_path / f"{site_id}_opcua_mapping.json", "w") as f:
+        with open(output_path / "opcua.json", "w") as f:
             json.dump(opcua_mapping, f, indent=2)
+
+    def _generate_s7_mapping(
+        self, site_id: str, mappings: List[AddressMapping], output_path: Path
+    ):
+        """Generate S7/Siemens mapping file"""
+        s7_mapping = {"site_id": site_id, "protocol": "s7", "mappings": {}}
+
+        for mapping in mappings:
+            if mapping.s7_address is not None:
+                s7_mapping["mappings"][mapping.parameter_id] = {
+                    "address": mapping.s7_address,
+                    "data_type": mapping.data_type.value,
+                    "component_id": mapping.component_id,
+                    "measurement": mapping.measurement,
+                    "unit": mapping.unit,
+                    "access": mapping.access,
+                    "description": mapping.description,
+                }
+
+        with open(output_path / "s7.json", "w") as f:
+            json.dump(s7_mapping, f, indent=2)
 
     def _generate_edge_gateway_config(
         self, site_id: str, mappings: List[AddressMapping], output_path: Path
@@ -714,7 +605,6 @@ class AddressAllocator:
             gateway_config["plcs"].append(connection_config)
 
             # Create tags for this protocol client
-            tags_created = 0
             for mapping, protocol_type, client_config in mappings_list:
                 # Use protocol-appropriate addresses
                 if protocol_type == "modbus" or protocol_type == "modbus_tcp":
@@ -752,7 +642,7 @@ class AddressAllocator:
                 }
                 gateway_config["tags"].append(tag_def)
 
-        with open(output_path / f"{site_id}_edge_gateway_config.yaml", "w") as f:
+        with open(output_path / "edge_gateway_config.yaml", "w") as f:
             yaml.dump(gateway_config, f, indent=2, default_flow_style=False)
 
 
@@ -772,7 +662,9 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         site_id = sys.argv[1]
     else:
-        site_id = "wtp-porto-01"
+        print("No site ID provided. Checked:")
+        print(f"  - {config_dir}")
+        sys.exit(1)
     
     site_config_file = config_dir / "sites" / site_id / "plant.yaml"
     templates_dir = config_dir / "templates"
@@ -782,24 +674,15 @@ if __name__ == "__main__":
     print(f"Templates dir: {templates_dir}")
     
     if site_config_file.exists() and templates_dir.exists():
-        # New structure
-        allocator = AddressAllocator(
+        allocator = ProtocolMapper(
             site_config_file=str(site_config_file),
             templates_dir=str(templates_dir)
         )
         output_dir = config_dir
     else:
-        # Fallback to legacy structure
-        print("New structure not found, falling back to legacy config")
-        legacy_config = config_dir / "plant_config.yaml"
-        if legacy_config.exists():
-            allocator = AddressAllocator(legacy_config_file=str(legacy_config))
-            output_dir = config_dir
-        else:
-            print(f"No valid configuration found. Checked:")
-            print(f"  - {site_config_file}")
-            print(f"  - {legacy_config}")
-            sys.exit(1)
+        print("No valid configuration found. Checked:")
+        print(f"  - {site_config_file}")
+        sys.exit(1)
 
     # Generate mappings
     mappings = allocator.generate_mapping_files(site_id, str(output_dir))

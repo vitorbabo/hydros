@@ -1,0 +1,516 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydros.com/schemas/parameter-specifications.json",
+  "title": "Hydros Parameter Specifications Schema",
+  "description": "Schema for validating water treatment plant parameter specifications",
+  "type": "object",
+  "required": ["parameter_specifications"],
+  "properties": {
+    "parameter_specifications": {
+      "type": "object",
+      "description": "Parameter specification definitions",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "required": ["measurement_type", "unit", "data_type", "precision"],
+          "properties": {
+            "measurement_type": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$",
+              "description": "Type of measurement (matches parameter key)"
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20,
+              "description": "Measurement unit (e.g., NTU, pH, °C, mg/L)"
+            },
+            "data_type": {
+              "type": "string",
+              "enum": ["REAL", "INT", "BOOL", "STRING"],
+              "description": "Data type for protocol mapping"
+            },
+            "precision": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6,
+              "description": "Number of decimal places"
+            },
+            "ranges": {
+              "type": "object",
+              "description": "Named ranges for different contexts",
+              "patternProperties": {
+                "^[a-z0-9_]+$": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "description": "Min and max values"
+                    },
+                    {
+                      "type": "number",
+                      "description": "Single value"
+                    }
+                  ]
+                }
+              }
+            },
+            "quality_indicators": {
+              "type": "object",
+              "description": "Quality assessment ranges",
+              "properties": {
+                "excellent": {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "Excellent quality range"
+                },
+                "good": {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "Good quality range"
+                },
+                "acceptable": {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "Acceptable quality range"
+                },
+                "poor": {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "Poor quality range"
+                }
+              }
+            },
+            "calibration_frequency": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "description": "Calibration frequency in days"
+            },
+            "calibration_buffers": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "Standard calibration buffer values"
+            },
+            "maintenance": {
+              "type": "object",
+              "properties": {
+                "cleaning_frequency": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Cleaning frequency in days"
+                },
+                "replacement_interval": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Replacement interval in days"
+                }
+              }
+            },
+            "conversion_factor": {
+              "type": "number",
+              "description": "Factor to convert to another unit"
+            },
+            "temperature_coefficient": {
+              "type": "number",
+              "description": "Temperature coefficient (%/°C)"
+            },
+            "temperature_dependent": {
+              "type": "boolean",
+              "description": "Whether measurement is temperature dependent"
+            },
+            "compensation_required": {
+              "type": "boolean",
+              "description": "Whether temperature compensation is required"
+            },
+            "regulatory_limits": {
+              "type": "object",
+              "description": "Regulatory limits for this parameter",
+              "patternProperties": {
+                "^[a-z0-9_]+$": {
+                  "type": "number",
+                  "description": "Regulatory limit value"
+                }
+              }
+            },
+            "measurement_types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["free", "total", "combined", "dissolved", "suspended"]
+              },
+              "description": "Different measurement variants"
+            },
+            "buffer_capacity": {
+              "type": "boolean",
+              "description": "Whether this parameter indicates buffer capacity"
+            },
+            "regulatory_significance": {
+              "type": "string",
+              "enum": ["DBP_formation", "corrosion_control", "treatment_efficiency", "public_health"],
+              "description": "Regulatory significance"
+            },
+            "regulatory_requirement": {
+              "type": "boolean",
+              "description": "Whether this is a regulatory requirement"
+            },
+            "health_significance": {
+              "type": "string",
+              "enum": ["dental_health", "disinfection", "taste_odor", "aesthetic", "toxicity"],
+              "description": "Public health significance"
+            },
+            "alarm_levels": {
+              "type": "object",
+              "description": "Standard alarm level definitions",
+              "properties": {
+                "low_alarm": {
+                  "type": "number",
+                  "description": "Low alarm threshold"
+                },
+                "high_alarm": {
+                  "type": "number", 
+                  "description": "High alarm threshold"
+                },
+                "emergency_low": {
+                  "type": "number",
+                  "description": "Emergency low threshold"
+                },
+                "emergency_high": {
+                  "type": "number",
+                  "description": "Emergency high threshold"
+                }
+              }
+            },
+            "measurement_principle": {
+              "type": "string",
+              "enum": [
+                "hydrostatic_pressure", "differential_pressure", "electromagnetic",
+                "ultrasonic", "optical", "electrochemical", "thermal", "mechanical"
+              ],
+              "description": "Measurement principle used"
+            },
+            "totalizer_available": {
+              "type": "boolean",
+              "description": "Whether totalizer function is available"
+            },
+            "flow_direction": {
+              "type": "string",
+              "enum": ["unidirectional", "bidirectional"],
+              "description": "Flow measurement direction capability"
+            },
+            "gauge_type": {
+              "type": "string",
+              "enum": ["absolute", "gauge", "absolute_or_gauge"],
+              "description": "Pressure measurement reference"
+            },
+            "backwash_trigger": {
+              "type": "number",
+              "description": "Value that triggers backwash operation"
+            },
+            "alarm_level": {
+              "type": "number",
+              "description": "General alarm threshold"
+            },
+            "nameplate_comparison": {
+              "type": "boolean",
+              "description": "Whether to compare with equipment nameplate"
+            },
+            "overload_threshold": {
+              "type": "number",
+              "minimum": 1.0,
+              "maximum": 2.0,
+              "description": "Overload threshold as factor of nameplate"
+            },
+            "thermal_protection": {
+              "type": "boolean",
+              "description": "Whether thermal protection is required"
+            },
+            "measurement_standard": {
+              "type": "string",
+              "description": "Applicable measurement standard (e.g., ISO 10816)"
+            },
+            "frequencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Measurement frequency ranges"
+            },
+            "power_factor_correction": {
+              "type": "boolean",
+              "description": "Whether power factor correction is applied"
+            },
+            "energy_monitoring": {
+              "type": "boolean",
+              "description": "Whether energy monitoring is included"
+            },
+            "safety_requirements": {
+              "type": "object",
+              "description": "Safety requirements for chemical parameters",
+              "properties": {
+                "secondary_containment": {
+                  "type": "boolean",
+                  "description": "Secondary containment required"
+                },
+                "leak_detection": {
+                  "type": "boolean",
+                  "description": "Leak detection required"
+                },
+                "low_level_alarm": {
+                  "type": "number",
+                  "description": "Low level alarm threshold"
+                }
+              }
+            },
+            "flow_proportional": {
+              "type": "boolean",
+              "description": "Whether dosing is flow proportional"
+            },
+            "access_mode": {
+              "type": "string",
+              "enum": ["read", "write", "read_write"],
+              "description": "Parameter access permissions"
+            },
+            "control_signal": {
+              "type": "string",
+              "enum": ["4-20mA", "0-10V", "digital", "modbus", "profibus"],
+              "description": "Control signal type"
+            },
+            "minimum_speed": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 100.0,
+              "description": "Minimum operating speed as percentage"
+            },
+            "position_feedback": {
+              "type": "boolean",
+              "description": "Whether position feedback is available"
+            },
+            "variable_speed": {
+              "type": "boolean",
+              "description": "Whether variable speed control is available"
+            },
+            "states": {
+              "type": "object",
+              "description": "Defined states for boolean parameters",
+              "patternProperties": {
+                "^[a-z0-9_]+$": {
+                  "anyOf": [
+                    {"type": "integer"},
+                    {"type": "boolean"}
+                  ]
+                }
+              }
+            },
+            "additional_states": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Additional states beyond basic boolean"
+            },
+            "alarm_types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["process", "equipment", "safety", "quality", "maintenance"]
+              },
+              "description": "Types of alarms this parameter can generate"
+            },
+            "lockout_required": {
+              "type": "boolean",
+              "description": "Whether lockout/tagout is required"
+            },
+            "wavelength": {
+              "type": "integer",
+              "minimum": 200,
+              "maximum": 800,
+              "description": "Wavelength for optical measurements in nm"
+            },
+            "path_length": {
+              "type": "string",
+              "enum": ["fixed", "variable"],
+              "description": "Optical path length configuration"
+            },
+            "lamp_aging_factor": {
+              "type": "boolean",
+              "description": "Whether lamp aging compensation is applied"
+            },
+            "fouling_factor": {
+              "type": "boolean",
+              "description": "Whether fouling compensation is applied"
+            },
+            "measurement_frequency": {
+              "type": "string",
+              "enum": ["continuous", "hourly", "daily", "weekly", "monthly"],
+              "description": "Frequency of measurement collection"
+            },
+            "measurement_principle": {
+              "type": "string",
+              "enum": [
+                "hydrostatic_pressure", "differential_pressure", "electromagnetic",
+                "ultrasonic", "optical", "electrochemical", "thermal", "mechanical",
+                "fluorometric", "electrokinetic", "laser_scattering", "nuclear"
+              ],
+              "description": "Physical measurement principle used"
+            },
+            "lamp_aging_factor": {
+              "type": "boolean",
+              "description": "Whether lamp aging compensation is applied"
+            },
+            "fouling_factor": {
+              "type": "boolean",
+              "description": "Whether fouling compensation is applied"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "data_quality_rules": {
+      "type": "object",
+      "description": "Data quality validation rules",
+      "properties": {
+        "validation_rules": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_]+$": {
+              "type": "object",
+              "required": ["description", "action"],
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "Rule description"
+                },
+                "action": {
+                  "type": "string",
+                  "enum": ["flag_as_suspect", "flag_as_failed", "flag_as_invalid", "flag_as_questionable"],
+                  "description": "Action to take when rule is violated"
+                },
+                "thresholds": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^[a-z0-9_]+$": {
+                      "type": "number",
+                      "description": "Parameter-specific threshold"
+                    }
+                  }
+                },
+                "duration": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Duration threshold in seconds"
+                },
+                "tolerance": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "Tolerance value"
+                },
+                "applicable_parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]+$"
+                  },
+                  "description": "Parameters this rule applies to"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "sensor_maintenance": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_]+$": {
+              "type": "object",
+              "required": ["check_frequency", "advance_warning", "overdue_action"],
+              "properties": {
+                "check_frequency": {
+                  "type": "integer",
+                  "minimum": 3600,
+                  "description": "Check frequency in seconds"
+                },
+                "advance_warning": {
+                  "type": "integer",
+                  "minimum": 3600,
+                  "description": "Advance warning time in seconds"
+                },
+                "overdue_action": {
+                  "type": "string",
+                  "enum": ["flag_as_questionable", "schedule_replacement", "notify_maintenance"],
+                  "description": "Action when maintenance is overdue"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "alarm_priorities": {
+      "type": "object",
+      "description": "Alarm priority classifications",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "properties": {
+            "safety_related": {
+              "type": "boolean",
+              "description": "Whether this priority level is safety related"
+            },
+            "automatic_shutdown": {
+              "type": "boolean",
+              "description": "Whether automatic shutdown is triggered"
+            },
+            "immediate_response": {
+              "type": "boolean",
+              "description": "Whether immediate response is required"
+            },
+            "production_impact": {
+              "type": "boolean",
+              "description": "Whether production is impacted"
+            },
+            "quality_impact": {
+              "type": "boolean",
+              "description": "Whether water quality is impacted"
+            },
+            "monitoring_only": {
+              "type": "boolean",
+              "description": "Whether this is monitoring only"
+            },
+            "response_time": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Required response time in seconds"
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$"
+              },
+              "description": "Parameters associated with this priority level"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

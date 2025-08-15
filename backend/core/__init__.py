@@ -1,31 +1,41 @@
 """
-Core plant modeling components for Hydros WTP system.
+Core Digital Twin Components for Hydros Water Treatment Plant System.
 
-This module contains all the core plant modeling functionality:
-- Plant model (digital twin)
-- Component factory for creating WTP components
-- WTP component definitions and simulation logic
-- Address allocation for protocol mapping
-- Protocol management
+This module provides the fundamental building blocks for modeling water treatment plants:
+
+Components:
+- digital_twin: Digital twin of the water treatment plant managing all components and states
+- plant_builder: Factory for constructing plant configurations from templates  
+- plant_elements: Core data structures (sensors, actuators, components)
+- sensor_catalog: Centralized library of sensor specifications and parameters
+- protocol_mapper: Protocol address mapping for Modbus, OPC UA, S7 communication
+
+Key Classes:
+- DigitalTwin: Central digital twin managing plant components and real-time data
+- PlantComponent: Physical equipment components (pumps, filters, tanks, etc.)
+- PlantParameter: Unified sensor/actuator parameter definitions
+- ComponentRole: Parameter roles (SENSOR, ACTUATOR, STATUS) 
+- SensorType: Types of measurements (turbidity, pH, flow rate, etc.)
+- ProtocolDataType: Data types for industrial protocols (BOOL, REAL, INT, etc.)
 """
 
-from .plant_model import PlantModel, ComponentMetadata, ComponentState
-from .component_factory import ComponentFactory
-from .wtp_components import WTPComponent, Parameter, ParameterType, MeasurementType
-from .address_allocator import AddressAllocator
-from .protocol_manager import DynamicModbusServer, DynamicModbusClient, ProtocolMapping
+from .digital_twin import DigitalTwin, ComponentInfo, OperationalState
+from .sensor_catalog import ParameterLibrary, ParameterSpecification
+from .plant_builder import ComponentFactory
+from .plant_elements import PlantComponent, PlantParameter, ComponentRole, SensorType, ProtocolDataType
+from .protocol_mapper import ProtocolMapper
 
 __all__ = [
-    "PlantModel",
-    "ComponentMetadata",
-    "ComponentState",
+    "DigitalTwin",
+    "ComponentInfo", 
+    "OperationalState",
     "ComponentFactory",
-    "WTPComponent",
-    "Parameter",
-    "ParameterType",
-    "MeasurementType",
-    "AddressAllocator",
-    "DynamicModbusServer",
-    "DynamicModbusClient",
-    "ProtocolMapping",
+    "PlantComponent",
+    "PlantParameter",
+    "ComponentRole",
+    "SensorType",
+    "ProtocolDataType",
+    "ProtocolMapper",
+    "ParameterLibrary",
+    "ParameterSpecification",
 ]

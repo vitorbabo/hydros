@@ -21,7 +21,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from core.plant_model import PlantModel
+from core.digital_twin import DigitalTwin
+from core.config_validator import ConfigValidator, ConfigurationValidationError
 from gateway.edge_gateway import EdgeGateway, GatewayMode
 from protocols.protocol_registry import ProtocolRegistry
 from simulation.simulator import SimulationEngine, SimulationMode
@@ -40,7 +41,7 @@ class HydrosSystem:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Core components
-        self.plant_model = PlantModel()
+        self.plant_model = DigitalTwin()
         self.protocol_registry = ProtocolRegistry()
 
         # Mode-specific components
@@ -52,7 +53,7 @@ class HydrosSystem:
         self.site_config_dir = self.config_dir / "sites" / site_id
         self.templates_dir = self.config_dir / "templates"
         self.plant_config_file = self.site_config_dir / "plant.yaml"
-        self.gateway_config_file = self.config_dir / f"{site_id}_edge_gateway_config.yaml"
+        self.gateway_config_file = self.site_config_dir / "edge_gateway_config.yaml"
 
         # Runtime state
         self.running = False
@@ -60,7 +61,8 @@ class HydrosSystem:
         self.logger.info(f"Initialized Hydros system in {mode} mode for site {site_id}")
 
     def validate_configuration(self) -> bool:
-        """Validate that required configuration files exist"""
+        """Validate configuration files exist and are valid according to schemas"""
+        # First check if required files exist
         required_files = [self.plant_config_file]
         
         # Check for template files
@@ -87,7 +89,54 @@ class HydrosSystem:
             self.logger.info(f"Expected site config directory: {self.site_config_dir}")
             return False
 
-        return True
+        # Perform schema validation if files exist
+        try:
+            self.logger.info("Validating configuration files against schemas...")
+            validator = ConfigValidator(str(self.config_dir))
+            
+            # Validate templates first (dependencies for site config)
+            templates_valid, template_errors = validator.validate_module_templates()
+            if not templates_valid:
+                self.logger.error("Module templates validation failed:")
+                for error in template_errors:
+                    self.logger.error(f"  • {error}")
+                return False
+                
+            params_valid, params_errors = validator.validate_parameter_specifications()
+            if not params_valid:
+                self.logger.error("Parameter specifications validation failed:")
+                for error in params_errors:
+                    self.logger.error(f"  • {error}")
+                return False
+            
+            # Validate site configuration
+            site_valid, site_errors = validator.validate_site_config(self.site_id)
+            if not site_valid:
+                self.logger.error(f"Site configuration validation failed for {self.site_id}:")
+                for error in site_errors:
+                    self.logger.error(f"  • {error}")
+                return False
+            
+            # Validate compatibility between site config and templates
+            compat_valid, compat_errors = validator.validate_configuration_compatibility(self.site_id)
+            if not compat_valid:
+                self.logger.error(f"Configuration compatibility validation failed for {self.site_id}:")
+                for error in compat_errors:
+                    self.logger.error(f"  • {error}")
+                return False
+            
+            self.logger.info("✅ All configuration validations passed")
+            return True
+            
+        except ConfigurationValidationError as e:
+            self.logger.error(f"Configuration validation error: {e}")
+            for error in e.errors:
+                self.logger.error(f"  • {error}")
+            return False
+        except Exception as e:
+            self.logger.warning(f"Schema validation unavailable: {e}")
+            self.logger.info("Continuing with basic file existence validation")
+            return True  # Fall back to basic validation if schema validation fails
 
     def initialize_simulation_mode(self):
         """Initialize simulation mode (simulation engine + modbus servers + edge gateway)"""
@@ -167,10 +216,10 @@ class HydrosSystem:
         while self.running:
             try:
                 if modbus_server and hasattr(modbus_server, "update_server_parameters"):
-                    # Get current parameter values from PlantModel
+                    # Get current parameter values from DigitalTwin
                     parameter_values = self.plant_model.get_all_parameters()
 
-                    # PlantModel and Modbus mappings use the same Paramter ID format:
+                    # DigitalTwin and Modbus mappings use the same Paramter ID format:
                     # "site.component.parameter" format
                     if parameter_values:
                         success_count = modbus_server.update_server_parameters(
@@ -195,23 +244,23 @@ class HydrosSystem:
             if not self.validate_configuration():
                 raise RuntimeError("Configuration validation failed")
 
-            # Run address allocator if init mode is enabled
+            # Run protocol mapper if init mode is enabled
             if init_mode:
-                self.logger.info(f"Running address allocator for site {self.site_id}")
+                self.logger.info(f"Running protocol mapper for site {self.site_id}")
                 try:
-                    from core.address_allocator import AddressAllocator
+                    from core.protocol_mapper import ProtocolMapper
                     
-                    allocator = AddressAllocator(
+                    protocol_mapper = ProtocolMapper(
                         site_config_file=str(self.plant_config_file),
                         templates_dir=str(self.templates_dir)
                     )
                     
-                    # Generate mappings and save to config directory
-                    mappings = allocator.generate_mapping_files(self.site_id, str(self.config_dir))
-                    self.logger.info(f"Generated {len(mappings)} parameter mappings for {self.site_id}")
+                    # Generate protocol mappings and save to config directory
+                    mappings = protocol_mapper.generate_mapping_files(self.site_id, str(self.config_dir))
+                    self.logger.info(f"Generated {len(mappings)} protocol address mappings for {self.site_id}")
                     
                 except Exception as e:
-                    self.logger.error(f"Failed to run address allocator: {e}")
+                    self.logger.error(f"Failed to run protocol mapper: {e}")
                     raise
 
             # Load plant model with site-specific configuration
@@ -358,9 +407,7 @@ Examples:
         system.site_config_dir = system.config_dir / "sites" / args.site_id
         system.templates_dir = system.config_dir / "templates"
         system.plant_config_file = system.site_config_dir / "plant.yaml"
-        system.gateway_config_file = (
-            system.config_dir / f"{args.site_id}_edge_gateway_config.yaml"
-        )
+        system.gateway_config_file = system.site_config_dir / "edge_gateway_config.yaml"
 
         await system.start(init_mode=args.init)
 

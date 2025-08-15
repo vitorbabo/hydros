@@ -5,7 +5,7 @@
     "raw_intake.level": {
       "address": 3000,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -16,7 +16,7 @@
     "raw_intake.flow_rate": {
       "address": 3001,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -27,7 +27,7 @@
     "raw_intake.turbidity": {
       "address": 3002,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -38,7 +38,7 @@
     "raw_intake.ph": {
       "address": 3003,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -49,7 +49,7 @@
     "raw_intake.temperature": {
       "address": 3004,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -60,7 +60,7 @@
     "raw_intake.conductivity": {
       "address": 3005,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -71,7 +71,7 @@
     "raw_intake.dissolved_oxygen": {
       "address": 3006,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "raw_intake",
@@ -79,10 +79,32 @@
       "unit": "mg/L",
       "access": "read"
     },
-    "intake_pump_1.flow_rate": {
+    "raw_intake.chlorophyll_a": {
       "address": 3007,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "raw_intake",
+      "measurement": "chlorophyll_a",
+      "unit": "\u00b5g/L",
+      "access": "read"
+    },
+    "raw_intake.blue_green_algae": {
+      "address": 3008,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "raw_intake",
+      "measurement": "blue_green_algae",
+      "unit": "cells/mL",
+      "access": "read"
+    },
+    "intake_pump_1.flow_rate": {
+      "address": 3009,
+      "type": "input_register",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -91,9 +113,9 @@
       "access": "read"
     },
     "intake_pump_1.pressure": {
-      "address": 3008,
+      "address": 3010,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -102,9 +124,9 @@
       "access": "read"
     },
     "intake_pump_1.motor_current": {
-      "address": 3009,
+      "address": 3011,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -113,9 +135,9 @@
       "access": "read"
     },
     "intake_pump_1.motor_temperature": {
-      "address": 3010,
+      "address": 3012,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -124,9 +146,9 @@
       "access": "read"
     },
     "intake_pump_1.vibration": {
-      "address": 3011,
+      "address": 3013,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -135,9 +157,9 @@
       "access": "read"
     },
     "intake_pump_1.power_consumption": {
-      "address": 3012,
+      "address": 3014,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -146,10 +168,10 @@
       "access": "read"
     },
     "intake_pump_1.run_status": {
-      "address": 101,
-      "type": "coil",
-      "data_type": "bool",
-      "scale_factor": 1.0,
+      "address": 1002,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
       "measurement": "run_status",
@@ -157,9 +179,9 @@
       "access": "read_write"
     },
     "intake_pump_1.pump_speed": {
-      "address": 1000,
+      "address": 1001,
       "type": "holding_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "intake_pump_1",
@@ -168,9 +190,9 @@
       "access": "read_write"
     },
     "coagulation_tank.level": {
-      "address": 3013,
+      "address": 3015,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulation_tank",
@@ -179,9 +201,9 @@
       "access": "read"
     },
     "coagulation_tank.ph": {
-      "address": 3014,
+      "address": 3016,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulation_tank",
@@ -190,9 +212,9 @@
       "access": "read"
     },
     "coagulation_tank.turbidity": {
-      "address": 3015,
+      "address": 3017,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulation_tank",
@@ -201,9 +223,9 @@
       "access": "read"
     },
     "coagulation_tank.temperature": {
-      "address": 3016,
+      "address": 3018,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulation_tank",
@@ -211,10 +233,43 @@
       "unit": "\u00b0C",
       "access": "read"
     },
+    "coagulation_tank.alkalinity": {
+      "address": 3019,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "coagulation_tank",
+      "measurement": "alkalinity",
+      "unit": "mg/L CaCO3",
+      "access": "read"
+    },
+    "coagulation_tank.streaming_current": {
+      "address": 3020,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "coagulation_tank",
+      "measurement": "streaming_current",
+      "unit": "mA",
+      "access": "read"
+    },
+    "coagulation_tank.zeta_potential": {
+      "address": 3021,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "coagulation_tank",
+      "measurement": "zeta_potential",
+      "unit": "mV",
+      "access": "read"
+    },
     "coagulation_tank.mixer_speed": {
-      "address": 1001,
+      "address": 1003,
       "type": "holding_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulation_tank",
@@ -223,9 +278,9 @@
       "access": "read_write"
     },
     "coagulant_dosing.chemical_tank_level": {
-      "address": 3017,
+      "address": 3022,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulant_dosing",
@@ -234,9 +289,9 @@
       "access": "read"
     },
     "coagulant_dosing.flow_rate": {
-      "address": 3018,
+      "address": 3023,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulant_dosing",
@@ -245,10 +300,10 @@
       "access": "read"
     },
     "coagulant_dosing.run_status": {
-      "address": 103,
-      "type": "coil",
-      "data_type": "bool",
-      "scale_factor": 1.0,
+      "address": 1006,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulant_dosing",
       "measurement": "run_status",
@@ -256,9 +311,9 @@
       "access": "read_write"
     },
     "coagulant_dosing.dose_rate": {
-      "address": 1002,
+      "address": 1005,
       "type": "holding_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "coagulant_dosing",
@@ -267,9 +322,9 @@
       "access": "read_write"
     },
     "clarifier_1.level": {
-      "address": 3019,
+      "address": 3024,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "clarifier_1",
@@ -278,9 +333,9 @@
       "access": "read"
     },
     "clarifier_1.turbidity": {
-      "address": 3020,
+      "address": 3025,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "clarifier_1",
@@ -289,9 +344,9 @@
       "access": "read"
     },
     "clarifier_1.flow_rate": {
-      "address": 3021,
+      "address": 3026,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "clarifier_1",
@@ -300,9 +355,9 @@
       "access": "read"
     },
     "clarifier_1.ph": {
-      "address": 3022,
+      "address": 3027,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "clarifier_1",
@@ -310,10 +365,54 @@
       "unit": "pH",
       "access": "read"
     },
-    "filter_bed_1.differential_pressure": {
-      "address": 3023,
+    "clarifier_1.sludge_blanket_level": {
+      "address": 3028,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "clarifier_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read"
+    },
+    "clarifier_1.sludge_density": {
+      "address": 3029,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "clarifier_1",
+      "measurement": "density",
+      "unit": "g/L",
+      "access": "read"
+    },
+    "clarifier_1.sludge_removal_rate": {
+      "address": 1007,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "clarifier_1",
+      "measurement": "flow_rate",
+      "unit": "L/min",
+      "access": "read_write"
+    },
+    "clarifier_1.overflow_weir_level": {
+      "address": 1008,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "clarifier_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read_write"
+    },
+    "filter_bed_1.differential_pressure": {
+      "address": 3030,
+      "type": "input_register",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "filter_bed_1",
@@ -322,9 +421,9 @@
       "access": "read"
     },
     "filter_bed_1.turbidity": {
-      "address": 3024,
+      "address": 3031,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "filter_bed_1",
@@ -333,9 +432,9 @@
       "access": "read"
     },
     "filter_bed_1.flow_rate": {
-      "address": 3025,
+      "address": 3032,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "filter_bed_1",
@@ -344,9 +443,9 @@
       "access": "read"
     },
     "filter_bed_1.level": {
-      "address": 3026,
+      "address": 3033,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "filter_bed_1",
@@ -355,10 +454,43 @@
       "access": "read"
     },
     "filter_bed_1.run_status": {
-      "address": 105,
-      "type": "coil",
-      "data_type": "bool",
-      "scale_factor": 1.0,
+      "address": 1012,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "filter_bed_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write"
+    },
+    "filter_bed_1.particle_count": {
+      "address": 3034,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "filter_bed_1",
+      "measurement": "particle_count",
+      "unit": "particles/mL",
+      "access": "read"
+    },
+    "filter_bed_1.backwash_initiation": {
+      "address": 1010,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "filter_bed_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write"
+    },
+    "filter_bed_1.filter_to_waste": {
+      "address": 1011,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "filter_bed_1",
       "measurement": "run_status",
@@ -366,9 +498,9 @@
       "access": "read_write"
     },
     "chlorination.chlorine_residual": {
-      "address": 3027,
+      "address": 3035,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "chlorination",
@@ -377,9 +509,9 @@
       "access": "read"
     },
     "chlorination.ph": {
-      "address": 3028,
+      "address": 3036,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "chlorination",
@@ -388,9 +520,9 @@
       "access": "read"
     },
     "chlorination.temperature": {
-      "address": 3029,
+      "address": 3037,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "chlorination",
@@ -399,9 +531,9 @@
       "access": "read"
     },
     "chlorination.chemical_tank_level": {
-      "address": 3030,
+      "address": 3038,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "chlorination",
@@ -410,9 +542,9 @@
       "access": "read"
     },
     "chlorination.dose_rate": {
-      "address": 1003,
+      "address": 1013,
       "type": "holding_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "chlorination",
@@ -421,9 +553,9 @@
       "access": "read_write"
     },
     "finished_water_pump_1.flow_rate": {
-      "address": 3031,
+      "address": 3039,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -432,9 +564,9 @@
       "access": "read"
     },
     "finished_water_pump_1.pressure": {
-      "address": 3032,
+      "address": 3040,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -443,9 +575,9 @@
       "access": "read"
     },
     "finished_water_pump_1.motor_current": {
-      "address": 3033,
+      "address": 3041,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -454,9 +586,9 @@
       "access": "read"
     },
     "finished_water_pump_1.motor_temperature": {
-      "address": 3034,
+      "address": 3042,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -465,9 +597,9 @@
       "access": "read"
     },
     "finished_water_pump_1.vibration": {
-      "address": 3035,
+      "address": 3043,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -476,9 +608,9 @@
       "access": "read"
     },
     "finished_water_pump_1.power_consumption": {
-      "address": 3036,
+      "address": 3044,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -487,10 +619,10 @@
       "access": "read"
     },
     "finished_water_pump_1.run_status": {
-      "address": 107,
-      "type": "coil",
-      "data_type": "bool",
-      "scale_factor": 1.0,
+      "address": 1016,
+      "type": "holding_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
       "measurement": "run_status",
@@ -498,9 +630,9 @@
       "access": "read_write"
     },
     "finished_water_pump_1.pump_speed": {
-      "address": 1004,
+      "address": 1015,
       "type": "holding_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_pump_1",
@@ -509,9 +641,9 @@
       "access": "read_write"
     },
     "finished_water_tank.level": {
-      "address": 3037,
+      "address": 3045,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_tank",
@@ -520,9 +652,9 @@
       "access": "read"
     },
     "finished_water_tank.chlorine_residual": {
-      "address": 3038,
+      "address": 3046,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_tank",
@@ -531,9 +663,9 @@
       "access": "read"
     },
     "finished_water_tank.ph": {
-      "address": 3039,
+      "address": 3047,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_tank",
@@ -542,14 +674,36 @@
       "access": "read"
     },
     "finished_water_tank.temperature": {
-      "address": 3040,
+      "address": 3048,
       "type": "input_register",
-      "data_type": "real",
+      "data_type": "REAL",
       "scale_factor": 100.0,
       "offset": 0.0,
       "component_id": "finished_water_tank",
       "measurement": "temperature",
       "unit": "\u00b0C",
+      "access": "read"
+    },
+    "finished_water_tank.water_age": {
+      "address": 3049,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "finished_water_tank",
+      "measurement": "water_age",
+      "unit": "hours",
+      "access": "read"
+    },
+    "finished_water_tank.heterotrophic_plate_count": {
+      "address": 3050,
+      "type": "input_register",
+      "data_type": "REAL",
+      "scale_factor": 100.0,
+      "offset": 0.0,
+      "component_id": "finished_water_tank",
+      "measurement": "heterotrophic_plate_count",
+      "unit": "CFU/mL",
       "access": "read"
     }
   }

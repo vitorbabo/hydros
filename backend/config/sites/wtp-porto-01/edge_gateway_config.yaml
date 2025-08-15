@@ -14,7 +14,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: level for raw_intake
+  description: level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
@@ -26,7 +26,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: flow_rate for raw_intake
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
@@ -38,7 +38,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: turbidity for raw_intake
+  description: turbidity parameter
   measurement: turbidity
   offset: 0.0
   plc_connection: main_plc
@@ -50,7 +50,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: ph for raw_intake
+  description: ph parameter
   measurement: ph
   offset: 0.0
   plc_connection: main_plc
@@ -62,7 +62,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: temperature for raw_intake
+  description: temperature parameter
   measurement: temperature
   offset: 0.0
   plc_connection: main_plc
@@ -74,7 +74,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: conductivity for raw_intake
+  description: conductivity parameter
   measurement: conductivity
   offset: 0.0
   plc_connection: main_plc
@@ -86,7 +86,7 @@ tags:
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
-  description: dissolved_oxygen for raw_intake
+  description: dissolved_oxygen parameter
   measurement: dissolved_oxygen
   offset: 0.0
   plc_connection: main_plc
@@ -95,567 +95,735 @@ tags:
   sensor_id: dissolved_oxygen-raw_intake
   tag_address: '33007'
   unit: mg/L
+- asset_id: raw_intake
+  component_type: sensor
+  data_type: REAL
+  description: chlorophyll_a parameter
+  measurement: chlorophyll_a
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: chlorophyll_a-raw_intake
+  tag_address: '33008'
+  unit: "\xB5g/L"
+- asset_id: raw_intake
+  component_type: sensor
+  data_type: REAL
+  description: blue_green_algae parameter
+  measurement: blue_green_algae
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: blue_green_algae-raw_intake
+  tag_address: '33009'
+  unit: cells/mL
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: flow_rate for intake_pump_1
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: flow_rate-intake_pump_1
-  tag_address: '33008'
+  tag_address: '33010'
   unit: "m\xB3/h"
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: pressure for intake_pump_1
+  description: pressure parameter
   measurement: pressure
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: pressure-intake_pump_1
-  tag_address: '33009'
+  tag_address: '33011'
   unit: bar
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: motor_current for intake_pump_1
+  description: motor_current parameter
   measurement: motor_current
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: motor_current-intake_pump_1
-  tag_address: '33010'
+  tag_address: '33012'
   unit: A
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: motor_temperature for intake_pump_1
+  description: motor_temperature parameter
   measurement: motor_temperature
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: motor_temperature-intake_pump_1
-  tag_address: '33011'
+  tag_address: '33013'
   unit: "\xB0C"
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: vibration for intake_pump_1
+  description: vibration parameter
   measurement: vibration
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: vibration-intake_pump_1
-  tag_address: '33012'
+  tag_address: '33014'
   unit: mm/s
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
-  description: power_consumption for intake_pump_1
+  description: power_consumption parameter
   measurement: power_consumption
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: power_consumption-intake_pump_1
-  tag_address: '33013'
+  tag_address: '33015'
   unit: kW
 - asset_id: intake_pump_1
   component_type: sensor
-  data_type: BOOL
-  description: run_status for intake_pump_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-intake_pump_1
-  tag_address: '101'
+  tag_address: '41001'
   unit: bool
 - asset_id: intake_pump_1
   component_type: actuator
   data_type: REAL
-  description: pump_speed for intake_pump_1
+  description: pump_speed parameter
   measurement: pump_speed
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: pump_speed-intake_pump_1
-  tag_address: '41001'
+  tag_address: '41002'
   unit: rpm
 - asset_id: intake_pump_1
   component_type: status
-  data_type: BOOL
-  description: run_status for intake_pump_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-intake_pump_1
-  tag_address: '102'
+  tag_address: '41003'
   unit: bool
 - asset_id: coagulation_tank
   component_type: sensor
   data_type: REAL
-  description: level for coagulation_tank
+  description: level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-coagulation_tank
-  tag_address: '33014'
+  tag_address: '33016'
   unit: m
 - asset_id: coagulation_tank
   component_type: sensor
   data_type: REAL
-  description: ph for coagulation_tank
+  description: ph parameter
   measurement: ph
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: ph-coagulation_tank
-  tag_address: '33015'
+  tag_address: '33017'
   unit: pH
 - asset_id: coagulation_tank
   component_type: sensor
   data_type: REAL
-  description: turbidity for coagulation_tank
+  description: turbidity parameter
   measurement: turbidity
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: turbidity-coagulation_tank
-  tag_address: '33016'
+  tag_address: '33018'
   unit: NTU
 - asset_id: coagulation_tank
   component_type: sensor
   data_type: REAL
-  description: temperature for coagulation_tank
+  description: temperature parameter
   measurement: temperature
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: temperature-coagulation_tank
-  tag_address: '33017'
+  tag_address: '33019'
   unit: "\xB0C"
+- asset_id: coagulation_tank
+  component_type: sensor
+  data_type: REAL
+  description: alkalinity parameter
+  measurement: alkalinity
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: alkalinity-coagulation_tank
+  tag_address: '33020'
+  unit: mg/L CaCO3
+- asset_id: coagulation_tank
+  component_type: sensor
+  data_type: REAL
+  description: streaming_current parameter
+  measurement: streaming_current
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: streaming_current-coagulation_tank
+  tag_address: '33021'
+  unit: mA
+- asset_id: coagulation_tank
+  component_type: sensor
+  data_type: REAL
+  description: zeta_potential parameter
+  measurement: zeta_potential
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: zeta_potential-coagulation_tank
+  tag_address: '33022'
+  unit: mV
 - asset_id: coagulation_tank
   component_type: actuator
   data_type: REAL
-  description: mixer_speed for coagulation_tank
+  description: mixer_speed parameter
   measurement: mixer_speed
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: mixer_speed-coagulation_tank
-  tag_address: '41002'
+  tag_address: '41004'
   unit: rpm
 - asset_id: coagulant_dosing
   component_type: sensor
   data_type: REAL
-  description: chemical_tank_level for coagulant_dosing
+  description: chemical_tank_level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-coagulant_dosing
-  tag_address: '33018'
+  tag_address: '33023'
   unit: m
 - asset_id: coagulant_dosing
   component_type: sensor
   data_type: REAL
-  description: flow_rate for coagulant_dosing
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: flow_rate-coagulant_dosing
-  tag_address: '33019'
+  tag_address: '33024'
   unit: "m\xB3/h"
 - asset_id: coagulant_dosing
   component_type: sensor
-  data_type: BOOL
-  description: run_status for coagulant_dosing
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-coagulant_dosing
-  tag_address: '103'
+  tag_address: '41005'
   unit: bool
 - asset_id: coagulant_dosing
   component_type: actuator
   data_type: REAL
-  description: dose_rate for coagulant_dosing
+  description: dose_rate parameter
   measurement: dose_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: dose_rate-coagulant_dosing
-  tag_address: '41003'
+  tag_address: '41006'
   unit: mg/L
 - asset_id: coagulant_dosing
   component_type: status
-  data_type: BOOL
-  description: run_status for coagulant_dosing
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-coagulant_dosing
-  tag_address: '104'
+  tag_address: '41007'
   unit: bool
 - asset_id: clarifier_1
   component_type: sensor
   data_type: REAL
-  description: level for clarifier_1
+  description: level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-clarifier_1
-  tag_address: '33020'
+  tag_address: '33025'
   unit: m
 - asset_id: clarifier_1
   component_type: sensor
   data_type: REAL
-  description: turbidity for clarifier_1
+  description: turbidity parameter
   measurement: turbidity
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: turbidity-clarifier_1
-  tag_address: '33021'
+  tag_address: '33026'
   unit: NTU
 - asset_id: clarifier_1
   component_type: sensor
   data_type: REAL
-  description: flow_rate for clarifier_1
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: flow_rate-clarifier_1
-  tag_address: '33022'
+  tag_address: '33027'
   unit: "m\xB3/h"
 - asset_id: clarifier_1
   component_type: sensor
   data_type: REAL
-  description: ph for clarifier_1
+  description: ph parameter
   measurement: ph
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: ph-clarifier_1
-  tag_address: '33023'
+  tag_address: '33028'
   unit: pH
+- asset_id: clarifier_1
+  component_type: sensor
+  data_type: REAL
+  description: sludge_blanket_level parameter
+  measurement: level
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: level-clarifier_1
+  tag_address: '33029'
+  unit: m
+- asset_id: clarifier_1
+  component_type: sensor
+  data_type: REAL
+  description: sludge_density parameter
+  measurement: density
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: density-clarifier_1
+  tag_address: '33030'
+  unit: g/L
+- asset_id: clarifier_1
+  component_type: actuator
+  data_type: REAL
+  description: sludge_removal_rate parameter
+  measurement: flow_rate
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: flow_rate-clarifier_1
+  tag_address: '41008'
+  unit: L/min
+- asset_id: clarifier_1
+  component_type: actuator
+  data_type: REAL
+  description: overflow_weir_level parameter
+  measurement: level
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: level-clarifier_1
+  tag_address: '41009'
+  unit: m
 - asset_id: filter_bed_1
   component_type: sensor
   data_type: REAL
-  description: differential_pressure for filter_bed_1
+  description: differential_pressure parameter
   measurement: differential_pressure
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: differential_pressure-filter_bed_1
-  tag_address: '33024'
+  tag_address: '33031'
   unit: mbar
 - asset_id: filter_bed_1
   component_type: sensor
   data_type: REAL
-  description: turbidity for filter_bed_1
+  description: turbidity parameter
   measurement: turbidity
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: turbidity-filter_bed_1
-  tag_address: '33025'
+  tag_address: '33032'
   unit: NTU
 - asset_id: filter_bed_1
   component_type: sensor
   data_type: REAL
-  description: flow_rate for filter_bed_1
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: flow_rate-filter_bed_1
-  tag_address: '33026'
+  tag_address: '33033'
   unit: "m\xB3/h"
 - asset_id: filter_bed_1
   component_type: sensor
   data_type: REAL
-  description: level for filter_bed_1
+  description: level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-filter_bed_1
-  tag_address: '33027'
+  tag_address: '33034'
   unit: m
 - asset_id: filter_bed_1
   component_type: sensor
-  data_type: BOOL
-  description: run_status for filter_bed_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-filter_bed_1
-  tag_address: '105'
+  tag_address: '41010'
+  unit: bool
+- asset_id: filter_bed_1
+  component_type: sensor
+  data_type: REAL
+  description: particle_count parameter
+  measurement: particle_count
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: particle_count-filter_bed_1
+  tag_address: '33035'
+  unit: particles/mL
+- asset_id: filter_bed_1
+  component_type: actuator
+  data_type: REAL
+  description: backwash_initiation parameter
+  measurement: run_status
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: run_status-filter_bed_1
+  tag_address: '41011'
+  unit: bool
+- asset_id: filter_bed_1
+  component_type: actuator
+  data_type: REAL
+  description: filter_to_waste parameter
+  measurement: run_status
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: run_status-filter_bed_1
+  tag_address: '41012'
   unit: bool
 - asset_id: filter_bed_1
   component_type: status
-  data_type: BOOL
-  description: run_status for filter_bed_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-filter_bed_1
-  tag_address: '106'
+  tag_address: '41013'
   unit: bool
 - asset_id: chlorination
   component_type: sensor
   data_type: REAL
-  description: chlorine_residual for chlorination
+  description: chlorine_residual parameter
   measurement: chlorine_residual
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: chlorine_residual-chlorination
-  tag_address: '33028'
+  tag_address: '33036'
   unit: mg/L
 - asset_id: chlorination
   component_type: sensor
   data_type: REAL
-  description: ph for chlorination
+  description: ph parameter
   measurement: ph
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: ph-chlorination
-  tag_address: '33029'
+  tag_address: '33037'
   unit: pH
 - asset_id: chlorination
   component_type: sensor
   data_type: REAL
-  description: temperature for chlorination
+  description: temperature parameter
   measurement: temperature
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: temperature-chlorination
-  tag_address: '33030'
+  tag_address: '33038'
   unit: "\xB0C"
 - asset_id: chlorination
   component_type: sensor
   data_type: REAL
-  description: chemical_tank_level for chlorination
+  description: chemical_tank_level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-chlorination
-  tag_address: '33031'
+  tag_address: '33039'
   unit: m
 - asset_id: chlorination
   component_type: actuator
   data_type: REAL
-  description: dose_rate for chlorination
+  description: dose_rate parameter
   measurement: dose_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: dose_rate-chlorination
-  tag_address: '41004'
+  tag_address: '41014'
   unit: mg/L
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: flow_rate for finished_water_pump_1
+  description: flow_rate parameter
   measurement: flow_rate
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: flow_rate-finished_water_pump_1
-  tag_address: '33032'
+  tag_address: '33040'
   unit: "m\xB3/h"
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: pressure for finished_water_pump_1
+  description: pressure parameter
   measurement: pressure
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: pressure-finished_water_pump_1
-  tag_address: '33033'
+  tag_address: '33041'
   unit: bar
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: motor_current for finished_water_pump_1
+  description: motor_current parameter
   measurement: motor_current
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: motor_current-finished_water_pump_1
-  tag_address: '33034'
+  tag_address: '33042'
   unit: A
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: motor_temperature for finished_water_pump_1
+  description: motor_temperature parameter
   measurement: motor_temperature
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: motor_temperature-finished_water_pump_1
-  tag_address: '33035'
+  tag_address: '33043'
   unit: "\xB0C"
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: vibration for finished_water_pump_1
+  description: vibration parameter
   measurement: vibration
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: vibration-finished_water_pump_1
-  tag_address: '33036'
+  tag_address: '33044'
   unit: mm/s
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
-  description: power_consumption for finished_water_pump_1
+  description: power_consumption parameter
   measurement: power_consumption
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: power_consumption-finished_water_pump_1
-  tag_address: '33037'
+  tag_address: '33045'
   unit: kW
 - asset_id: finished_water_pump_1
   component_type: sensor
-  data_type: BOOL
-  description: run_status for finished_water_pump_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-finished_water_pump_1
-  tag_address: '107'
+  tag_address: '41015'
   unit: bool
 - asset_id: finished_water_pump_1
   component_type: actuator
   data_type: REAL
-  description: pump_speed for finished_water_pump_1
+  description: pump_speed parameter
   measurement: pump_speed
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: pump_speed-finished_water_pump_1
-  tag_address: '41005'
+  tag_address: '41016'
   unit: rpm
 - asset_id: finished_water_pump_1
   component_type: status
-  data_type: BOOL
-  description: run_status for finished_water_pump_1
+  data_type: REAL
+  description: run_status parameter
   measurement: run_status
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
-  scale_factor: 1.0
+  scale_factor: 100.0
   sensor_id: run_status-finished_water_pump_1
-  tag_address: '108'
+  tag_address: '41017'
   unit: bool
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
-  description: level for finished_water_tank
+  description: level parameter
   measurement: level
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: level-finished_water_tank
-  tag_address: '33038'
+  tag_address: '33046'
   unit: m
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
-  description: chlorine_residual for finished_water_tank
+  description: chlorine_residual parameter
   measurement: chlorine_residual
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: chlorine_residual-finished_water_tank
-  tag_address: '33039'
+  tag_address: '33047'
   unit: mg/L
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
-  description: ph for finished_water_tank
+  description: ph parameter
   measurement: ph
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: ph-finished_water_tank
-  tag_address: '33040'
+  tag_address: '33048'
   unit: pH
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
-  description: temperature for finished_water_tank
+  description: temperature parameter
   measurement: temperature
   offset: 0.0
   plc_connection: main_plc
   protocol: modbus
   scale_factor: 100.0
   sensor_id: temperature-finished_water_tank
-  tag_address: '33041'
+  tag_address: '33049'
   unit: "\xB0C"
+- asset_id: finished_water_tank
+  component_type: sensor
+  data_type: REAL
+  description: water_age parameter
+  measurement: water_age
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: water_age-finished_water_tank
+  tag_address: '33050'
+  unit: hours
+- asset_id: finished_water_tank
+  component_type: sensor
+  data_type: REAL
+  description: heterotrophic_plate_count parameter
+  measurement: heterotrophic_plate_count
+  offset: 0.0
+  plc_connection: main_plc
+  protocol: modbus
+  scale_factor: 100.0
+  sensor_id: heterotrophic_plate_count-finished_water_tank
+  tag_address: '33051'
+  unit: CFU/mL

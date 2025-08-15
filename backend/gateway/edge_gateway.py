@@ -30,7 +30,7 @@ try:
 except ImportError:
     MQTT_AVAILABLE = False
 
-from core.plant_model import PlantModel
+from core.digital_twin import DigitalTwin
 
 
 class GatewayMode(Enum):
@@ -85,7 +85,7 @@ class EdgeGateway:
     """
 
     def __init__(
-        self, plant_model: PlantModel, mode: GatewayMode = GatewayMode.PRODUCTION
+        self, plant_model: DigitalTwin, mode: GatewayMode = GatewayMode.PRODUCTION
     ):
         self.plant_model = plant_model
         self.mode = mode
@@ -398,7 +398,7 @@ class EdgeGateway:
                     # Update plant model with proper parameter ID format
                     for param_id, value in parameter_data.items():
                         mapping = self.parameter_mappings.get(param_id, {})
-                        # Convert sensor_id to component.parameter format for PlantModel
+                        # Convert sensor_id to component.parameter format for DigitalTwin
                         asset_id = mapping.get("asset_id", "unknown")
                         measurement = mapping.get("measurement", "unknown")
                         # Include site_id to match SimulationEngine component registration format

@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 """
-Plant Model
+Digital Twin - Central Management System for Water Treatment Plant
 
-Unified plant model representing the digital twin of the WTP system.
-Manages component lifecycle, state synchronization, and parameter mapping.
+The digital twin serves as the central orchestrator for all plant components, managing
+real-time data, component states, and system-wide coordination in both simulation
+and production environments.
+
+Key Responsibilities:
+- Component lifecycle management and registration
+- Real-time parameter value storage and synchronization  
+- Component state tracking (active, inactive, fault, maintenance)
+- Plant statistics and performance monitoring
+- Integration bridge between simulation engine and edge gateway
+
+The DigitalTwin class provides a unified interface that abstracts the complexity
+of managing hundreds of sensors, actuators, and control components across different
+water treatment processes.
 """
 
 import logging
@@ -20,8 +32,8 @@ except ImportError:
     YAML_AVAILABLE = False
 
 
-class ComponentState(Enum):
-    """Component operational states"""
+class OperationalState(Enum):
+    """Component operational states in the water treatment plant"""
 
     INACTIVE = "inactive"
     ACTIVE = "active"
@@ -30,8 +42,8 @@ class ComponentState(Enum):
 
 
 @dataclass
-class ComponentMetadata:
-    """Metadata for plant components"""
+class ComponentInfo:
+    """Information and metadata for plant components"""
 
     component_id: str
     component_type: str
@@ -39,13 +51,13 @@ class ComponentMetadata:
     description: str = ""
     tags: List[str] = field(default_factory=list)
     parameters: Dict[str, Any] = field(default_factory=dict)
-    state: ComponentState = ComponentState.INACTIVE
+    state: OperationalState = OperationalState.INACTIVE
     last_update: float = field(default_factory=time.time)
 
 
-class PlantModel:
+class DigitalTwin:
     """
-    Unified plant model that manages all components and their states.
+    Digital twin of the water treatment plant managing all components and their states.
 
     This class serves as the central digital twin, maintaining:
     - Component registry and metadata
@@ -59,7 +71,7 @@ class PlantModel:
 
         # Component management
         self.components: Dict[str, Any] = {}  # component_id -> component instance
-        self.metadata: Dict[str, ComponentMetadata] = {}  # component_id -> metadata
+        self.metadata: Dict[str, ComponentInfo] = {}  # component_id -> metadata
         self.parameters: Dict[str, Any] = {}  # parameter_id -> current value
 
         # Plant configuration
@@ -158,7 +170,7 @@ class PlantModel:
             raise
 
     def register_component(
-        self, component_id: str, component: Any, metadata: ComponentMetadata
+        self, component_id: str, component: Any, metadata: ComponentInfo
     ):
         """Register a component with the plant model"""
         self.components[component_id] = component
@@ -172,7 +184,7 @@ class PlantModel:
                 self.parameters[param_id] = param_value
 
         self.stats["total_components"] += 1
-        if metadata.state == ComponentState.ACTIVE:
+        if metadata.state == OperationalState.ACTIVE:
             self.stats["active_components"] += 1
 
         self.logger.debug(f"Registered component: {component_id}")
@@ -189,7 +201,7 @@ class PlantModel:
 
             # Remove component and metadata
             metadata = self.metadata.get(component_id)
-            if metadata and metadata.state == ComponentState.ACTIVE:
+            if metadata and metadata.state == OperationalState.ACTIVE:
                 self.stats["active_components"] -= 1
 
             del self.components[component_id]
@@ -198,7 +210,7 @@ class PlantModel:
 
             self.logger.debug(f"Unregistered component: {component_id}")
 
-    def update_component_state(self, component_id: str, new_state: ComponentState):
+    def update_component_state(self, component_id: str, new_state: OperationalState):
         """Update component operational state"""
         if component_id in self.metadata:
             old_state = self.metadata[component_id].state
@@ -207,13 +219,13 @@ class PlantModel:
 
             # Update active component count
             if (
-                old_state == ComponentState.ACTIVE
-                and new_state != ComponentState.ACTIVE
+                old_state == OperationalState.ACTIVE
+                and new_state != OperationalState.ACTIVE
             ):
                 self.stats["active_components"] -= 1
             elif (
-                old_state != ComponentState.ACTIVE
-                and new_state == ComponentState.ACTIVE
+                old_state != OperationalState.ACTIVE
+                and new_state == OperationalState.ACTIVE
             ):
                 self.stats["active_components"] += 1
 
@@ -252,7 +264,7 @@ class PlantModel:
 
         except Exception as e:
             self.logger.error(f"Error updating component {component_id}: {e}")
-            self.update_component_state(component_id, ComponentState.FAULT)
+            self.update_component_state(component_id, OperationalState.FAULT)
 
         return updated_params
 
@@ -264,7 +276,7 @@ class PlantModel:
         active_components = [
             comp_id
             for comp_id, metadata in self.metadata.items()
-            if metadata.state == ComponentState.ACTIVE
+            if metadata.state == OperationalState.ACTIVE
         ]
 
         for component_id in active_components:
@@ -391,7 +403,7 @@ class PlantModel:
                     if comp_id in self.metadata:
                         state_value = meta_data.get("state", "inactive")
                         try:
-                            new_state = ComponentState(state_value)
+                            new_state = OperationalState(state_value)
                             self.update_component_state(comp_id, new_state)
                         except ValueError:
                             self.logger.warning(

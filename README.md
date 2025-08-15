@@ -17,28 +17,32 @@ backend/
 │   │       └── plant.yaml          # Regional plant configuration
 │   ├── templates/                  # Centralized templates
 │   │   ├── modules.yaml            # Module templates (58 types)
-│   │   └── parameters.yaml         # Parameter specifications (30+ types)
-│   └── wtp-*_edge_gateway_config.yaml # Auto-generated gateway configs
-├── core/                           # Core system components
-│   ├── plant_model.py             # Unified plant model (digital twin)
-│   ├── component_factory.py       # Factory for creating plant components
-│   ├── protocol_manager.py        # Dynamic protocol management
-│   ├── wtp_components.py          # WTP component definitions
-│   └── address_allocator.py       # Dynamic address allocation
-├── simulation/                    # Simulation engine
-│   ├── simulator.py              # Simulation engine and orchestration
-│   ├── components.py             # Simulated component wrappers
+│   │   └── parameters.yaml         # Parameter specifications (49+ types)
+│   └── schemas/                    # JSON schema validation
+│       ├── site_config_schema.json
+│       ├── module_templates_schema.json
+│       └── parameter_specifications_schema.json
+├── core/                           # Core digital twin components
+│   ├── digital_twin.py            # Central digital twin management
+│   ├── plant_builder.py           # Factory for plant configurations
+│   ├── plant_elements.py          # Core data structures (sensors, actuators)
+│   ├── sensor_catalog.py          # Centralized parameter specifications
+│   ├── protocol_mapper.py         # Protocol address mapping
+│   └── config_validator.py        # Configuration validation system
+├── simulation/                    # Physics-based simulation engine
+│   ├── simulator.py              # Simulation orchestration
+│   ├── components.py             # Simulated plant component wrappers
 │   └── process_models.py         # Physical process simulation models
-├── gateway/                       # Edge gateway functionality
-│   ├── edge_gateway.py           # Production edge gateway
-│   ├── plc_readers.py            # Real PLC communication
+├── gateway/                       # Edge gateway for real PLCs
+│   ├── edge_gateway.py           # Production data collection gateway
+│   ├── plc_readers.py            # Async PLC communication handlers
 │   └── data_mapper.py            # Data transformation utilities
-├── protocols/                     # Protocol handlers
-│   ├── modbus_handler.py         # Unified Modbus implementation
-│   ├── protocol_registry.py      # Protocol registration system
+├── protocols/                     # Industrial protocol handlers
+│   ├── modbus_handler.py         # Unified async Modbus implementation
+│   ├── protocol_registry.py      # Pluggable protocol system
 │   └── __init__.py               # Protocol package initialization
-├── main.py              # Main unified entry point
-└── README.md                     # Core system documentation
+├── main.py                        # Main unified system entry point
+└── README.md                      # System documentation
 ```
 
 ## 🚀 Quick Start
@@ -81,21 +85,23 @@ docker compose up -d --build
 - Scalable to unlimited sites without code changes
 - Site-specific protocol client configurations
 
-### ✅ **Dynamic Address Allocation**
-- Automatic generation per site with structured client IDs
-- Eliminates hardcoded addresses completely
+### ✅ **Dynamic Protocol Mapping**
+- Automatic protocol address allocation per site
+- Eliminates hardcoded addresses completely  
 - Supports multiple protocols per site (Modbus, OPC UA, S7)
 - Scalable for any plant size (9-20+ modules tested)
+- Centralized sensor catalog with 49+ parameter types
 
-### ✅ **Unified Plant Model (Digital Twin)**
-- Central state management for all plant components
-- Real-time parameter synchronization
-- Component lifecycle management
-- Comprehensive statistics and diagnostics
+### ✅ **Digital Twin Architecture**
+- DigitalTwin class manages all plant components and states
+- PlantComponent instances for physical equipment (pumps, filters, tanks)
+- PlantParameter definitions with protocol addressing
+- ComponentRole classification (sensor, actuator, status)
+- Real-time parameter synchronization and lifecycle management
 
 ### ✅ **Unified Parameter ID Format**
 - Consistent `site.component.parameter` format throughout system
-- PlantModel uses: `wtp-porto-01.raw_intake.level`
+- DigitalTwin uses: `wtp-porto-01.raw_intake.level`
 - MQTT topics use: `wtp/wtp-porto-01/raw_intake/level/observation`
 - No parameter ID conversion needed between components
 
@@ -108,15 +114,39 @@ docker compose up -d --build
 ### ✅ **Protocol Abstraction**
 - **Modbus TCP**: Full async client/server implementation ✅
 - **MQTT**: Real-time data publishing ✅
-- **OPC UA**: Framework ready 🚧
-- **Siemens S7**: Framework ready 🚧
-- Pluggable protocol registry system
+- **OPC UA**: Protocol mapper support ready 🚧
+- **Siemens S7**: Protocol mapper support ready 🚧
+- Pluggable protocol registry system with ProtocolMapper
 
 ### ✅ **Physics-Based Simulation**
-- Realistic hydraulic and water quality models
-- Equipment-specific behavior modeling
-- Sensor noise and drift simulation
-- Configurable process parameters
+- SimulatedPlantComponent wrappers for realistic behavior
+- Hydraulic and water quality process models
+- SensorType-specific noise and drift simulation
+- Configurable process parameters with ComponentRole classification
+
+## 🏗️ Core Architecture Components
+
+The Hydros system is built around intuitive, domain-specific components:
+
+### **Digital Twin Core**
+- **DigitalTwin**: Central orchestrator managing all plant components and real-time data
+- **PlantComponent**: Physical equipment instances (pumps, filters, tanks, sensors)
+- **PlantParameter**: Unified parameter definitions with protocol addressing
+- **ComponentInfo**: Component metadata and operational information
+
+### **Plant Configuration System**
+- **PlantBuilder**: Factory for constructing plant configurations from templates
+- **SensorCatalog**: Centralized library of 49+ parameter specifications
+- **ProtocolMapper**: Dynamic address allocation for Modbus, OPC UA, S7 protocols
+- **ConfigValidator**: JSON schema validation for all configuration files
+
+### **Data Type System**
+- **ComponentRole**: Parameter classification (SENSOR, ACTUATOR, STATUS)
+- **SensorType**: Water treatment measurements (turbidity, pH, flow_rate, etc.)
+- **ProtocolDataType**: Industrial protocol data types (BOOL, REAL, INT, etc.)
+- **OperationalState**: Component states (active, inactive, fault, maintenance)
+
+This architecture provides a clear, maintainable structure that reflects real water treatment plant concepts while enabling advanced digital twin capabilities.
 
 ## 🔧 Multi-Site Configuration
 
@@ -170,21 +200,22 @@ module_templates:
       - chlorophyll_a
 ```
 
-### Auto-Generated Mappings (Per Site)
-Address mappings are automatically generated for each site:
-- `wtp-porto-01_modbus_mapping.json` - Modbus TCP mappings (54 parameters)
-- `wtp-regional-02_modbus_mapping.json` - Regional plant mappings (106 parameters)
-- `{site-id}_opcua_mapping.json` - OPC UA mappings
-- `{site-id}_edge_gateway_config.yaml` - Gateway configuration with protocol clients
+### Auto-Generated Protocol Mappings (Per Site)
+Protocol addresses are automatically generated by ProtocolMapper for each site:
+- `mappings/modbus.json` - Modbus TCP mappings (68 parameters)
+- `mappings/opcua.json` - OPC UA node mappings
+- `mappings/s7.json` - Siemens S7 address mappings
+- `edge_gateway_config.yaml` - Gateway configuration with protocol clients
 
 ## 📈 Performance & Scalability
 
 ### **Tested Capabilities**
-- **Multi-site support**: Porto (54 parameters), Regional (106 parameters)
-- **Real-time simulation** at 1-2 second intervals
+- **Multi-site support**: Porto (68 parameters), Regional (106+ parameters)
+- **Real-time simulation** at 1-2 second intervals with DigitalTwin
 - **Multiple protocol clients** per site (up to 5 tested)
 - **~100 concurrent connections** per protocol server
-- **Centralized templates**: 58 module types, 30+ parameter specifications
+- **Centralized templates**: 58 module types, 49+ parameter specifications
+- **Configuration validation**: JSON schema validation for all configs
 
 ### **Resource Usage**
 - **Memory**: ~50MB base + ~1MB per 100 parameters
@@ -203,15 +234,14 @@ Address mappings are automatically generated for each site:
    vim backend/config/sites/wtp-new-site/plant.yaml
    ```
 
-2. **Generate Address Mappings**
+2. **Generate Protocol Mappings**
    ```bash
-   cd backend/core
-   # Generate for specific site
-   python address_allocator.py wtp-new-site
+   cd backend
+   # Generate for specific site using protocol mapper
+   python -m core.protocol_mapper wtp-new-site
    
-   # Or generate for all sites
-   python address_allocator.py wtp-porto-01
-   python address_allocator.py wtp-regional-02
+   # Or use the main system with --init flag
+   python main.py --site-id wtp-new-site --init
    ```
 
 3. **Test in Simulation**
@@ -423,6 +453,15 @@ ping 192.168.1.100
 telnet 192.168.1.100 502
 ```
 
+**Configuration validation failures**
+```bash
+# Run configuration validation manually
+python -c "from core.config_validator import ConfigValidator; ConfigValidator().validate_all_configurations()"
+
+# Check schema validation
+python main.py --init --log-level DEBUG
+```
+
 **Missing dependencies**
 ```bash
 # Install requirements
@@ -435,7 +474,7 @@ pip install -r requirements.txt
 python backend/main.py --mode simulation --log-level DEBUG
 
 # Check specific component
-grep "PlantModel" backend/hydros.log
+grep "DigitalTwin" backend/hydros.log
 
 # Monitor MQTT publishing
 mosquitto_sub -h localhost -t "wtp/+/+/+/observation"

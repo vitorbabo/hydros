@@ -1,15 +1,26 @@
 """
-Component Factory for Building Modular Water Treatment Plant Configurations
+Plant Builder - Factory for Constructing Water Treatment Plant Configurations
 
-This module provides a factory pattern for creating different WTP configurations
-from predefined templates and custom specifications.
+Provides a factory pattern for creating water treatment plant configurations from
+centralized templates and specifications. Supports both legacy single-file configs
+and modern template-based architectures.
+
+Key Capabilities:
+- Component creation from module templates (pumps, filters, disinfection, etc.)
+- Parameter assignment based on sensor catalog specifications  
+- Template inheritance and customization for different plant sizes
+- Dynamic parameter adjustment based on treatment context
+- Integration with digital twin for automatic component registration
+
+This system enables rapid plant configuration while maintaining consistency
+and avoiding duplication of sensor and component definitions.
 """
 
 from typing import Any, Dict, List, Optional
 
 import yaml
 
-from .wtp_components import MeasurementType, Parameter, ParameterType, WTPComponent
+from .plant_elements import SensorType, PlantParameter, ComponentRole, PlantComponent
 
 
 class ComponentFactory:
@@ -59,7 +70,7 @@ class ComponentFactory:
         # Legacy doesn't have separate parameter specs
         self.parameter_specs = {}
 
-    def create_site_components(self, site_id: str) -> Dict[str, WTPComponent]:
+    def create_site_components(self, site_id: str) -> Dict[str, PlantComponent]:
         """Create all components for a specific site configuration"""
 
         if site_id not in self.site_configurations:
@@ -90,7 +101,7 @@ class ComponentFactory:
         component_id: str,
         tag_counter: Dict[str, int],
         site_config: Dict[str, Any],
-    ) -> WTPComponent:
+    ) -> PlantComponent:
         """Create a component from a template definition"""
 
         template = self.module_templates[template_name]
@@ -102,7 +113,7 @@ class ComponentFactory:
         for sensor_type in template.get("required_sensors", []):
             param = self._create_parameter(
                 sensor_type,
-                ParameterType.SENSOR,
+                ComponentRole.SENSOR,
                 tag_counter,
                 template_name,
                 site_config,
@@ -115,7 +126,7 @@ class ComponentFactory:
             if self._should_include_optional(sensor_type, template_name):
                 param = self._create_parameter(
                     sensor_type,
-                    ParameterType.SENSOR,
+                    ComponentRole.SENSOR,
                     tag_counter,
                     template_name,
                     site_config,
@@ -127,7 +138,7 @@ class ComponentFactory:
         for actuator_type in template.get("actuators", []):
             param = self._create_parameter(
                 actuator_type,
-                ParameterType.ACTUATOR,
+                ComponentRole.ACTUATOR,
                 tag_counter,
                 template_name,
                 site_config,
@@ -140,7 +151,7 @@ class ComponentFactory:
             # Most equipment has run status
             param = self._create_parameter(
                 "run_status",
-                ParameterType.STATUS,
+                ComponentRole.STATUS,
                 tag_counter,
                 template_name,
                 site_config,
@@ -148,7 +159,7 @@ class ComponentFactory:
             if param:
                 parameters.append(param)
 
-        return WTPComponent(
+        return PlantComponent(
             component_id=component_id,
             component_name=template.get(
                 "description", component_id.replace("_", " ").title()
@@ -160,38 +171,38 @@ class ComponentFactory:
     def _create_parameter(
         self,
         measurement_name: str,
-        param_type: ParameterType,
+        param_type: ComponentRole,
         tag_counter: Dict[str, int],
         template_name: str,
         site_config: Dict[str, Any],
-    ) -> Optional[Parameter]:
+    ) -> Optional[PlantParameter]:
         """Create a parameter with appropriate PLC tag and characteristics"""
 
         # Map measurement names to MeasurementType enum
         measurement_map = {
-            "level": MeasurementType.LEVEL,
-            "flow_rate": MeasurementType.FLOW_RATE,
-            "turbidity": MeasurementType.TURBIDITY,
-            "ph": MeasurementType.PH,
-            "temperature": MeasurementType.TEMPERATURE,
-            "pressure": MeasurementType.PRESSURE,
-            "differential_pressure": MeasurementType.DIFFERENTIAL_PRESSURE,
-            "conductivity": MeasurementType.CONDUCTIVITY,
-            "dissolved_oxygen": MeasurementType.DISSOLVED_OXYGEN,
-            "chlorine_residual": MeasurementType.CHLORINE_RESIDUAL,
-            "alkalinity": MeasurementType.ALKALINITY,
-            "toc": MeasurementType.TOC,
-            "motor_current": MeasurementType.MOTOR_CURRENT,
-            "motor_temperature": MeasurementType.MOTOR_TEMPERATURE,
-            "vibration": MeasurementType.VIBRATION,
-            "power_consumption": MeasurementType.POWER_CONSUMPTION,
-            "chemical_tank_level": MeasurementType.CHEMICAL_TANK_LEVEL,
-            "chemical_dose_rate": MeasurementType.CHEMICAL_DOSE_RATE,
-            "pump_speed": MeasurementType.PUMP_SPEED,
-            "valve_position": MeasurementType.VALVE_POSITION,
-            "run_status": MeasurementType.RUN_STATUS,
-            "alarm_status": MeasurementType.ALARM_STATUS,
-            "maintenance_mode": MeasurementType.MAINTENANCE_MODE,
+            "level": SensorType.LEVEL,
+            "flow_rate": SensorType.FLOW_RATE,
+            "turbidity": SensorType.TURBIDITY,
+            "ph": SensorType.PH,
+            "temperature": SensorType.TEMPERATURE,
+            "pressure": SensorType.PRESSURE,
+            "differential_pressure": SensorType.DIFFERENTIAL_PRESSURE,
+            "conductivity": SensorType.CONDUCTIVITY,
+            "dissolved_oxygen": SensorType.DISSOLVED_OXYGEN,
+            "chlorine_residual": SensorType.CHLORINE_RESIDUAL,
+            "alkalinity": SensorType.ALKALINITY,
+            "toc": SensorType.TOC,
+            "motor_current": SensorType.MOTOR_CURRENT,
+            "motor_temperature": SensorType.MOTOR_TEMPERATURE,
+            "vibration": SensorType.VIBRATION,
+            "power_consumption": SensorType.POWER_CONSUMPTION,
+            "chemical_tank_level": SensorType.CHEMICAL_TANK_LEVEL,
+            "dose_rate": SensorType.DOSE_RATE,
+            "pump_speed": SensorType.PUMP_SPEED,
+            "valve_position": SensorType.VALVE_POSITION,
+            "run_status": SensorType.RUN_STATUS,
+            "alarm_status": SensorType.ALARM_STATUS,
+            "maintenance_mode": SensorType.MAINTENANCE_MODE,
         }
 
         if measurement_name not in measurement_map:
@@ -207,10 +218,10 @@ class ComponentFactory:
             measurement_type, template_name, site_config
         )
 
-        return Parameter(
+        return PlantParameter(
             tag=tag,
-            parameter_type=param_type,
-            measurement=measurement_type,
+            component_role=param_type,
+            sensor_type=measurement_type,
             unit=param_specs["unit"],
             min_value=param_specs["min_value"],
             max_value=param_specs["max_value"],
@@ -221,14 +232,14 @@ class ComponentFactory:
         )
 
     def _generate_plc_tag(
-        self, tag_counter: Dict[str, int], param_type: ParameterType
+        self, tag_counter: Dict[str, int], param_type: ComponentRole
     ) -> str:
         """Generate realistic PLC tag addresses"""
 
         db = tag_counter["DB"]
         offset = tag_counter["offset"]
 
-        if param_type == ParameterType.STATUS:
+        if param_type == ComponentRole.STATUS:
             # Boolean/bit parameters use DBX format
             tag = f"DB{db}.DBX{offset}.0"
             tag_counter["offset"] += 2  # Bits take 2-byte boundaries in S7
@@ -246,7 +257,7 @@ class ComponentFactory:
 
     def _get_parameter_specs(
         self,
-        measurement_type: MeasurementType,
+        measurement_type: SensorType,
         template_name: str,
         site_config: Dict[str, Any],
     ) -> Dict[str, Any]:
@@ -268,139 +279,139 @@ class ComponentFactory:
 
         # Default specifications for each measurement type
         specs = {
-            MeasurementType.LEVEL: {
+            SensorType.LEVEL: {
                 "unit": "m",
                 "min_value": 0.0,
                 "max_value": 10.0,
                 "precision": 2,
             },
-            MeasurementType.FLOW_RATE: {
+            SensorType.FLOW_RATE: {
                 "unit": "m3/h",
                 "min_value": 0.0,
                 "max_value": 100.0,
                 "precision": 1,
             },
-            MeasurementType.TURBIDITY: {
+            SensorType.TURBIDITY: {
                 "unit": "NTU",
                 "min_value": 0.0,
                 "max_value": 100.0,
                 "precision": 2,
             },
-            MeasurementType.PH: {
+            SensorType.PH: {
                 "unit": "pH",
                 "min_value": 4.0,
                 "max_value": 12.0,
                 "precision": 2,
             },
-            MeasurementType.TEMPERATURE: {
+            SensorType.TEMPERATURE: {
                 "unit": "°C",
                 "min_value": -10.0,
                 "max_value": 50.0,
                 "precision": 1,
             },
-            MeasurementType.PRESSURE: {
+            SensorType.PRESSURE: {
                 "unit": "bar",
                 "min_value": 0.0,
                 "max_value": 10.0,
                 "precision": 2,
             },
-            MeasurementType.DIFFERENTIAL_PRESSURE: {
+            SensorType.DIFFERENTIAL_PRESSURE: {
                 "unit": "mbar",
                 "min_value": 0,
                 "max_value": 500,
                 "precision": 0,
             },
-            MeasurementType.CONDUCTIVITY: {
+            SensorType.CONDUCTIVITY: {
                 "unit": "µS/cm",
                 "min_value": 50,
                 "max_value": 2000,
                 "precision": 0,
             },
-            MeasurementType.DISSOLVED_OXYGEN: {
+            SensorType.DISSOLVED_OXYGEN: {
                 "unit": "mg/L",
                 "min_value": 0.0,
                 "max_value": 20.0,
                 "precision": 2,
             },
-            MeasurementType.CHLORINE_RESIDUAL: {
+            SensorType.CHLORINE_RESIDUAL: {
                 "unit": "mg/L",
                 "min_value": 0.0,
                 "max_value": 5.0,
                 "precision": 2,
             },
-            MeasurementType.ALKALINITY: {
+            SensorType.ALKALINITY: {
                 "unit": "mg/L",
                 "min_value": 20.0,
                 "max_value": 300.0,
                 "precision": 1,
             },
-            MeasurementType.TOC: {
+            SensorType.TOC: {
                 "unit": "mg/L",
                 "min_value": 0.0,
                 "max_value": 20.0,
                 "precision": 2,
             },
-            MeasurementType.MOTOR_CURRENT: {
+            SensorType.MOTOR_CURRENT: {
                 "unit": "A",
                 "min_value": 0.0,
                 "max_value": 50.0,
                 "precision": 1,
             },
-            MeasurementType.MOTOR_TEMPERATURE: {
+            SensorType.MOTOR_TEMPERATURE: {
                 "unit": "°C",
                 "min_value": 15.0,
                 "max_value": 100.0,
                 "precision": 1,
             },
-            MeasurementType.VIBRATION: {
+            SensorType.VIBRATION: {
                 "unit": "mm/s",
                 "min_value": 0.1,
                 "max_value": 10.0,
                 "precision": 2,
             },
-            MeasurementType.POWER_CONSUMPTION: {
+            SensorType.POWER_CONSUMPTION: {
                 "unit": "kW",
                 "min_value": 0.0,
                 "max_value": 50.0,
                 "precision": 1,
             },
-            MeasurementType.CHEMICAL_TANK_LEVEL: {
+            SensorType.CHEMICAL_TANK_LEVEL: {
                 "unit": "m",
                 "min_value": 0.1,
                 "max_value": 5.0,
                 "precision": 2,
             },
-            MeasurementType.CHEMICAL_DOSE_RATE: {
+            SensorType.DOSE_RATE: {
                 "unit": "mg/L",
                 "min_value": 0.0,
                 "max_value": 50.0,
                 "precision": 2,
             },
-            MeasurementType.PUMP_SPEED: {
+            SensorType.PUMP_SPEED: {
                 "unit": "%",
                 "min_value": 0.0,
                 "max_value": 100.0,
                 "precision": 1,
             },
-            MeasurementType.VALVE_POSITION: {
+            SensorType.VALVE_POSITION: {
                 "unit": "%",
                 "min_value": 0.0,
                 "max_value": 100.0,
                 "precision": 1,
             },
-            MeasurementType.RUN_STATUS: {
+            SensorType.RUN_STATUS: {
                 "unit": "bool",
                 "min_value": 0,
                 "max_value": 1,
                 "precision": 0,
             },
-            MeasurementType.ALARM_STATUS: {
+            SensorType.ALARM_STATUS: {
                 "unit": "bool",
                 "min_value": 0,
                 "max_value": 1,
                 "precision": 0,
             },
-            MeasurementType.MAINTENANCE_MODE: {
+            SensorType.MAINTENANCE_MODE: {
                 "unit": "bool",
                 "min_value": 0,
                 "max_value": 1,
@@ -417,7 +428,7 @@ class ComponentFactory:
         # Context-specific adjustments
         if (
             template_name == "intake_pump"
-            and measurement_type == MeasurementType.FLOW_RATE
+            and measurement_type == SensorType.FLOW_RATE
         ):
             # Intake pumps typically have higher flow rates
             base_spec["max_value"] = (
@@ -426,12 +437,12 @@ class ComponentFactory:
 
         elif (
             template_name == "finished_water_pump"
-            and measurement_type == MeasurementType.PRESSURE
+            and measurement_type == SensorType.PRESSURE
         ):
             # Distribution pumps need higher pressure
             base_spec["max_value"] = 8.0
 
-        elif measurement_type == MeasurementType.TURBIDITY:
+        elif measurement_type == SensorType.TURBIDITY:
             # Adjust turbidity ranges based on treatment stage
             if "raw" in template_name or "intake" in template_name:
                 base_spec["max_value"] = 50.0
@@ -443,26 +454,26 @@ class ComponentFactory:
         return base_spec
 
     @classmethod
-    def create_from_plant_model(cls, plant_model):
+    def create_from_digital_twin(cls, digital_twin):
         """Create ComponentFactory from an already-loaded PlantModel"""
         factory = cls.__new__(cls)  # Create instance without calling __init__
         
         # Copy configuration data from plant model
-        if hasattr(plant_model, 'module_templates'):
-            factory.module_templates = plant_model.module_templates.get("module_templates", {})
+        if hasattr(digital_twin, 'module_templates'):
+            factory.module_templates = digital_twin.module_templates.get("module_templates", {})
         else:
-            factory.module_templates = plant_model.plant_config.get("module_templates", {})
+            factory.module_templates = digital_twin.plant_config.get("module_templates", {})
             
-        if hasattr(plant_model, 'parameter_specs'):
-            factory.parameter_specs = plant_model.parameter_specs.get("parameter_specifications", {})
+        if hasattr(digital_twin, 'parameter_specs'):
+            factory.parameter_specs = digital_twin.parameter_specs.get("parameter_specifications", {})
         else:
             factory.parameter_specs = {}
             
-        if hasattr(plant_model, 'site_config'):
-            site_id = plant_model.site_config.get("site_info", {}).get("site_id", "unknown")
-            factory.site_configurations = {site_id: plant_model.site_config}
+        if hasattr(digital_twin, 'site_config'):
+            site_id = digital_twin.site_config.get("site_info", {}).get("site_id", "unknown")
+            factory.site_configurations = {site_id: digital_twin.site_config}
         else:
-            factory.site_configurations = plant_model.plant_config.get("site_configurations", {})
+            factory.site_configurations = digital_twin.plant_config.get("site_configurations", {})
             
         return factory
 

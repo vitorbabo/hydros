@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydros.com/schemas/module-templates.json",
+  "title": "Hydros Module Templates Schema",
+  "description": "Schema for validating water treatment plant module templates",
+  "type": "object",
+  "required": ["module_templates"],
+  "properties": {
+    "module_templates": {
+      "type": "object",
+      "description": "Module template definitions",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "required": ["type", "category", "description"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "intake", "pretreatment", "pump", "chemical_treatment", "chemical_dosing",
+                "sedimentation", "filtration", "disinfection", "storage", "monitoring"
+              ],
+              "description": "Module type classification"
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "source_water", "physical_treatment", "fluid_handling", "primary_treatment",
+                "chemical_feed", "solids_separation", "tertiary_treatment", "advanced_treatment",
+                "final_treatment", "distribution", "public_health"
+              ],
+              "description": "Module category for grouping"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 200,
+              "description": "Human readable description of the module"
+            },
+            "required_sensors": {
+              "type": "array",
+              "description": "List of required sensor parameters",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "Parameter name (must match parameter specifications)"
+              }
+            },
+            "optional_sensors": {
+              "type": "array",
+              "description": "List of optional sensor parameters",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "Parameter name (must match parameter specifications)"
+              }
+            },
+            "actuators": {
+              "type": "array",
+              "description": "List of actuator parameters",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "Actuator parameter name"
+              }
+            },
+            "alarms": {
+              "type": "array",
+              "description": "Standard alarm definitions for this module",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "Alarm identifier"
+              }
+            },
+            "typical_ranges": {
+              "type": "object",
+              "description": "Typical operating ranges for parameters",
+              "patternProperties": {
+                "^[a-z0-9_]+$": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "description": "Min and max values"
+                    },
+                    {
+                      "type": "number",
+                      "description": "Single typical value"
+                    }
+                  ]
+                }
+              }
+            },
+            "control_logic": {
+              "type": "string",
+              "enum": [
+                "manual", "automatic", "vfd_speed_control", "rapid_mix_optimization",
+                "gentle_mix_optimization", "turbidity_based", "ph_feedback",
+                "differential_pressure_or_time", "ct_value_calculation", "uv_dose_calculation"
+              ],
+              "description": "Standard control logic type"
+            },
+            "maintenance": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "description": "Maintenance schedule definitions",
+                  "patternProperties": {
+                    "^[a-z0-9_]+$": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "Maintenance interval in hours"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "calibration_frequency": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "Calibration frequency in days"
+                    },
+                    "cleaning_frequency": {
+                      "type": "integer", 
+                      "minimum": 1,
+                      "description": "Cleaning frequency in days"
+                    },
+                    "replacement_interval": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "Replacement interval in days"
+                    }
+                  }
+                },
+                {
+                  "type": "array",
+                  "description": "List of maintenance items with intervals",
+                  "items": {
+                    "type": "object",
+                    "patternProperties": {
+                      "^[a-z0-9_]+$": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Maintenance interval in hours"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "safety_systems": {
+              "type": "array",
+              "description": "Required safety systems",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "overflow_protection", "leak_detection", "neutralization_tank",
+                  "emergency_dilution", "chlorine_leak_detection", "emergency_shutdown",
+                  "scrubber_system", "overfeed_protection", "fluoride_analyzer"
+                ]
+              }
+            },
+            "chemicals": {
+              "type": "array",
+              "description": "Applicable chemicals for dosing modules",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "alum", "ferric_chloride", "pac", "caustic_soda", "sulfuric_acid",
+                  "sodium_hypochlorite", "calcium_hypochlorite", "fluoride_compound"
+                ]
+              }
+            },
+            "retention_time": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Process retention time in seconds"
+            },
+            "inherits": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$",
+              "description": "Parent template to inherit properties from"
+            },
+            "filtration_rate": {
+              "type": "number",
+              "minimum": 1.0,
+              "maximum": 100.0,
+              "description": "Filtration rate in m/h"
+            },
+            "target_dose_range": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Typical dose range for chemical dosing in mg/L"
+            },
+            "typical_dose_range": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Typical dose range for chemical dosing in mg/L"
+            },
+            "target_residual": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Target residual concentration range"
+            },
+            "target_ph_range": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 4.0,
+                "maximum": 12.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Target pH range"
+            },
+            "backwash_criteria": {
+              "type": "object",
+              "properties": {
+                "max_pressure": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "description": "Maximum differential pressure in mbar"
+                },
+                "max_runtime": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum runtime in hours"
+                },
+                "min_runtime": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Minimum runtime in hours"
+                }
+              },
+              "additionalProperties": false
+            },
+            "media_specifications": {
+              "type": "object",
+              "description": "Filter media specifications",
+              "properties": {
+                "sand_size": {
+                  "type": "string",
+                  "description": "Sand particle size specification"
+                },
+                "bed_depth": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "description": "Filter bed depth in meters"
+                }
+              }
+            },
+            "replacement_indicators": {
+              "type": "array",
+              "description": "Indicators for media replacement",
+              "items": {
+                "type": "string",
+                "enum": ["carbon_bed_life", "toc_breakthrough", "membrane_integrity"]
+              }
+            },
+            "ct_requirements": {
+              "type": "object",
+              "description": "CT value requirements for pathogen inactivation",
+              "properties": {
+                "giardia": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "CT requirement for Giardia in mg*min/L"
+                },
+                "virus": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "CT requirement for virus in mg*min/L"
+                },
+                "crypto": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "CT requirement for Cryptosporidium in mg*min/L"
+                }
+              },
+              "additionalProperties": false
+            },
+            "target_dose": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Target UV dose in mJ/cm²"
+            },
+            "log_reduction": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 6.0,
+              "description": "Log reduction requirement for pathogens"
+            },
+            "regulatory": {
+              "type": "string",
+              "enum": ["public_health_requirement", "environmental_regulation", "safety_standard"],
+              "description": "Regulatory significance"
+            },
+            "health_significance": {
+              "type": "string",
+              "enum": ["dental_health", "disinfection", "taste_odor", "aesthetic"],
+              "description": "Public health significance"
+            },
+            "mixing_system": {
+              "type": "boolean",
+              "description": "Whether module has mixing system"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "control_strategy_templates": {
+      "type": "object",
+      "description": "Reusable control strategy templates",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "required": ["description", "applicable_modules", "inputs", "outputs", "algorithm"],
+          "properties": {
+            "description": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 200,
+              "description": "Description of the control strategy"
+            },
+            "applicable_modules": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_*]+$",
+                "description": "Module types this strategy applies to (* for wildcards)"
+              }
+            },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_*]+\\.[a-z0-9_*]+$",
+                "description": "Input parameter pattern (* for wildcards)"
+              }
+            },
+            "outputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_*]+\\.[a-z0-9_*]+$",
+                "description": "Output parameter pattern (* for wildcards)"
+              }
+            },
+            "algorithm": {
+              "type": "string",
+              "enum": [
+                "pid", "pid_with_feedforward", "threshold_based", "ct_calculation",
+                "uv_dose_calculation", "feedforward", "cascade", "ratio", "custom",
+                "model_predictive_control", "dynamic_flow_balancing", "adaptive_control",
+                "fuzzy_logic", "neural_network"
+              ],
+              "description": "Control algorithm type"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Algorithm-specific parameters"
+            },
+            "requirements": {
+              "type": "object",
+              "description": "Regulatory or process requirements"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "alarm_templates": {
+      "type": "object",
+      "description": "Reusable alarm definition templates",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "description": "Alarm category",
+          "patternProperties": {
+            "^[a-z0-9_]+$": {
+              "type": "object",
+              "required": ["applicable_modules", "parameter", "severity"],
+              "properties": {
+                "applicable_modules": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_*]+$",
+                    "description": "Module types this alarm applies to (* for all)"
+                  }
+                },
+                "parameter": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_]+$",
+                  "description": "Parameter to monitor"
+                },
+                "threshold": {
+                  "type": "number",
+                  "description": "Fixed threshold value"
+                },
+                "threshold_factor": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "description": "Factor to apply to normal range"
+                },
+                "low_threshold": {
+                  "type": "number",
+                  "description": "Low alarm threshold"
+                },
+                "high_threshold": {
+                  "type": "number",
+                  "description": "High alarm threshold"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high", "critical"],
+                  "description": "Alarm severity level"
+                },
+                "action": {
+                  "type": "string",
+                  "description": "Recommended action when alarm triggers"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

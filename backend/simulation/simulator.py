@@ -11,7 +11,7 @@ import time
 from typing import Dict, Any, Optional
 from enum import Enum
 
-from core.plant_model import PlantModel, ComponentState, ComponentMetadata
+from core.digital_twin import DigitalTwin, OperationalState, ComponentInfo
 
 
 class SimulationMode(Enum):
@@ -35,7 +35,7 @@ class SimulationEngine:
 
     def __init__(
         self,
-        plant_model: PlantModel,
+        plant_model: DigitalTwin,
         simulation_mode: SimulationMode = SimulationMode.REAL_TIME,
     ):
         self.plant_model = plant_model
@@ -72,7 +72,7 @@ class SimulationEngine:
             if site_config_file and templates_dir:
                 # New site-based configuration
                 # Note: plant_model should already be loaded by HydrosSystem
-                from core.component_factory import ComponentFactory
+                from core.plant_builder import ComponentFactory
                 self.component_factory = ComponentFactory(
                     site_config_file=site_config_file,
                     templates_dir=templates_dir
@@ -80,12 +80,12 @@ class SimulationEngine:
             elif config_file:
                 # Legacy configuration loading
                 self.plant_model.load_plant_configuration(config_file)
-                from core.component_factory import ComponentFactory
+                from core.plant_builder import ComponentFactory
                 self.component_factory = ComponentFactory(legacy_config_file=config_file)
             else:
                 # Try to create factory from already-loaded plant model
-                from core.component_factory import ComponentFactory
-                self.component_factory = ComponentFactory.create_from_plant_model(self.plant_model)
+                from core.plant_builder import ComponentFactory
+                self.component_factory = ComponentFactory.create_from_digital_twin(self.plant_model)
 
             # Create components from site configuration
             # For now, use the first available site
@@ -104,20 +104,20 @@ class SimulationEngine:
                     self.logger.debug(f"Created {len(wtp_components)} WTP components")
 
                     # Wrap them in simulation components
-                    from .components import SimulatedWTPComponent
+                    from .components import SimulatedPlantComponent
 
                     for comp_name, wtp_component in wtp_components.items():
                         # Create simulation wrapper
-                        sim_component = SimulatedWTPComponent(wtp_component)
+                        sim_component = SimulatedPlantComponent(wtp_component)
                         comp_id = f"{site_id}.{comp_name}"
 
                         # Create metadata
-                        metadata = ComponentMetadata(
+                        metadata = ComponentInfo(
                             component_id=comp_id,
                             component_type=type(wtp_component).__name__,
                             module_id=site_id,
                             description=f"Component {comp_name} in site {site_id}",
-                            state=ComponentState.ACTIVE,
+                            state=OperationalState.ACTIVE,
                         )
 
                         # Register with plant model
@@ -306,7 +306,7 @@ class SimulationEngine:
 
         # Reset all component states
         for comp_id in self.plant_model.components:
-            self.plant_model.update_component_state(comp_id, ComponentState.ACTIVE)
+            self.plant_model.update_component_state(comp_id, OperationalState.ACTIVE)
 
         # Clear statistics
         self.stats = {

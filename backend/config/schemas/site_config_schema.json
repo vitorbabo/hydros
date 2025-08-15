@@ -1,0 +1,494 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydros.com/schemas/site-config.json",
+  "title": "Hydros Site Configuration Schema",
+  "description": "Schema for validating water treatment plant site configurations",
+  "type": "object",
+  "required": ["site_info", "modules", "operational_parameters", "protocol_clients"],
+  "properties": {
+    "site_info": {
+      "type": "object",
+      "description": "Basic site identification and metadata",
+      "required": ["site_id", "name", "design_capacity"],
+      "properties": {
+        "site_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Unique site identifier (lowercase, alphanumeric with hyphens)"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100,
+          "description": "Human readable site name"
+        },
+        "design_capacity": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 1000000,
+          "description": "Design capacity in m3/day"
+        },
+        "treatment_train": {
+          "type": "string",
+          "enum": ["conventional", "membrane", "advanced", "hybrid"],
+          "description": "Type of treatment train"
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "region": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 50
+            },
+            "country": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 50
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Latitude and longitude coordinates"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "modules": {
+      "type": "array",
+      "description": "List of module template references",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_]+$",
+        "description": "Module template name (lowercase, alphanumeric with underscores)"
+      }
+    },
+    "operational_parameters": {
+      "type": "object",
+      "description": "Site-specific operational parameters",
+      "required": ["normal_flow_rate", "design_flow_rate"],
+      "properties": {
+        "normal_flow_rate": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 10000.0,
+          "description": "Normal operational flow rate in m3/h"
+        },
+        "design_flow_rate": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 10000.0,
+          "description": "Design maximum flow rate in m3/h"
+        },
+        "raw_water_quality": {
+          "type": "object",
+          "properties": {
+            "turbidity_range": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Min and max turbidity in NTU"
+            },
+            "ph_range": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 4.0,
+                "maximum": 12.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Min and max pH"
+            },
+            "temperature_range": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Min and max temperature in °C"
+            }
+          },
+          "additionalProperties": false
+        },
+        "treatment_targets": {
+          "type": "object",
+          "properties": {
+            "finished_turbidity": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 4.0,
+              "description": "Target finished water turbidity in NTU"
+            },
+            "finished_ph": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 6.5,
+                "maximum": 8.5
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Target pH range for finished water"
+            },
+            "chlorine_residual": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.2,
+                "maximum": 4.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Target chlorine residual range in mg/L"
+            },
+            "fluoride_residual": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Target fluoride residual range in mg/L"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "protocol_clients": {
+      "type": "array",
+      "description": "Protocol client configurations for data acquisition",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["client_id", "protocol", "description", "connection", "enabled", "modules_assigned"],
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Unique client identifier (lowercase, alphanumeric with underscores)"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": ["modbus_tcp", "modbus_rtu", "opcua", "s7"],
+            "description": "Communication protocol type"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200,
+            "description": "Human readable description of the client"
+          },
+          "connection": {
+            "type": "object",
+            "description": "Protocol-specific connection parameters",
+            "anyOf": [
+              {
+                "description": "Modbus TCP connection",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "description": "Host IP or hostname (supports environment variables)"
+                  },
+                  "port": {
+                    "anyOf": [
+                      {"type": "integer", "minimum": 1, "maximum": 65535},
+                      {"type": "string", "pattern": "^\\$\\{[A-Z_]+:[0-9]+\\}$"}
+                    ],
+                    "description": "TCP port number or environment variable"
+                  },
+                  "unit_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 247,
+                    "description": "Modbus unit/slave ID"
+                  },
+                  "timeout": {
+                    "type": "number",
+                    "minimum": 1.0,
+                    "maximum": 30.0,
+                    "description": "Connection timeout in seconds"
+                  },
+                  "retry_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Number of retry attempts"
+                  }
+                },
+                "required": ["host", "port", "unit_id"],
+                "additionalProperties": false
+              },
+              {
+                "description": "OPC UA connection",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "pattern": "^opc\\.tcp://",
+                    "description": "OPC UA endpoint URL"
+                  },
+                  "endpoint_url": {
+                    "type": "string",
+                    "description": "OPC UA endpoint URL (alternative to endpoint)"
+                  },
+                  "security_mode": {
+                    "type": "string",
+                    "enum": ["None", "Sign", "SignAndEncrypt"],
+                    "default": "None"
+                  },
+                  "security_policy": {
+                    "type": "string",
+                    "enum": ["None", "Basic256Sha256", "Aes128Sha256RsaOaep"],
+                    "default": "None"
+                  },
+                  "timeout": {
+                    "type": "number",
+                    "minimum": 1.0,
+                    "maximum": 30.0,
+                    "description": "Connection timeout in seconds"
+                  }
+                },
+                "anyOf": [
+                  {"required": ["endpoint"]},
+                  {"required": ["endpoint_url"]}
+                ],
+                "additionalProperties": false
+              },
+              {
+                "description": "S7 connection",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "description": "Host IP or hostname (supports environment variables)"
+                  },
+                  "rack": {
+                    "anyOf": [
+                      {"type": "integer", "minimum": 0, "maximum": 7},
+                      {"type": "string", "pattern": "^\\$\\{[A-Z0-9_]+:[0-9]+\\}$"}
+                    ],
+                    "description": "S7 rack number or environment variable"
+                  },
+                  "slot": {
+                    "anyOf": [
+                      {"type": "integer", "minimum": 1, "maximum": 15},
+                      {"type": "string", "pattern": "^\\$\\{[A-Z0-9_]+:[0-9]+\\}$"}
+                    ],
+                    "description": "S7 slot number or environment variable"
+                  },
+                  "timeout": {
+                    "type": "number",
+                    "minimum": 1.0,
+                    "maximum": 30.0,
+                    "description": "Connection timeout in seconds"
+                  },
+                  "retry_count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Number of retry attempts"
+                  }
+                },
+                "required": ["host", "rack", "slot"],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this client is active"
+          },
+          "modules_assigned": {
+            "type": "array",
+            "description": "List of modules assigned to this protocol client",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$",
+              "description": "Module name matching entries in modules array"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "control_strategies": {
+      "type": "object",
+      "description": "Site-specific control strategies",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "required": ["description", "inputs", "outputs"],
+          "properties": {
+            "description": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 200,
+              "description": "Description of the control strategy"
+            },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+                "description": "Input parameter in module.parameter format"
+              }
+            },
+            "outputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+                "description": "Output parameter in module.parameter format"
+              }
+            },
+            "algorithm": {
+              "type": "string",
+              "enum": [
+                "pid", "pid_with_feedforward", "threshold_based", "ct_calculation", "custom",
+                "model_predictive_control", "dynamic_flow_balancing", "adaptive_control",
+                "fuzzy_logic", "neural_network"
+              ],
+              "description": "Control algorithm type"
+            },
+            "parameters": {
+              "type": "object",
+              "description": "Algorithm-specific parameters"
+            },
+            "requirements": {
+              "type": "object",
+              "description": "Process or regulatory requirements"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "alarm_definitions": {
+      "type": "object",
+      "description": "Site-specific alarm definitions",
+      "patternProperties": {
+        "^[a-z0-9_]+$": {
+          "type": "object",
+          "description": "Alarm category",
+          "patternProperties": {
+            "^[a-z0-9_]+$": {
+              "type": "object",
+              "anyOf": [
+                {
+                  "description": "Single parameter alarm",
+                  "required": ["parameter", "threshold", "severity"],
+                  "properties": {
+                    "parameter": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+                      "description": "Parameter to monitor in module.parameter format"
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "description": "Alarm threshold value"
+                    },
+                    "severity": {
+                      "type": "string",
+                      "enum": ["low", "medium", "high", "critical"],
+                      "description": "Alarm severity level"
+                    },
+                    "action": {
+                      "type": "string",
+                      "description": "Recommended action when alarm triggers"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "description": "Multi-parameter alarm",
+                  "required": ["parameters", "severity"],
+                  "properties": {
+                    "parameters": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+                        "description": "Parameter to monitor in module.parameter format"
+                      },
+                      "description": "List of parameters to monitor"
+                    },
+                    "condition": {
+                      "type": "string",
+                      "enum": ["all_true", "all_false", "any_true", "any_false", "both_false"],
+                      "description": "Condition logic for multi-parameter alarms"
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "description": "Alarm threshold value (if applicable)"
+                    },
+                    "severity": {
+                      "type": "string",
+                      "enum": ["low", "medium", "high", "critical"],
+                      "description": "Alarm severity level"
+                    },
+                    "action": {
+                      "type": "string",
+                      "description": "Recommended action when alarm triggers"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "mqtt_config": {
+      "type": "object",
+      "description": "MQTT publishing configuration",
+      "required": ["topic_prefix", "publish_interval"],
+      "properties": {
+        "topic_prefix": {
+          "type": "string",
+          "pattern": "^[a-z0-9/\\-]+$",
+          "description": "MQTT topic prefix (lowercase, alphanumeric with slashes and hyphens)"
+        },
+        "publish_interval": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 60.0,
+          "description": "Data publishing interval in seconds"
+        },
+        "retain_messages": {
+          "type": "boolean",
+          "description": "Whether to retain MQTT messages"
+        },
+        "qos": {
+          "type": "integer",
+          "enum": [0, 1, 2],
+          "description": "MQTT Quality of Service level"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

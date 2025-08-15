@@ -1,8 +1,8 @@
-# Centralized Parameter Specifications Library
+# Parameter Specifications Library
 # Defines standardized parameter characteristics for consistent sensor/actuator handling
 
 parameter_specifications:
-  
+
   # WATER QUALITY PARAMETERS
   turbidity:
     measurement_type: "turbidity"
@@ -10,120 +10,120 @@ parameter_specifications:
     data_type: "REAL"
     precision: 2
     ranges:
-      raw_water: [0.0, 100.0]
-      clarified: [0.0, 10.0]
-      filtered: [0.0, 1.0]
-      membrane_filtered: [0.0, 0.1]
+      raw_water: [ 0.0, 100.0 ]
+      clarified: [ 0.0, 10.0 ]
+      filtered: [ 0.0, 1.0 ]
+      membrane_filtered: [ 0.0, 0.1 ]
     quality_indicators:
-      excellent: [0.0, 0.1]
-      good: [0.1, 1.0]
-      acceptable: [1.0, 4.0]
-      poor: [4.0, 100.0]
-    calibration_frequency: 30  # days
+      excellent: [ 0.0, 0.1 ]
+      good: [ 0.1, 1.0 ]
+      acceptable: [ 1.0, 4.0 ]
+      poor: [ 4.0, 100.0 ]
+    calibration_frequency: 30 # days
     maintenance:
-      cleaning_frequency: 7  # days
-      replacement_interval: 730  # days
-    
+      cleaning_frequency: 7 # days
+      replacement_interval: 730 # days
+
   ph:
     measurement_type: "ph"
     unit: "pH"
     data_type: "REAL"
     precision: 2
     ranges:
-      normal: [4.0, 12.0]
-      drinking_water: [6.5, 8.5]
-      optimal_coagulation: [6.0, 7.5]
+      normal: [ 4.0, 12.0 ]
+      drinking_water: [ 6.5, 8.5 ]
+      optimal_coagulation: [ 6.0, 7.5 ]
     quality_indicators:
-      excellent: [7.0, 8.0]
-      good: [6.8, 8.2]
-      acceptable: [6.5, 8.5]
-      poor: [4.0, 12.0]
-    calibration_frequency: 7  # days
-    calibration_buffers: [4.01, 7.00, 10.01]
-    
+      excellent: [ 7.0, 8.0 ]
+      good: [ 6.8, 8.2 ]
+      acceptable: [ 6.5, 8.5 ]
+      poor: [ 4.0, 12.0 ]
+    calibration_frequency: 7 # days
+    calibration_buffers: [ 4.01, 7.00, 10.01 ]
+
   temperature:
     measurement_type: "temperature"
     unit: "°C"
     data_type: "REAL"
     precision: 1
     ranges:
-      ambient: [-10.0, 50.0]
-      process_water: [5.0, 35.0]
-      equipment: [15.0, 100.0]
+      ambient: [ -10, 50.0 ]
+      process_water: [ 5.0, 35.0 ]
+      equipment: [ 15.0, 100.0 ]
     quality_indicators:
-      optimal_treatment: [15.0, 25.0]
-      summer_range: [20.0, 30.0]
-      winter_range: [8.0, 18.0]
+      optimal_treatment: [ 15.0, 25.0 ]
+      summer_range: [ 20.0, 30.0 ]
+      winter_range: [ 8.0, 18.0 ]
     compensation_required: true
-    
+
   conductivity:
     measurement_type: "conductivity"
     unit: "µS/cm"
     data_type: "REAL"
     precision: 0
     ranges:
-      ultrapure: [0.1, 10.0]
-      drinking_water: [50.0, 1500.0]
-      process_water: [100.0, 2000.0]
-    conversion_factor: 0.64  # to TDS (mg/L)
-    temperature_coefficient: 2.0  # %/°C
-    
+      ultrapure: [ 0.1, 10.0 ]
+      drinking_water: [ 50.0, 1500.0 ]
+      process_water: [ 100.0, 2000.0 ]
+    conversion_factor: 0.64 # to TDS (mg/L)
+    temperature_coefficient: 2.0 # %/°C
+
   dissolved_oxygen:
     measurement_type: "dissolved_oxygen"
     unit: "mg/L"
     data_type: "REAL"
     precision: 2
     ranges:
-      saturated: [8.0, 14.0]
-      aerobic_conditions: [2.0, 12.0]
-      anaerobic_threshold: [0.0, 2.0]
+      saturated: [ 8.0, 14.0 ]
+      aerobic_conditions: [ 2.0, 12.0 ]
+      anaerobic_threshold: [ 0.0, 2.0 ]
     temperature_dependent: true
-    calibration_frequency: 7  # days
-    
+    calibration_frequency: 7 # days
+
   chlorine_residual:
     measurement_type: "chlorine_residual"
     unit: "mg/L"
     data_type: "REAL"
     precision: 2
     ranges:
-      free_chlorine: [0.0, 10.0]
-      combined_chlorine: [0.0, 4.0]
-      total_chlorine: [0.0, 15.0]
+      free_chlorine: [ 0.0, 10.0 ]
+      combined_chlorine: [ 0.0, 4.0 ]
+      total_chlorine: [ 0.0, 15.0 ]
     regulatory_limits:
-      minimum_distribution: 0.2  # mg/L
-      maximum_distribution: 4.0  # mg/L
-    measurement_types: ["free", "total", "combined"]
-    calibration_frequency: 7  # days
-    
+      minimum_distribution: 0.2 # mg/L
+      maximum_distribution: 4.0 # mg/L
+    measurement_types: [ "free", "total", "combined" ]
+    calibration_frequency: 7 # days
+
   alkalinity:
     measurement_type: "alkalinity"
     unit: "mg/L CaCO3"
     data_type: "REAL"
     precision: 1
     ranges:
-      normal: [20.0, 300.0]
-      optimal_coagulation: [30.0, 150.0]
+      normal: [ 20.0, 300.0 ]
+      optimal_coagulation: [ 30.0, 150.0 ]
     buffer_capacity: true
-    
+
   toc:
     measurement_type: "toc"
     unit: "mg/L"
     data_type: "REAL"
     precision: 2
     ranges:
-      surface_water: [1.0, 20.0]
-      treated_water: [0.5, 5.0]
-      gac_breakthrough: [2.0, 10.0]
+      surface_water: [ 1.0, 20.0 ]
+      treated_water: [ 0.5, 5.0 ]
+      gac_breakthrough: [ 2.0, 10.0 ]
     regulatory_significance: "DBP_formation"
-    
+
   fluoride_residual:
     measurement_type: "fluoride_residual"
     unit: "mg/L"
     data_type: "REAL"
     precision: 2
     ranges:
-      optimal: [0.7, 1.2]
-      maximum: [0.0, 4.0]
+      optimal: [ 0.7, 1.2 ]
+      maximum: [ 0.0, 4.0 ]
     regulatory_requirement: true
     health_significance: "dental_health"
 
@@ -134,48 +134,48 @@ parameter_specifications:
     data_type: "REAL"
     precision: 2
     ranges:
-      tank_general: [0.0, 10.0]
-      chemical_tank: [0.0, 5.0]
-      clearwell: [0.0, 8.0]
+      tank_general: [ 0.0, 10.0 ]
+      chemical_tank: [ 0.0, 5.0 ]
+      clearwell: [ 0.0, 8.0 ]
     alarm_levels:
-      low_alarm: 0.5  # m
-      high_alarm: 9.5  # m
-      emergency_low: 0.2  # m
+      low_alarm: 0.5 # m
+      high_alarm: 9.5 # m
+      emergency_low: 0.2 # m
     measurement_principle: "hydrostatic_pressure"
-    
+
   flow_rate:
     measurement_type: "flow_rate"
     unit: "m³/h"
     data_type: "REAL"
     precision: 1
     ranges:
-      small_plant: [0.0, 100.0]
-      medium_plant: [0.0, 300.0]
-      large_plant: [0.0, 1000.0]
+      small_plant: [ 0.0, 100.0 ]
+      medium_plant: [ 0.0, 300.0 ]
+      large_plant: [ 0.0, 1000.0 ]
     totalizer_available: true
     flow_direction: "bidirectional"
-    
+
   pressure:
     measurement_type: "pressure"
     unit: "bar"
     data_type: "REAL"
     precision: 2
     ranges:
-      low_pressure: [0.0, 2.0]
-      medium_pressure: [0.0, 6.0]
-      high_pressure: [0.0, 10.0]
+      low_pressure: [ 0.0, 2.0 ]
+      medium_pressure: [ 0.0, 6.0 ]
+      high_pressure: [ 0.0, 10.0 ]
     gauge_type: "absolute_or_gauge"
-    
+
   differential_pressure:
     measurement_type: "differential_pressure"
     unit: "mbar"
     data_type: "REAL"
     precision: 0
     ranges:
-      filter_normal: [0.0, 500.0]
-      membrane_normal: [0.0, 2000.0]
-    backwash_trigger: 350  # mbar
-    alarm_level: 450  # mbar
+      filter_normal: [ 0.0, 500.0 ]
+      membrane_normal: [ 0.0, 2000.0 ]
+    backwash_trigger: 350 # mbar
+    alarm_level: 450 # mbar
 
   # EQUIPMENT PARAMETERS
   motor_current:
@@ -184,46 +184,46 @@ parameter_specifications:
     data_type: "REAL"
     precision: 1
     ranges:
-      small_motor: [0.0, 20.0]
-      medium_motor: [0.0, 50.0]
-      large_motor: [0.0, 200.0]
+      small_motor: [ 0.0, 20.0 ]
+      medium_motor: [ 0.0, 50.0 ]
+      large_motor: [ 0.0, 200.0 ]
     nameplate_comparison: true
-    overload_threshold: 1.15  # 115% of nameplate
-    
+    overload_threshold: 1.15 # 115% of nameplate
+
   motor_temperature:
     measurement_type: "motor_temperature"
     unit: "°C"
     data_type: "REAL"
     precision: 1
     ranges:
-      normal_operation: [15.0, 70.0]
-      warning_level: [70.0, 80.0]
-      alarm_level: [80.0, 100.0]
+      normal_operation: [ 15.0, 70.0 ]
+      warning_level: [ 70.0, 80.0 ]
+      alarm_level: [ 80.0, 100.0 ]
     thermal_protection: true
-    
+
   vibration:
     measurement_type: "vibration"
     unit: "mm/s"
     data_type: "REAL"
     precision: 2
     ranges:
-      excellent: [0.0, 0.71]
-      good: [0.71, 1.8]
-      satisfactory: [1.8, 4.5]
-      unsatisfactory: [4.5, 11.2]
-      unacceptable: [11.2, 100.0]
+      excellent: [ 0.0, 0.71 ]
+      good: [ 0.71, 1.8 ]
+      satisfactory: [ 1.8, 4.5 ]
+      unsatisfactory: [ 4.5, 11.2 ]
+      unacceptable: [ 11.2, 100.0 ]
     measurement_standard: "ISO 10816"
-    frequencies: ["10Hz", "1kHz"]
-    
+    frequencies: [ "10Hz", "1kHz" ]
+
   power_consumption:
     measurement_type: "power_consumption"
     unit: "kW"
     data_type: "REAL"
     precision: 1
     ranges:
-      small_equipment: [0.0, 10.0]
-      medium_equipment: [0.0, 50.0]
-      large_equipment: [0.0, 200.0]
+      small_equipment: [ 0.0, 10.0 ]
+      medium_equipment: [ 0.0, 50.0 ]
+      large_equipment: [ 0.0, 200.0 ]
     power_factor_correction: true
     energy_monitoring: true
 
@@ -234,22 +234,22 @@ parameter_specifications:
     data_type: "REAL"
     precision: 2
     ranges:
-      standard_tank: [0.1, 5.0]
+      standard_tank: [ 0.1, 5.0 ]
     safety_requirements:
       secondary_containment: true
       leak_detection: true
-      low_level_alarm: 0.5  # m
-    
+      low_level_alarm: 0.5 # m
+
   dose_rate:
     measurement_type: "dose_rate"
     unit: "mg/L"
     data_type: "REAL"
     precision: 2
     ranges:
-      coagulant: [0.0, 50.0]
-      chlorine: [0.0, 10.0]
-      fluoride: [0.0, 2.0]
-      ph_adjustment: [0.0, 100.0]
+      coagulant: [ 0.0, 50.0 ]
+      chlorine: [ 0.0, 10.0 ]
+      fluoride: [ 0.0, 2.0 ]
+      ph_adjustment: [ 0.0, 100.0 ]
     flow_proportional: true
     access_mode: "read_write"
 
@@ -260,31 +260,31 @@ parameter_specifications:
     data_type: "REAL"
     precision: 0
     ranges:
-      vfd_controlled: [0.0, 3600.0]
-      percentage: [0.0, 100.0]
+      vfd_controlled: [ 0.0, 3600.0 ]
+      percentage: [ 0.0, 100.0 ]
     control_signal: "4-20mA"
     access_mode: "read_write"
-    minimum_speed: 30.0  # % (to prevent overheating)
-    
+    minimum_speed: 30.0 # % (to prevent overheating)
+
   valve_position:
     measurement_type: "valve_position"
     unit: "%"
     data_type: "REAL"
     precision: 1
     ranges:
-      standard: [0.0, 100.0]
+      standard: [ 0.0, 100.0 ]
     position_feedback: true
     control_signal: "4-20mA"
     access_mode: "read_write"
-    
+
   mixer_speed:
     measurement_type: "mixer_speed"
     unit: "rpm"
     data_type: "REAL"
     precision: 0
     ranges:
-      rapid_mix: [50.0, 300.0]
-      slow_mix: [10.0, 100.0]
+      rapid_mix: [ 50.0, 300.0 ]
+      slow_mix: [ 10.0, 100.0 ]
     variable_speed: true
     access_mode: "read_write"
 
@@ -297,20 +297,20 @@ parameter_specifications:
     states:
       stopped: 0
       running: 1
-    additional_states: ["starting", "stopping", "fault"]
+    additional_states: [ "starting", "stopping", "fault" ]
     access_mode: "read_write"
-    
+
   alarm_status:
-    measurement_type: "alarm_status"  
+    measurement_type: "alarm_status"
     unit: "bool"
     data_type: "BOOL"
     precision: 0
     states:
       normal: 0
       alarm: 1
-    alarm_types: ["process", "equipment", "safety"]
+    alarm_types: [ "process", "equipment", "safety" ]
     access_mode: "read"
-    
+
   maintenance_mode:
     measurement_type: "maintenance_mode"
     unit: "bool"
@@ -329,79 +329,296 @@ parameter_specifications:
     data_type: "REAL"
     precision: 1
     ranges:
-      typical: [85.0, 98.0]
-      minimum_effective: [75.0, 100.0]
-    wavelength: 254  # nm
+      typical: [ 85.0, 98.0 ]
+      minimum_effective: [ 75.0, 100.0 ]
+    wavelength: 254 # nm
     path_length: "variable"
-    
+
   uv_intensity:
     measurement_type: "uv_intensity"
     unit: "mW/cm²"
     data_type: "REAL"
     precision: 1
     ranges:
-      typical: [10.0, 50.0]
+      typical: [ 10.0, 50.0 ]
     lamp_aging_factor: true
     fouling_factor: true
 
+  # ADVANCED MONITORING PARAMETERS
+  chlorophyll_a:
+    measurement_type: "chlorophyll_a"
+    unit: "µg/L"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ 0.0, 100.0 ]
+      algae_bloom: [ 50.0, 500.0 ]
+    measurement_principle: "fluorometric"
+
+  blue_green_algae:
+    measurement_type: "blue_green_algae"
+    unit: "cells/mL"
+    data_type: "INT"
+    precision: 0
+    ranges:
+      typical: [ 0, 10000 ]
+      bloom_warning: [ 10000, 100000 ]
+    measurement_principle: "fluorometric"
+
+  # PROCESS CONTROL PARAMETERS
+  screen_speed:
+    measurement_type: "screen_speed"
+    unit: "rpm"
+    data_type: "REAL"
+    precision: 0
+    ranges:
+      standard: [ 1.0, 20.0 ]
+    control_signal: "4-20mA"
+    access_mode: "read_write"
+
+  cleaning_frequency:
+    measurement_type: "cleaning_frequency"
+    unit: "cycles/hour"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      standard: [ 0.1, 10.0 ]
+    access_mode: "read_write"
+
+  streaming_current:
+    measurement_type: "streaming_current"
+    unit: "mA"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ -50, 50.0 ]
+    measurement_principle: "electrokinetic"
+
+  zeta_potential:
+    measurement_type: "zeta_potential"
+    unit: "mV"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      typical: [ -100, 100.0 ]
+      optimal_coagulation: [ -10, 10.0 ]
+    measurement_principle: "electrokinetic"
+
+  retention_time:
+    measurement_type: "retention_time"
+    unit: "minutes"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      flocculation: [ 15.0, 45.0 ]
+      sedimentation: [ 60.0, 240.0 ]
+    access_mode: "read_write"
+
+  ph_feedback:
+    measurement_type: "ph"
+    unit: "pH"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      normal: [ 4.0, 12.0 ]
+      drinking_water: [ 6.5, 8.5 ]
+    calibration_frequency: 7
+
+  # CLARIFIER PARAMETERS
+  sludge_blanket_level:
+    measurement_type: "level"
+    unit: "m"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ 0.0, 3.0 ]
+    measurement_principle: "ultrasonic"
+
+  sludge_density:
+    measurement_type: "density"
+    unit: "g/L"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      typical: [ 1.0, 50.0 ]
+    measurement_principle: "nuclear"
+
+  sludge_removal_rate:
+    measurement_type: "flow_rate"
+    unit: "L/min"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      typical: [ 0.0, 100.0 ]
+    access_mode: "read_write"
+
+  overflow_weir_level:
+    measurement_type: "level"
+    unit: "m"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ 0.0, 2.0 ]
+    access_mode: "read_write"
+
+  # FILTER PARAMETERS
+  particle_count:
+    measurement_type: "particle_count"
+    unit: "particles/mL"
+    data_type: "INT"
+    precision: 0
+    ranges:
+      typical: [ 0, 10000 ]
+    measurement_principle: "laser_scattering"
+
+  backwash_initiation:
+    measurement_type: "run_status"
+    unit: "bool"
+    data_type: "BOOL"
+    precision: 0
+    states:
+      normal: 0
+      backwash: 1
+    access_mode: "read_write"
+
+  filter_to_waste:
+    measurement_type: "run_status"
+    unit: "bool"
+    data_type: "BOOL"
+    precision: 0
+    states:
+      normal: 0
+      waste: 1
+    access_mode: "read_write"
+
+  # MEMBRANE FILTRATION PARAMETERS
+  transmembrane_pressure:
+    measurement_type: "differential_pressure"
+    unit: "bar"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ 0.0, 3.0 ]
+      alarm_level: 2.5
+
+  cleaning_cycle:
+    measurement_type: "run_status"
+    unit: "bool"
+    data_type: "BOOL"
+    precision: 0
+    states:
+      normal: 0
+      cleaning: 1
+    access_mode: "read_write"
+
+  backwash_pressure:
+    measurement_type: "pressure"
+    unit: "bar"
+    data_type: "REAL"
+    precision: 2
+    ranges:
+      typical: [ 0.0, 5.0 ]
+    access_mode: "read_write"
+
+  # UV DISINFECTION PARAMETERS
+  lamp_status:
+    measurement_type: "run_status"
+    unit: "bool"
+    data_type: "BOOL"
+    precision: 0
+    states:
+      "off": 0
+      "on": 1
+    additional_states: [ "warming_up", "fault", "end_of_life" ]
+    access_mode: "read"
+
+  lamp_power:
+    measurement_type: "power_consumption"
+    unit: "%"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      standard: [ 0.0, 100.0 ]
+    access_mode: "read_write"
+
+  # WATER QUALITY ADVANCED PARAMETERS
+  water_age:
+    measurement_type: "water_age"
+    unit: "hours"
+    data_type: "REAL"
+    precision: 1
+    ranges:
+      typical: [ 0.0, 168.0 ] # Up to 1 week
+    regulatory_significance: "DBP_formation"
+
+  heterotrophic_plate_count:
+    measurement_type: "heterotrophic_plate_count"
+    unit: "CFU/mL"
+    data_type: "INT"
+    precision: 0
+    ranges:
+      drinking_water: [ 0, 500 ] # WHO guideline
+    regulatory_requirement: true
+    measurement_frequency: "weekly"
+
 # Data Quality Rules
 data_quality_rules:
-  
+
   validation_rules:
     range_check:
       description: "Verify parameter values are within expected ranges"
       action: "flag_as_suspect"
-      
+
     rate_of_change:
       description: "Detect unrealistic parameter changes"
       thresholds:
-        turbidity: 50  # NTU/hour
-        ph: 1.0        # pH/hour
-        chlorine_residual: 2.0  # mg/L/hour
+        turbidity: 50 # NTU/hour
+        ph: 1.0 # pH/hour
+        chlorine_residual: 2.0 # mg/L/hour
       action: "flag_as_suspect"
-      
+
     stuck_value:
       description: "Detect sensors providing constant values"
-      duration: 3600  # seconds
-      tolerance: 0.01  # measurement units
+      duration: 3600 # seconds
+      tolerance: 0.01 # measurement units
       action: "flag_as_failed"
-      
+
     negative_values:
       description: "Flag negative values for parameters that cannot be negative"
-      applicable_parameters: ["turbidity", "flow_rate", "level", "pressure"]
+      applicable_parameters: [ "turbidity", "flow_rate", "level", "pressure" ]
       action: "flag_as_invalid"
-  
+
   sensor_maintenance:
     calibration_due:
-      check_frequency: 86400  # seconds (daily)
-      advance_warning: 604800  # seconds (7 days)
+      check_frequency: 86400 # seconds (daily)
+      advance_warning: 604800 # seconds (7 days)
       overdue_action: "flag_as_questionable"
-      
+
     replacement_due:
-      check_frequency: 86400  # seconds (daily)
-      advance_warning: 2592000  # seconds (30 days)
+      check_frequency: 86400 # seconds (daily)
+      advance_warning: 2592000 # seconds (30 days)
       overdue_action: "schedule_replacement"
 
 # Alarm Priority Matrix
 alarm_priorities:
-  
+
   critical:
     safety_related: true
     automatic_shutdown: true
     immediate_response: true
-    parameters: ["chlorine_residual", "motor_temperature", "chemical_tank_level"]
-    
+    parameters: [ "chlorine_residual", "motor_temperature", "chemical_tank_level" ]
+
   high:
     production_impact: true
-    response_time: 300  # seconds
-    parameters: ["turbidity", "pressure", "vibration"]
-    
+    response_time: 300 # seconds
+    parameters: [ "turbidity", "pressure", "vibration" ]
+
   medium:
     quality_impact: true
-    response_time: 1800  # seconds
-    parameters: ["ph", "differential_pressure", "power_consumption"]
-    
+    response_time: 1800 # seconds
+    parameters: [ "ph", "differential_pressure", "power_consumption" ]
+
   low:
     monitoring_only: true
-    response_time: 3600  # seconds
-    parameters: ["temperature", "conductivity", "motor_current"]
+    response_time: 3600 # seconds
+    parameters: [ "temperature", "conductivity", "motor_current" ]

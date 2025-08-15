@@ -1,0 +1,1203 @@
+{
+  "site_id": "wtp-regional-02",
+  "protocol": "s7",
+  "mappings": {
+    "raw_intake.level": {
+      "address": "DB1.DBW0",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "raw_intake.flow_rate": {
+      "address": "DB1.DBW2",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "raw_intake.turbidity": {
+      "address": "DB1.DBW4",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "raw_intake.ph": {
+      "address": "DB1.DBW6",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "raw_intake.temperature": {
+      "address": "DB1.DBW8",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "temperature parameter"
+    },
+    "raw_intake.conductivity": {
+      "address": "DB1.DBW10",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "conductivity",
+      "unit": "\u00b5S/cm",
+      "access": "read",
+      "description": "conductivity parameter"
+    },
+    "raw_intake.dissolved_oxygen": {
+      "address": "DB1.DBW12",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "dissolved_oxygen",
+      "unit": "mg/L",
+      "access": "read",
+      "description": "dissolved_oxygen parameter"
+    },
+    "raw_intake.chlorophyll_a": {
+      "address": "DB1.DBW14",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "chlorophyll_a",
+      "unit": "\u00b5g/L",
+      "access": "read",
+      "description": "chlorophyll_a parameter"
+    },
+    "raw_intake.blue_green_algae": {
+      "address": "DB1.DBW16",
+      "data_type": "REAL",
+      "component_id": "raw_intake",
+      "measurement": "blue_green_algae",
+      "unit": "cells/mL",
+      "access": "read",
+      "description": "blue_green_algae parameter"
+    },
+    "intake_pump_1.flow_rate": {
+      "address": "DB1.DBW18",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "intake_pump_1.pressure": {
+      "address": "DB1.DBW20",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "pressure",
+      "unit": "bar",
+      "access": "read",
+      "description": "pressure parameter"
+    },
+    "intake_pump_1.motor_current": {
+      "address": "DB1.DBW22",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "motor_current",
+      "unit": "A",
+      "access": "read",
+      "description": "motor_current parameter"
+    },
+    "intake_pump_1.motor_temperature": {
+      "address": "DB1.DBW24",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "motor_temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "motor_temperature parameter"
+    },
+    "intake_pump_1.vibration": {
+      "address": "DB1.DBW26",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "vibration",
+      "unit": "mm/s",
+      "access": "read",
+      "description": "vibration parameter"
+    },
+    "intake_pump_1.power_consumption": {
+      "address": "DB1.DBW28",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "power_consumption",
+      "unit": "kW",
+      "access": "read",
+      "description": "power_consumption parameter"
+    },
+    "intake_pump_1.run_status": {
+      "address": "DB1.DBW34",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "intake_pump_1.pump_speed": {
+      "address": "DB1.DBW32",
+      "data_type": "REAL",
+      "component_id": "intake_pump_1",
+      "measurement": "pump_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "pump_speed parameter"
+    },
+    "intake_pump_2.flow_rate": {
+      "address": "DB1.DBW36",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "intake_pump_2.pressure": {
+      "address": "DB1.DBW38",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "pressure",
+      "unit": "bar",
+      "access": "read",
+      "description": "pressure parameter"
+    },
+    "intake_pump_2.motor_current": {
+      "address": "DB1.DBW40",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "motor_current",
+      "unit": "A",
+      "access": "read",
+      "description": "motor_current parameter"
+    },
+    "intake_pump_2.motor_temperature": {
+      "address": "DB1.DBW42",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "motor_temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "motor_temperature parameter"
+    },
+    "intake_pump_2.vibration": {
+      "address": "DB1.DBW44",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "vibration",
+      "unit": "mm/s",
+      "access": "read",
+      "description": "vibration parameter"
+    },
+    "intake_pump_2.power_consumption": {
+      "address": "DB1.DBW46",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "power_consumption",
+      "unit": "kW",
+      "access": "read",
+      "description": "power_consumption parameter"
+    },
+    "intake_pump_2.run_status": {
+      "address": "DB1.DBW52",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "intake_pump_2.pump_speed": {
+      "address": "DB1.DBW50",
+      "data_type": "REAL",
+      "component_id": "intake_pump_2",
+      "measurement": "pump_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "pump_speed parameter"
+    },
+    "screening_system.differential_pressure": {
+      "address": "DB1.DBW54",
+      "data_type": "REAL",
+      "component_id": "screening_system",
+      "measurement": "differential_pressure",
+      "unit": "mbar",
+      "access": "read",
+      "description": "differential_pressure parameter"
+    },
+    "screening_system.motor_current": {
+      "address": "DB1.DBW56",
+      "data_type": "REAL",
+      "component_id": "screening_system",
+      "measurement": "motor_current",
+      "unit": "A",
+      "access": "read",
+      "description": "motor_current parameter"
+    },
+    "screening_system.run_status": {
+      "address": "DB1.DBW64",
+      "data_type": "REAL",
+      "component_id": "screening_system",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "screening_system.screen_speed": {
+      "address": "DB1.DBW60",
+      "data_type": "REAL",
+      "component_id": "screening_system",
+      "measurement": "screen_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "screen_speed parameter"
+    },
+    "screening_system.cleaning_frequency": {
+      "address": "DB1.DBW62",
+      "data_type": "REAL",
+      "component_id": "screening_system",
+      "measurement": "cleaning_frequency",
+      "unit": "cycles/hour",
+      "access": "read_write",
+      "description": "cleaning_frequency parameter"
+    },
+    "coagulation_tank.level": {
+      "address": "DB1.DBW66",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "coagulation_tank.ph": {
+      "address": "DB1.DBW68",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "coagulation_tank.turbidity": {
+      "address": "DB1.DBW70",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "coagulation_tank.temperature": {
+      "address": "DB1.DBW72",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "temperature parameter"
+    },
+    "coagulation_tank.alkalinity": {
+      "address": "DB1.DBW74",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "alkalinity",
+      "unit": "mg/L CaCO3",
+      "access": "read",
+      "description": "alkalinity parameter"
+    },
+    "coagulation_tank.streaming_current": {
+      "address": "DB1.DBW76",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "streaming_current",
+      "unit": "mA",
+      "access": "read",
+      "description": "streaming_current parameter"
+    },
+    "coagulation_tank.zeta_potential": {
+      "address": "DB1.DBW78",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "zeta_potential",
+      "unit": "mV",
+      "access": "read",
+      "description": "zeta_potential parameter"
+    },
+    "coagulation_tank.mixer_speed": {
+      "address": "DB1.DBW80",
+      "data_type": "REAL",
+      "component_id": "coagulation_tank",
+      "measurement": "mixer_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "mixer_speed parameter"
+    },
+    "flocculation_tank.level": {
+      "address": "DB1.DBW82",
+      "data_type": "REAL",
+      "component_id": "flocculation_tank",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "flocculation_tank.turbidity": {
+      "address": "DB1.DBW84",
+      "data_type": "REAL",
+      "component_id": "flocculation_tank",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "flocculation_tank.ph": {
+      "address": "DB1.DBW86",
+      "data_type": "REAL",
+      "component_id": "flocculation_tank",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "flocculation_tank.mixer_speed": {
+      "address": "DB1.DBW88",
+      "data_type": "REAL",
+      "component_id": "flocculation_tank",
+      "measurement": "mixer_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "mixer_speed parameter"
+    },
+    "flocculation_tank.retention_time": {
+      "address": "DB1.DBW90",
+      "data_type": "REAL",
+      "component_id": "flocculation_tank",
+      "measurement": "retention_time",
+      "unit": "minutes",
+      "access": "read_write",
+      "description": "retention_time parameter"
+    },
+    "coagulant_dosing.chemical_tank_level": {
+      "address": "DB1.DBW92",
+      "data_type": "REAL",
+      "component_id": "coagulant_dosing",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "chemical_tank_level parameter"
+    },
+    "coagulant_dosing.flow_rate": {
+      "address": "DB1.DBW94",
+      "data_type": "REAL",
+      "component_id": "coagulant_dosing",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "coagulant_dosing.run_status": {
+      "address": "DB1.DBW100",
+      "data_type": "REAL",
+      "component_id": "coagulant_dosing",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "coagulant_dosing.dose_rate": {
+      "address": "DB1.DBW98",
+      "data_type": "REAL",
+      "component_id": "coagulant_dosing",
+      "measurement": "dose_rate",
+      "unit": "mg/L",
+      "access": "read_write",
+      "description": "dose_rate parameter"
+    },
+    "ph_adjustment_dosing.chemical_tank_level": {
+      "address": "DB1.DBW102",
+      "data_type": "REAL",
+      "component_id": "ph_adjustment_dosing",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "chemical_tank_level parameter"
+    },
+    "ph_adjustment_dosing.ph_feedback": {
+      "address": "DB1.DBW104",
+      "data_type": "REAL",
+      "component_id": "ph_adjustment_dosing",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph_feedback parameter"
+    },
+    "ph_adjustment_dosing.flow_rate": {
+      "address": "DB1.DBW106",
+      "data_type": "REAL",
+      "component_id": "ph_adjustment_dosing",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "ph_adjustment_dosing.dose_rate": {
+      "address": "DB1.DBW108",
+      "data_type": "REAL",
+      "component_id": "ph_adjustment_dosing",
+      "measurement": "dose_rate",
+      "unit": "mg/L",
+      "access": "read_write",
+      "description": "dose_rate parameter"
+    },
+    "clarifier_1.level": {
+      "address": "DB1.DBW110",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "clarifier_1.turbidity": {
+      "address": "DB1.DBW112",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "clarifier_1.flow_rate": {
+      "address": "DB1.DBW114",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "clarifier_1.ph": {
+      "address": "DB1.DBW116",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "clarifier_1.sludge_blanket_level": {
+      "address": "DB1.DBW118",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "sludge_blanket_level parameter"
+    },
+    "clarifier_1.sludge_density": {
+      "address": "DB1.DBW120",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "density",
+      "unit": "g/L",
+      "access": "read",
+      "description": "sludge_density parameter"
+    },
+    "clarifier_1.sludge_removal_rate": {
+      "address": "DB1.DBW122",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "flow_rate",
+      "unit": "L/min",
+      "access": "read_write",
+      "description": "sludge_removal_rate parameter"
+    },
+    "clarifier_1.overflow_weir_level": {
+      "address": "DB1.DBW124",
+      "data_type": "REAL",
+      "component_id": "clarifier_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read_write",
+      "description": "overflow_weir_level parameter"
+    },
+    "clarifier_2.level": {
+      "address": "DB1.DBW126",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "clarifier_2.turbidity": {
+      "address": "DB1.DBW128",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "clarifier_2.flow_rate": {
+      "address": "DB1.DBW130",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "clarifier_2.ph": {
+      "address": "DB1.DBW132",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "clarifier_2.sludge_blanket_level": {
+      "address": "DB1.DBW134",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "sludge_blanket_level parameter"
+    },
+    "clarifier_2.sludge_density": {
+      "address": "DB1.DBW136",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "density",
+      "unit": "g/L",
+      "access": "read",
+      "description": "sludge_density parameter"
+    },
+    "clarifier_2.sludge_removal_rate": {
+      "address": "DB1.DBW138",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "flow_rate",
+      "unit": "L/min",
+      "access": "read_write",
+      "description": "sludge_removal_rate parameter"
+    },
+    "clarifier_2.overflow_weir_level": {
+      "address": "DB1.DBW140",
+      "data_type": "REAL",
+      "component_id": "clarifier_2",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read_write",
+      "description": "overflow_weir_level parameter"
+    },
+    "filter_bed_1.differential_pressure": {
+      "address": "DB1.DBW142",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "differential_pressure",
+      "unit": "mbar",
+      "access": "read",
+      "description": "differential_pressure parameter"
+    },
+    "filter_bed_1.turbidity": {
+      "address": "DB1.DBW144",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "filter_bed_1.flow_rate": {
+      "address": "DB1.DBW146",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "filter_bed_1.level": {
+      "address": "DB1.DBW148",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "filter_bed_1.run_status": {
+      "address": "DB1.DBW158",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "filter_bed_1.particle_count": {
+      "address": "DB1.DBW152",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "particle_count",
+      "unit": "particles/mL",
+      "access": "read",
+      "description": "particle_count parameter"
+    },
+    "filter_bed_1.backwash_initiation": {
+      "address": "DB1.DBW154",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "backwash_initiation parameter"
+    },
+    "filter_bed_1.filter_to_waste": {
+      "address": "DB1.DBW156",
+      "data_type": "REAL",
+      "component_id": "filter_bed_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "filter_to_waste parameter"
+    },
+    "filter_bed_2.differential_pressure": {
+      "address": "DB1.DBW160",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "differential_pressure",
+      "unit": "mbar",
+      "access": "read",
+      "description": "differential_pressure parameter"
+    },
+    "filter_bed_2.turbidity": {
+      "address": "DB1.DBW162",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "filter_bed_2.flow_rate": {
+      "address": "DB1.DBW164",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "filter_bed_2.level": {
+      "address": "DB1.DBW166",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "filter_bed_2.run_status": {
+      "address": "DB1.DBW176",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "filter_bed_2.particle_count": {
+      "address": "DB1.DBW170",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "particle_count",
+      "unit": "particles/mL",
+      "access": "read",
+      "description": "particle_count parameter"
+    },
+    "filter_bed_2.backwash_initiation": {
+      "address": "DB1.DBW172",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "backwash_initiation parameter"
+    },
+    "filter_bed_2.filter_to_waste": {
+      "address": "DB1.DBW174",
+      "data_type": "REAL",
+      "component_id": "filter_bed_2",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "filter_to_waste parameter"
+    },
+    "filter_bed_3.differential_pressure": {
+      "address": "DB1.DBW178",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "differential_pressure",
+      "unit": "mbar",
+      "access": "read",
+      "description": "differential_pressure parameter"
+    },
+    "filter_bed_3.turbidity": {
+      "address": "DB1.DBW180",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "filter_bed_3.flow_rate": {
+      "address": "DB1.DBW182",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "filter_bed_3.level": {
+      "address": "DB1.DBW184",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "filter_bed_3.run_status": {
+      "address": "DB1.DBW194",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "filter_bed_3.particle_count": {
+      "address": "DB1.DBW188",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "particle_count",
+      "unit": "particles/mL",
+      "access": "read",
+      "description": "particle_count parameter"
+    },
+    "filter_bed_3.backwash_initiation": {
+      "address": "DB1.DBW190",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "backwash_initiation parameter"
+    },
+    "filter_bed_3.filter_to_waste": {
+      "address": "DB1.DBW192",
+      "data_type": "REAL",
+      "component_id": "filter_bed_3",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "filter_to_waste parameter"
+    },
+    "gac_filter_1.differential_pressure": {
+      "address": "DB1.DBW196",
+      "data_type": "REAL",
+      "component_id": "gac_filter_1",
+      "measurement": "differential_pressure",
+      "unit": "mbar",
+      "access": "read",
+      "description": "differential_pressure parameter"
+    },
+    "gac_filter_1.turbidity": {
+      "address": "DB1.DBW198",
+      "data_type": "REAL",
+      "component_id": "gac_filter_1",
+      "measurement": "turbidity",
+      "unit": "NTU",
+      "access": "read",
+      "description": "turbidity parameter"
+    },
+    "gac_filter_1.toc": {
+      "address": "DB2.DBW0",
+      "data_type": "REAL",
+      "component_id": "gac_filter_1",
+      "measurement": "toc",
+      "unit": "mg/L",
+      "access": "read",
+      "description": "toc parameter"
+    },
+    "gac_filter_1.flow_rate": {
+      "address": "DB2.DBW2",
+      "data_type": "REAL",
+      "component_id": "gac_filter_1",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "gac_filter_1.backwash_initiation": {
+      "address": "DB2.DBW4",
+      "data_type": "REAL",
+      "component_id": "gac_filter_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "backwash_initiation parameter"
+    },
+    "uv_disinfection.uv_transmittance": {
+      "address": "DB2.DBW6",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "uv_transmittance",
+      "unit": "%",
+      "access": "read",
+      "description": "uv_transmittance parameter"
+    },
+    "uv_disinfection.uv_intensity": {
+      "address": "DB2.DBW8",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "uv_intensity",
+      "unit": "mW/cm\u00b2",
+      "access": "read",
+      "description": "uv_intensity parameter"
+    },
+    "uv_disinfection.flow_rate": {
+      "address": "DB2.DBW10",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "uv_disinfection.lamp_status": {
+      "address": "DB2.DBW12",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read",
+      "description": "lamp_status parameter"
+    },
+    "uv_disinfection.lamp_power": {
+      "address": "DB2.DBW14",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "power_consumption",
+      "unit": "%",
+      "access": "read_write",
+      "description": "lamp_power parameter"
+    },
+    "uv_disinfection.cleaning_cycle": {
+      "address": "DB2.DBW16",
+      "data_type": "REAL",
+      "component_id": "uv_disinfection",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "cleaning_cycle parameter"
+    },
+    "chlorination.chlorine_residual": {
+      "address": "DB2.DBW18",
+      "data_type": "REAL",
+      "component_id": "chlorination",
+      "measurement": "chlorine_residual",
+      "unit": "mg/L",
+      "access": "read",
+      "description": "chlorine_residual parameter"
+    },
+    "chlorination.ph": {
+      "address": "DB2.DBW20",
+      "data_type": "REAL",
+      "component_id": "chlorination",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "chlorination.temperature": {
+      "address": "DB2.DBW22",
+      "data_type": "REAL",
+      "component_id": "chlorination",
+      "measurement": "temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "temperature parameter"
+    },
+    "chlorination.chemical_tank_level": {
+      "address": "DB2.DBW24",
+      "data_type": "REAL",
+      "component_id": "chlorination",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "chemical_tank_level parameter"
+    },
+    "chlorination.dose_rate": {
+      "address": "DB2.DBW26",
+      "data_type": "REAL",
+      "component_id": "chlorination",
+      "measurement": "dose_rate",
+      "unit": "mg/L",
+      "access": "read_write",
+      "description": "dose_rate parameter"
+    },
+    "fluoridation.fluoride_residual": {
+      "address": "DB2.DBW28",
+      "data_type": "REAL",
+      "component_id": "fluoridation",
+      "measurement": "fluoride_residual",
+      "unit": "mg/L",
+      "access": "read",
+      "description": "fluoride_residual parameter"
+    },
+    "fluoridation.chemical_tank_level": {
+      "address": "DB2.DBW30",
+      "data_type": "REAL",
+      "component_id": "fluoridation",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "chemical_tank_level parameter"
+    },
+    "fluoridation.flow_rate": {
+      "address": "DB2.DBW32",
+      "data_type": "REAL",
+      "component_id": "fluoridation",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "fluoridation.dose_rate": {
+      "address": "DB2.DBW34",
+      "data_type": "REAL",
+      "component_id": "fluoridation",
+      "measurement": "dose_rate",
+      "unit": "mg/L",
+      "access": "read_write",
+      "description": "dose_rate parameter"
+    },
+    "finished_water_pump_1.flow_rate": {
+      "address": "DB2.DBW36",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "finished_water_pump_1.pressure": {
+      "address": "DB2.DBW38",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "pressure",
+      "unit": "bar",
+      "access": "read",
+      "description": "pressure parameter"
+    },
+    "finished_water_pump_1.motor_current": {
+      "address": "DB2.DBW40",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "motor_current",
+      "unit": "A",
+      "access": "read",
+      "description": "motor_current parameter"
+    },
+    "finished_water_pump_1.motor_temperature": {
+      "address": "DB2.DBW42",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "motor_temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "motor_temperature parameter"
+    },
+    "finished_water_pump_1.vibration": {
+      "address": "DB2.DBW44",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "vibration",
+      "unit": "mm/s",
+      "access": "read",
+      "description": "vibration parameter"
+    },
+    "finished_water_pump_1.power_consumption": {
+      "address": "DB2.DBW46",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "power_consumption",
+      "unit": "kW",
+      "access": "read",
+      "description": "power_consumption parameter"
+    },
+    "finished_water_pump_1.run_status": {
+      "address": "DB2.DBW52",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "finished_water_pump_1.pump_speed": {
+      "address": "DB2.DBW50",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_1",
+      "measurement": "pump_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "pump_speed parameter"
+    },
+    "finished_water_pump_2.flow_rate": {
+      "address": "DB2.DBW54",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "flow_rate",
+      "unit": "m\u00b3/h",
+      "access": "read",
+      "description": "flow_rate parameter"
+    },
+    "finished_water_pump_2.pressure": {
+      "address": "DB2.DBW56",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "pressure",
+      "unit": "bar",
+      "access": "read",
+      "description": "pressure parameter"
+    },
+    "finished_water_pump_2.motor_current": {
+      "address": "DB2.DBW58",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "motor_current",
+      "unit": "A",
+      "access": "read",
+      "description": "motor_current parameter"
+    },
+    "finished_water_pump_2.motor_temperature": {
+      "address": "DB2.DBW60",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "motor_temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "motor_temperature parameter"
+    },
+    "finished_water_pump_2.vibration": {
+      "address": "DB2.DBW62",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "vibration",
+      "unit": "mm/s",
+      "access": "read",
+      "description": "vibration parameter"
+    },
+    "finished_water_pump_2.power_consumption": {
+      "address": "DB2.DBW64",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "power_consumption",
+      "unit": "kW",
+      "access": "read",
+      "description": "power_consumption parameter"
+    },
+    "finished_water_pump_2.run_status": {
+      "address": "DB2.DBW70",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "run_status",
+      "unit": "bool",
+      "access": "read_write",
+      "description": "run_status parameter"
+    },
+    "finished_water_pump_2.pump_speed": {
+      "address": "DB2.DBW68",
+      "data_type": "REAL",
+      "component_id": "finished_water_pump_2",
+      "measurement": "pump_speed",
+      "unit": "rpm",
+      "access": "read_write",
+      "description": "pump_speed parameter"
+    },
+    "finished_water_tank.level": {
+      "address": "DB2.DBW72",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "level",
+      "unit": "m",
+      "access": "read",
+      "description": "level parameter"
+    },
+    "finished_water_tank.chlorine_residual": {
+      "address": "DB2.DBW74",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "chlorine_residual",
+      "unit": "mg/L",
+      "access": "read",
+      "description": "chlorine_residual parameter"
+    },
+    "finished_water_tank.ph": {
+      "address": "DB2.DBW76",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "ph",
+      "unit": "pH",
+      "access": "read",
+      "description": "ph parameter"
+    },
+    "finished_water_tank.temperature": {
+      "address": "DB2.DBW78",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "temperature",
+      "unit": "\u00b0C",
+      "access": "read",
+      "description": "temperature parameter"
+    },
+    "finished_water_tank.water_age": {
+      "address": "DB2.DBW80",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "water_age",
+      "unit": "hours",
+      "access": "read",
+      "description": "water_age parameter"
+    },
+    "finished_water_tank.heterotrophic_plate_count": {
+      "address": "DB2.DBW82",
+      "data_type": "REAL",
+      "component_id": "finished_water_tank",
+      "measurement": "heterotrophic_plate_count",
+      "unit": "CFU/mL",
+      "access": "read",
+      "description": "heterotrophic_plate_count parameter"
+    }
+  }
+}
