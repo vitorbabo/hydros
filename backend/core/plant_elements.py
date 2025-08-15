@@ -2,7 +2,7 @@
 Plant Elements - Core Data Structures for Water Treatment Plants
 
 This module defines the fundamental data structures used throughout the Hydros system:
-- ProtocolDataType: Data types for industrial protocols (Modbus, OPC UA, S7)  
+- ProtocolDataType: Data types for industrial protocols (Modbus, OPC UA, S7)
 - ComponentRole: Parameter roles (sensor, actuator, status indicator)
 - SensorType: Comprehensive catalog of water treatment measurements
 - PlantParameter: Unified parameter definition with protocol addressing
@@ -19,6 +19,7 @@ from typing import List, Optional
 
 class ProtocolDataType(Enum):
     """Standard data types for protocol mapping"""
+
     BOOL = "BOOL"
     INT = "INT"
     INT16 = "INT16"
@@ -29,7 +30,7 @@ class ProtocolDataType(Enum):
     STRING = "STRING"
 
     @classmethod
-    def from_string(cls, data_type_str: str) -> 'DataType':
+    def from_string(cls, data_type_str: str) -> "ProtocolDataType":
         """Convert string representation to DataType enum"""
         mapping = {
             "bool": cls.BOOL,
@@ -47,6 +48,7 @@ class ProtocolDataType(Enum):
 
 class ComponentRole(Enum):
     """Role of a component parameter (sensor, actuator, or status indicator)"""
+
     SENSOR = "sensor"
     ACTUATOR = "actuator"
     STATUS = "status"
@@ -54,7 +56,7 @@ class ComponentRole(Enum):
 
 class SensorType(Enum):
     """Types of sensors and measurements available in water treatment plants"""
-    
+
     # Water Quality Parameters
     TURBIDITY = "turbidity"
     PH = "ph"
@@ -118,6 +120,7 @@ class SensorType(Enum):
 @dataclass
 class PlantParameter:
     """Unified parameter definition for water treatment plant components"""
+
     tag: str
     component_role: ComponentRole
     sensor_type: SensorType
@@ -130,7 +133,7 @@ class PlantParameter:
     description: str = ""
     component_id: Optional[str] = None  # Component this parameter belongs to
     quality_degradation_chance: float = 0.02  # 2% chance of quality issues
-    
+
     # Protocol-specific addressing (populated by address allocator)
     modbus_address: Optional[int] = None
     modbus_type: Optional[str] = None
@@ -138,19 +141,19 @@ class PlantParameter:
     s7_address: Optional[str] = None
     scale_factor: float = 1.0
     offset: float = 0.0
-    
+
     @property
     def parameter_id(self) -> str:
         """Get standardized parameter ID"""
         if self.component_id:
             return f"{self.component_id}.{self.tag}"
         return self.tag
-    
+
     @property
     def parameter_name(self) -> str:
         """Get parameter name from tag"""
         return self.tag
-    
+
     def get_min_max(self) -> tuple[float, float]:
         """Get min and max values"""
         return self.min_value, self.max_value
@@ -159,6 +162,7 @@ class PlantParameter:
 @dataclass
 class PlantComponent:
     """A physical component or system in the water treatment plant"""
+
     component_id: str
     component_name: str
     component_type: str

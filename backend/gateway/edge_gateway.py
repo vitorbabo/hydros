@@ -131,8 +131,8 @@ class EdgeGateway:
                 config_content = f.read()
 
             # Simple environment variable substitution
-            import re
             import os
+            import re
 
             def replace_env_var(match):
                 var_name = match.group(1)

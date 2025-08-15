@@ -8,7 +8,7 @@ and production environments.
 
 Key Responsibilities:
 - Component lifecycle management and registration
-- Real-time parameter value storage and synchronization  
+- Real-time parameter value storage and synchronization
 - Component state tracking (active, inactive, fault, maintenance)
 - Plant statistics and performance monitoring
 - Integration bridge between simulation engine and edge gateway
@@ -20,9 +20,9 @@ water treatment processes.
 
 import logging
 import time
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 try:
     import yaml
@@ -149,21 +149,22 @@ class DigitalTwin:
             # Convert modules list to dict format for compatibility
             modules_list = self.site_config.get("modules", [])
             self.modules = {mod: {"id": mod} for mod in modules_list}
-            
+
             # Store the full plant config for compatibility with existing code
             # This creates a backward-compatible structure
             self.plant_config = {
                 "site_configurations": {
-                    self.site_id: {
-                        "modules": modules_list,
-                        **self.site_config
-                    }
+                    self.site_id: {"modules": modules_list, **self.site_config}
                 },
                 "module_templates": self.module_templates.get("module_templates", {}),
-                "parameter_specifications": self.parameter_specs.get("parameter_specifications", {})
+                "parameter_specifications": self.parameter_specs.get(
+                    "parameter_specifications", {}
+                ),
             }
 
-            self.logger.info(f"Configured {len(self.modules)} plant modules for site {self.site_id}")
+            self.logger.info(
+                f"Configured {len(self.modules)} plant modules for site {self.site_id}"
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to load site configuration: {e}")

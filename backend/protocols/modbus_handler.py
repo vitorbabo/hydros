@@ -6,15 +6,15 @@ Unified Modbus implementation for both client and server functionality.
 """
 
 import logging
-from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 try:
     from pymodbus.client import ModbusTcpClient
     from pymodbus.datastore import (
-        ModbusSequentialDataBlock,
         ModbusDeviceContext,
+        ModbusSequentialDataBlock,
         ModbusServerContext,
     )
     from pymodbus.server import StartAsyncTcpServer
@@ -127,9 +127,10 @@ class ModbusHandler:
     def load_mappings_from_gateway_config(self, gateway_config_file: str):
         """Load mappings from gateway YAML config file"""
         try:
-            import yaml
             import os
             import re
+
+            import yaml
 
             with open(gateway_config_file, "r") as f:
                 config_content = f.read()

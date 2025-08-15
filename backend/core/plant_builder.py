@@ -7,7 +7,7 @@ and modern template-based architectures.
 
 Key Capabilities:
 - Component creation from module templates (pumps, filters, disinfection, etc.)
-- Parameter assignment based on sensor catalog specifications  
+- Parameter assignment based on sensor catalog specifications
 - Template inheritance and customization for different plant sizes
 - Dynamic parameter adjustment based on treatment context
 - Integration with digital twin for automatic component registration
@@ -20,13 +20,18 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from .plant_elements import SensorType, PlantParameter, ComponentRole, PlantComponent
+from .plant_elements import ComponentRole, PlantComponent, PlantParameter, SensorType
 
 
 class ComponentFactory:
     """Factory for creating WTP components from centralized configuration templates"""
 
-    def __init__(self, site_config_file: str = None, templates_dir: str = None, legacy_config_file: str = None):
+    def __init__(
+        self,
+        site_config_file: str = None,
+        templates_dir: str = None,
+        legacy_config_file: str = None,
+    ):
         """Initialize factory with either new template structure or legacy config"""
         if site_config_file and templates_dir:
             # New centralized template structure
@@ -35,7 +40,9 @@ class ComponentFactory:
             # Legacy single-file structure
             self._load_legacy_config(legacy_config_file)
         else:
-            raise ValueError("Either (site_config_file + templates_dir) or legacy_config_file must be provided")
+            raise ValueError(
+                "Either (site_config_file + templates_dir) or legacy_config_file must be provided"
+            )
 
     def _load_centralized_templates(self, site_config_file: str, templates_dir: str):
         """Load configuration from new centralized template structure"""
@@ -56,9 +63,7 @@ class ComponentFactory:
         # Create backward-compatible site_configurations structure
         site_info = self.site_config.get("site_info", {})
         site_id = site_info.get("site_id", "unknown")
-        self.site_configurations = {
-            site_id: self.site_config
-        }
+        self.site_configurations = {site_id: self.site_config}
 
     def _load_legacy_config(self, config_file: str):
         """Load configuration from legacy single-file structure"""
@@ -262,9 +267,9 @@ class ComponentFactory:
         site_config: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Get parameter specifications based on measurement type and context"""
-        
+
         # First try to get specs from centralized parameter library
-        if hasattr(self, 'parameter_specs') and self.parameter_specs:
+        if hasattr(self, "parameter_specs") and self.parameter_specs:
             measurement_name = measurement_type.value.lower()
             if measurement_name in self.parameter_specs:
                 spec = self.parameter_specs[measurement_name]
@@ -272,9 +277,9 @@ class ComponentFactory:
                     "unit": spec.get("unit", "unit"),
                     "min_value": spec.get("ranges", {}).get("normal", [0, 100])[0],
                     "max_value": spec.get("ranges", {}).get("normal", [0, 100])[1],
-                    "precision": spec.get("precision", 2)
+                    "precision": spec.get("precision", 2),
                 }
-        
+
         # Fallback to legacy hardcoded specifications
 
         # Default specifications for each measurement type
@@ -426,10 +431,7 @@ class ComponentFactory:
         )
 
         # Context-specific adjustments
-        if (
-            template_name == "intake_pump"
-            and measurement_type == SensorType.FLOW_RATE
-        ):
+        if template_name == "intake_pump" and measurement_type == SensorType.FLOW_RATE:
             # Intake pumps typically have higher flow rates
             base_spec["max_value"] = (
                 site_config.get("parameters", {}).get("normal_flow_rate", 50) * 1.5
@@ -457,24 +459,34 @@ class ComponentFactory:
     def create_from_digital_twin(cls, digital_twin):
         """Create ComponentFactory from an already-loaded PlantModel"""
         factory = cls.__new__(cls)  # Create instance without calling __init__
-        
+
         # Copy configuration data from plant model
-        if hasattr(digital_twin, 'module_templates'):
-            factory.module_templates = digital_twin.module_templates.get("module_templates", {})
+        if hasattr(digital_twin, "module_templates"):
+            factory.module_templates = digital_twin.module_templates.get(
+                "module_templates", {}
+            )
         else:
-            factory.module_templates = digital_twin.plant_config.get("module_templates", {})
-            
-        if hasattr(digital_twin, 'parameter_specs'):
-            factory.parameter_specs = digital_twin.parameter_specs.get("parameter_specifications", {})
+            factory.module_templates = digital_twin.plant_config.get(
+                "module_templates", {}
+            )
+
+        if hasattr(digital_twin, "parameter_specs"):
+            factory.parameter_specs = digital_twin.parameter_specs.get(
+                "parameter_specifications", {}
+            )
         else:
             factory.parameter_specs = {}
-            
-        if hasattr(digital_twin, 'site_config'):
-            site_id = digital_twin.site_config.get("site_info", {}).get("site_id", "unknown")
+
+        if hasattr(digital_twin, "site_config"):
+            site_id = digital_twin.site_config.get("site_info", {}).get(
+                "site_id", "unknown"
+            )
             factory.site_configurations = {site_id: digital_twin.site_config}
         else:
-            factory.site_configurations = digital_twin.plant_config.get("site_configurations", {})
-            
+            factory.site_configurations = digital_twin.plant_config.get(
+                "site_configurations", {}
+            )
+
         return factory
 
     def _should_include_optional(self, sensor_type: str, template_name: str) -> bool:

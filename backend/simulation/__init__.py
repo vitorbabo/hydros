@@ -4,7 +4,7 @@ Simulation Module
 Components for running plant simulation with physics-based models.
 """
 
-from .simulator import SimulationEngine
 from .process_models import ProcessModels
+from .simulator import SimulationEngine
 
 __all__ = ["SimulationEngine", "ProcessModels"]

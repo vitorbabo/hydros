@@ -21,8 +21,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from core.config_validator import ConfigurationValidationError, ConfigValidator
 from core.digital_twin import DigitalTwin
-from core.config_validator import ConfigValidator, ConfigurationValidationError
 from gateway.edge_gateway import EdgeGateway, GatewayMode
 from protocols.protocol_registry import ProtocolRegistry
 from simulation.simulator import SimulationEngine, SimulationMode
@@ -64,11 +64,11 @@ class HydrosSystem:
         """Validate configuration files exist and are valid according to schemas"""
         # First check if required files exist
         required_files = [self.plant_config_file]
-        
+
         # Check for template files
         template_files = [
             self.templates_dir / "modules.yaml",
-            self.templates_dir / "parameters.yaml"
+            self.templates_dir / "parameters.yaml",
         ]
         required_files.extend(template_files)
 
@@ -93,7 +93,7 @@ class HydrosSystem:
         try:
             self.logger.info("Validating configuration files against schemas...")
             validator = ConfigValidator(str(self.config_dir))
-            
+
             # Validate templates first (dependencies for site config)
             templates_valid, template_errors = validator.validate_module_templates()
             if not templates_valid:
@@ -101,33 +101,39 @@ class HydrosSystem:
                 for error in template_errors:
                     self.logger.error(f"  • {error}")
                 return False
-                
+
             params_valid, params_errors = validator.validate_parameter_specifications()
             if not params_valid:
                 self.logger.error("Parameter specifications validation failed:")
                 for error in params_errors:
                     self.logger.error(f"  • {error}")
                 return False
-            
+
             # Validate site configuration
             site_valid, site_errors = validator.validate_site_config(self.site_id)
             if not site_valid:
-                self.logger.error(f"Site configuration validation failed for {self.site_id}:")
+                self.logger.error(
+                    f"Site configuration validation failed for {self.site_id}:"
+                )
                 for error in site_errors:
                     self.logger.error(f"  • {error}")
                 return False
-            
+
             # Validate compatibility between site config and templates
-            compat_valid, compat_errors = validator.validate_configuration_compatibility(self.site_id)
+            compat_valid, compat_errors = (
+                validator.validate_configuration_compatibility(self.site_id)
+            )
             if not compat_valid:
-                self.logger.error(f"Configuration compatibility validation failed for {self.site_id}:")
+                self.logger.error(
+                    f"Configuration compatibility validation failed for {self.site_id}:"
+                )
                 for error in compat_errors:
                     self.logger.error(f"  • {error}")
                 return False
-            
+
             self.logger.info("✅ All configuration validations passed")
             return True
-            
+
         except ConfigurationValidationError as e:
             self.logger.error(f"Configuration validation error: {e}")
             for error in e.errors:
@@ -149,7 +155,7 @@ class HydrosSystem:
         # Pass new configuration structure to simulation engine
         self.simulation_engine.initialize_simulation(
             site_config_file=str(self.plant_config_file),
-            templates_dir=str(self.templates_dir)
+            templates_dir=str(self.templates_dir),
         )
 
         # Create Modbus server for serving simulated data
@@ -249,16 +255,20 @@ class HydrosSystem:
                 self.logger.info(f"Running protocol mapper for site {self.site_id}")
                 try:
                     from core.protocol_mapper import ProtocolMapper
-                    
+
                     protocol_mapper = ProtocolMapper(
                         site_config_file=str(self.plant_config_file),
-                        templates_dir=str(self.templates_dir)
+                        templates_dir=str(self.templates_dir),
                     )
-                    
+
                     # Generate protocol mappings and save to config directory
-                    mappings = protocol_mapper.generate_mapping_files(self.site_id, str(self.config_dir))
-                    self.logger.info(f"Generated {len(mappings)} protocol address mappings for {self.site_id}")
-                    
+                    mappings = protocol_mapper.generate_mapping_files(
+                        self.site_id, str(self.config_dir)
+                    )
+                    self.logger.info(
+                        f"Generated {len(mappings)} protocol address mappings for {self.site_id}"
+                    )
+
                 except Exception as e:
                     self.logger.error(f"Failed to run protocol mapper: {e}")
                     raise
@@ -266,7 +276,7 @@ class HydrosSystem:
             # Load plant model with site-specific configuration
             self.plant_model.load_site_configuration(
                 site_config_file=str(self.plant_config_file),
-                templates_dir=str(self.templates_dir)
+                templates_dir=str(self.templates_dir),
             )
 
             # Initialize based on mode
@@ -281,7 +291,9 @@ class HydrosSystem:
                 await self.run_normal_mode()
 
             else:
-                raise ValueError(f"Unknown mode: {self.mode}. Use 'simulation' or 'normal'.")
+                raise ValueError(
+                    f"Unknown mode: {self.mode}. Use 'simulation' or 'normal'."
+                )
 
         except Exception as e:
             self.logger.error(f"Failed to start Hydros system: {e}")
@@ -356,7 +368,7 @@ Examples:
   python main.py                    # Normal mode (gateway only)
   python main.py --mode simulation  # Simulation mode (full stack)
         """,
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument(

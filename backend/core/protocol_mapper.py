@@ -12,19 +12,20 @@ Key Features:
 - Support for both simulation and production deployments
 - Integration with centralized sensor catalog for parameter specifications
 
-This system eliminates hardcoded protocol addresses and enables flexible plant 
+This system eliminates hardcoded protocol addresses and enables flexible plant
 configurations while maintaining consistent addressing across different protocols.
 """
 
-import yaml
 import json
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import List, Optional
-from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import List, Optional
 
+import yaml
+
+from .plant_elements import ComponentRole, ProtocolDataType
 from .sensor_catalog import ParameterLibrary, ParameterSpecification
-from .plant_elements import ProtocolDataType, ComponentRole
 
 
 @dataclass
@@ -42,18 +43,18 @@ class ParameterDefinition:
     max_value: Optional[float] = None
     precision: int = 2
     access: str = "read"  # read, write, read_write
-    
+
     @classmethod
     def from_parameter_spec(
-        cls, 
-        component_id: str, 
-        parameter_name: str, 
-        param_spec: ParameterSpecification, 
-        parameter_type: ComponentRole
-    ) -> 'ParameterDefinition':
+        cls,
+        component_id: str,
+        parameter_name: str,
+        param_spec: ParameterSpecification,
+        parameter_type: ComponentRole,
+    ) -> "ParameterDefinition":
         """Create ParameterDefinition from ParameterSpecification"""
         min_val, max_val = param_spec.get_min_max()
-        
+
         return cls(
             component_id=component_id,
             parameter_name=parameter_name,
@@ -65,7 +66,7 @@ class ParameterDefinition:
             min_value=min_val,
             max_value=max_val,
             precision=param_spec.precision,
-            access=param_spec.access_mode
+            access=param_spec.access_mode,
         )
 
 
@@ -99,22 +100,29 @@ class AddressMapping:
 class ProtocolMapper:
     """Maps plant parameters to protocol-specific addresses for industrial communication"""
 
-    def __init__(self, site_config_file: str = None, templates_dir: str = None, legacy_config_file: str = None):
+    def __init__(
+        self,
+        site_config_file: str = None,
+        templates_dir: str = None,
+        legacy_config_file: str = None,
+    ):
         """Initialize allocator with either new site structure or legacy config"""
-        
+
         # Initialize parameter library first
         if templates_dir:
             params_file = f"{templates_dir}/parameters.yaml"
             self.parameter_library = ParameterLibrary(params_file)
         else:
             self.parameter_library = ParameterLibrary()
-        
+
         if site_config_file and templates_dir:
             self._load_site_configuration(site_config_file, templates_dir)
         elif legacy_config_file:
             self._load_legacy_configuration(legacy_config_file)
         else:
-            raise ValueError("Either (site_config_file + templates_dir) or legacy_config_file must be provided")
+            raise ValueError(
+                "Either (site_config_file + templates_dir) or legacy_config_file must be provided"
+            )
 
         # Address allocation state
         self.modbus_registers = {
@@ -150,16 +158,14 @@ class ProtocolMapper:
             # Extract site info
             site_info = self.site_config.get("site_info", {})
             self.site_id = site_info.get("site_id", "unknown")
-            
+
             # Get protocol clients configuration
             self.protocol_clients = self.site_config.get("protocol_clients", [])
-            
+
             # Create backward-compatible plant_config structure
             self.plant_config = {
-                "site_configurations": {
-                    self.site_id: self.site_config
-                },
-                "module_templates": self.module_templates
+                "site_configurations": {self.site_id: self.site_config},
+                "module_templates": self.module_templates,
             }
 
         except Exception as e:
@@ -175,12 +181,12 @@ class ProtocolMapper:
         try:
             with open(config_file, "r") as f:
                 self.plant_config = yaml.safe_load(f)
-                
+
             self.module_templates = self.plant_config.get("module_templates", {})
             self.parameter_specs = {}
             self.protocol_clients = []
             self.site_id = "wtp-porto-01"  # Default for legacy
-            
+
         except FileNotFoundError:
             print(f"Config file {config_file} not found")
             self.plant_config = {}
@@ -188,20 +194,24 @@ class ProtocolMapper:
             self.parameter_specs = {}
             self.protocol_clients = []
 
-    def generate_plant_parameters(self, site_id: str = None) -> List[ParameterDefinition]:
+    def generate_plant_parameters(
+        self, site_id: str = None
+    ) -> List[ParameterDefinition]:
         """Generate all parameters for a plant site based on modules"""
         # Use site_id from initialization if not provided
         if site_id is None:
-            site_id = getattr(self, 'site_id', 'wtp-porto-01')
-            
+            site_id = getattr(self, "site_id", "wtp-porto-01")
+
         # Get site configuration
-        if hasattr(self, 'site_config'):
+        if hasattr(self, "site_config"):
             # New structure
             site_config = self.site_config
             module_templates = self.module_templates
         else:
             # Legacy structure
-            site_config = self.plant_config.get("site_configurations", {}).get(site_id, {})
+            site_config = self.plant_config.get("site_configurations", {}).get(
+                site_id, {}
+            )
             module_templates = self.plant_config.get("module_templates", {})
 
         parameters = []
@@ -273,16 +283,17 @@ class ProtocolMapper:
         param_spec = self.parameter_library.get_parameter_spec(parameter_name)
 
         if not param_spec:
-            print(f"Warning: Parameter specification not found for '{parameter_name}', skipping")
+            print(
+                f"Warning: Parameter specification not found for '{parameter_name}', skipping"
+            )
             return None
 
         return ParameterDefinition.from_parameter_spec(
             component_id=component_id,
             parameter_name=parameter_name,
             param_spec=param_spec,
-            parameter_type=param_type
+            parameter_type=param_type,
         )
-
 
     def allocate_addresses(
         self, parameters: List[ParameterDefinition]
@@ -382,7 +393,7 @@ class ProtocolMapper:
         # Create site-specific directory if it doesn't exist
         site_output_path = output_path / "sites" / site_id
         site_output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Create mappings output (if needed for future use)
         mappings_output_path = site_output_path / "mappings"
         mappings_output_path.mkdir(exist_ok=True)
@@ -394,13 +405,15 @@ class ProtocolMapper:
         mappings = self.allocate_addresses(parameters)
 
         # Generate unified mapping file
-        self._generate_unified_mapping(site_id, parameters, mappings, mappings_output_path)
+        self._generate_unified_mapping(
+            site_id, parameters, mappings, mappings_output_path
+        )
 
         # Generate protocol-specific mapping files
         self._generate_modbus_mapping(site_id, mappings, mappings_output_path)
         self._generate_opcua_mapping(site_id, mappings, mappings_output_path)
         self._generate_s7_mapping(site_id, mappings, mappings_output_path)
-        
+
         # Generate edge gateway configuration file
         self._generate_edge_gateway_config(site_id, mappings, site_output_path)
 
@@ -412,7 +425,11 @@ class ProtocolMapper:
         return mappings
 
     def _generate_unified_mapping(
-        self, site_id: str, parameters: List[ParameterDefinition], mappings: List[AddressMapping], output_path: Path
+        self,
+        site_id: str,
+        parameters: List[ParameterDefinition],
+        mappings: List[AddressMapping],
+        output_path: Path,
     ):
         """Generate unified mapping file containing all parameters and address mappings"""
         unified_mapping = {
@@ -493,21 +510,20 @@ class ProtocolMapper:
         self, site_id: str, mappings: List[AddressMapping], output_path: Path
     ):
         """Generate edge gateway configuration file with protocol-specific addresses"""
-        
+
         # Get protocol clients from site configuration
         protocol_clients_config = []
-        if hasattr(self, 'protocol_clients') and self.protocol_clients:
+        if hasattr(self, "protocol_clients") and self.protocol_clients:
             protocol_clients_config = self.protocol_clients
-        
-        
+
         # Group mappings by protocol client and modules assigned
         protocol_groups = {}
-        
+
         for client_config in protocol_clients_config:
             client_id = client_config.get("client_id", "unknown_client")
             protocol = client_config.get("protocol", "modbus_tcp")
             modules_assigned = client_config.get("modules_assigned", [])
-            
+
             # Find mappings for modules assigned to this client
             client_mappings = []
             for mapping in mappings:
@@ -516,10 +532,10 @@ class ProtocolMapper:
                     if mapping.component_id == module_id:
                         client_mappings.append((mapping, protocol, client_config))
                         break
-            
+
             if client_mappings:
                 protocol_groups[client_id] = client_mappings
-        
+
         # Fallback: if no protocol clients defined, use legacy approach
         if not protocol_groups:
             for mapping in mappings:
@@ -527,25 +543,36 @@ class ProtocolMapper:
                 if mapping.modbus_address is not None:
                     if "modbus_tcp" not in protocol_groups:
                         protocol_groups["modbus_tcp"] = []
-                    protocol_groups["modbus_tcp"].append((mapping, "modbus", {
-                        "client_id": "modbus_tcp_plc",
-                        "protocol": "modbus_tcp",
-                        "connection": {"host": "${PLC_HOST:localhost}", "port": "${PLC_PORT:5020}"}
-                    }))
+                    protocol_groups["modbus_tcp"].append(
+                        (
+                            mapping,
+                            "modbus",
+                            {
+                                "client_id": "modbus_tcp_plc",
+                                "protocol": "modbus_tcp",
+                                "connection": {
+                                    "host": "${PLC_HOST:localhost}",
+                                    "port": "${PLC_PORT:5020}",
+                                },
+                            },
+                        )
+                    )
                 elif mapping.opcua_node_id is not None:
                     if "opcua" not in protocol_groups:
                         protocol_groups["opcua"] = []
-                    protocol_groups["opcua"].append((mapping, "opcua", {
-                        "client_id": "opcua_plc", 
-                        "protocol": "opcua"
-                    }))
+                    protocol_groups["opcua"].append(
+                        (
+                            mapping,
+                            "opcua",
+                            {"client_id": "opcua_plc", "protocol": "opcua"},
+                        )
+                    )
                 elif mapping.s7_address is not None:
                     if "s7" not in protocol_groups:
                         protocol_groups["s7"] = []
-                    protocol_groups["s7"].append((mapping, "s7", {
-                        "client_id": "s7_plc",
-                        "protocol": "s7"
-                    }))
+                    protocol_groups["s7"].append(
+                        (mapping, "s7", {"client_id": "s7_plc", "protocol": "s7"})
+                    )
 
         gateway_config = {
             "site_id": site_id,
@@ -562,13 +589,13 @@ class ProtocolMapper:
         for client_name, mappings_list in protocol_groups.items():
             if not mappings_list:
                 continue
-                
+
             # Get client configuration from first mapping (they should all have the same client config)
             sample_mapping, protocol_type, client_config = mappings_list[0]
-            
+
             # Create connection config based on protocol and client configuration
             connection = client_config.get("connection", {})
-            
+
             if client_config.get("protocol") == "modbus_tcp":
                 connection_config = {
                     "connection_id": client_config.get("client_id", "modbus_tcp_plc"),
@@ -581,8 +608,10 @@ class ProtocolMapper:
             elif client_config.get("protocol") == "opcua":
                 connection_config = {
                     "connection_id": client_config.get("client_id", "opcua_plc"),
-                    "protocol": "opcua", 
-                    "endpoint_url": connection.get("endpoint_url", "${OPCUA_ENDPOINT:opc.tcp://localhost:4840}"),
+                    "protocol": "opcua",
+                    "endpoint_url": connection.get(
+                        "endpoint_url", "${OPCUA_ENDPOINT:opc.tcp://localhost:4840}"
+                    ),
                     "enabled": client_config.get("enabled", True),
                 }
             elif client_config.get("protocol") == "s7":
@@ -638,7 +667,9 @@ class ProtocolMapper:
                     "description": mapping.description,
                     "component_type": mapping.parameter_type.value,
                     "plc_connection": client_config.get("client_id", "unknown_plc"),
-                    "protocol": "modbus" if protocol_type in ["modbus", "modbus_tcp"] else protocol_type,  # Normalize protocol name
+                    "protocol": "modbus"
+                    if protocol_type in ["modbus", "modbus_tcp"]
+                    else protocol_type,  # Normalize protocol name
                 }
                 gateway_config["tags"].append(tag_def)
 
@@ -650,7 +681,7 @@ if __name__ == "__main__":
     # Test the address allocator with new site structure
     import sys
     from pathlib import Path
-    
+
     # Get the config directory relative to this file
     # If running from core/, go up one level. If running from hydros/, config is relative
     current_dir = Path.cwd()
@@ -658,25 +689,24 @@ if __name__ == "__main__":
         config_dir = current_dir.parent / "config"
     else:
         config_dir = current_dir / "config"
-    
+
     if len(sys.argv) > 1:
         site_id = sys.argv[1]
     else:
         print("No site ID provided. Checked:")
         print(f"  - {config_dir}")
         sys.exit(1)
-    
+
     site_config_file = config_dir / "sites" / site_id / "plant.yaml"
     templates_dir = config_dir / "templates"
-    
+
     print(f"Testing address allocator for site: {site_id}")
     print(f"Site config: {site_config_file}")
     print(f"Templates dir: {templates_dir}")
-    
+
     if site_config_file.exists() and templates_dir.exists():
         allocator = ProtocolMapper(
-            site_config_file=str(site_config_file),
-            templates_dir=str(templates_dir)
+            site_config_file=str(site_config_file), templates_dir=str(templates_dir)
         )
         output_dir = config_dir
     else:

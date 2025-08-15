@@ -6,12 +6,17 @@ Wrapper classes that provide simulation behavior for WTP components.
 These classes wrap the PlantComponent dataclass to provide update() and get_parameters() methods.
 """
 
+import math
 import random
 import time
-import math
-from typing import Dict, Any
+from typing import Any, Dict
 
-from core.plant_elements import PlantComponent, PlantParameter, ComponentRole, SensorType
+from core.plant_elements import (
+    ComponentRole,
+    PlantComponent,
+    PlantParameter,
+    SensorType,
+)
 
 
 class SimulatedPlantComponent:

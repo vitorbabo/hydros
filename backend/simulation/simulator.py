@@ -8,10 +8,10 @@ Main simulation engine that orchestrates component updates and physics models.
 import asyncio
 import logging
 import time
-from typing import Dict, Any, Optional
 from enum import Enum
+from typing import Any, Dict, Optional
 
-from core.digital_twin import DigitalTwin, OperationalState, ComponentInfo
+from core.digital_twin import ComponentInfo, DigitalTwin, OperationalState
 
 
 class SimulationMode(Enum):
@@ -65,7 +65,12 @@ class SimulationEngine:
             "last_cycle_time": 0.0,
         }
 
-    def initialize_simulation(self, config_file: Optional[str] = None, site_config_file: Optional[str] = None, templates_dir: Optional[str] = None):
+    def initialize_simulation(
+        self,
+        config_file: Optional[str] = None,
+        site_config_file: Optional[str] = None,
+        templates_dir: Optional[str] = None,
+    ):
         """Initialize simulation with plant configuration"""
         try:
             # Support both new and legacy configuration loading
@@ -73,19 +78,25 @@ class SimulationEngine:
                 # New site-based configuration
                 # Note: plant_model should already be loaded by HydrosSystem
                 from core.plant_builder import ComponentFactory
+
                 self.component_factory = ComponentFactory(
-                    site_config_file=site_config_file,
-                    templates_dir=templates_dir
+                    site_config_file=site_config_file, templates_dir=templates_dir
                 )
             elif config_file:
                 # Legacy configuration loading
                 self.plant_model.load_plant_configuration(config_file)
                 from core.plant_builder import ComponentFactory
-                self.component_factory = ComponentFactory(legacy_config_file=config_file)
+
+                self.component_factory = ComponentFactory(
+                    legacy_config_file=config_file
+                )
             else:
                 # Try to create factory from already-loaded plant model
                 from core.plant_builder import ComponentFactory
-                self.component_factory = ComponentFactory.create_from_digital_twin(self.plant_model)
+
+                self.component_factory = ComponentFactory.create_from_digital_twin(
+                    self.plant_model
+                )
 
             # Create components from site configuration
             # For now, use the first available site

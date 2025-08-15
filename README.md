@@ -1,4 +1,4 @@
-# Hydros - Multi-Site Water Treatment Plant IoT System
+# Hydros - Digital Twin & IoT Hub for Water Treatment Plants
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)![Mosquitto](https://img.shields.io/badge/mosquitto-%233C5280.svg?style=for-the-badge&logo=eclipsemosquitto&logoColor=white)![InfluxDB](https://img.shields.io/badge/InfluxDB-22ADF6?style=for-the-badge&logo=InfluxDB&logoColor=white)
 
@@ -9,12 +9,12 @@
 
 ```
 backend/
-├── config/                          # Multi-site configuration management
+├── config/                         # Multi-site configuration management
 │   ├── sites/                      # Individual site configurations
 │   │   ├── wtp-porto-01/
-│   │   │   └── plant.yaml          # Porto plant configuration
+│   │   │   └── plant.yaml          # Sample Plant configuration
 │   │   └── wtp-regional-02/
-│   │       └── plant.yaml          # Regional plant configuration
+│   │       └── plant.yaml          # Another sample plant configuration
 │   ├── templates/                  # Centralized templates
 │   │   ├── modules.yaml            # Module templates (58 types)
 │   │   └── parameters.yaml         # Parameter specifications (49+ types)
@@ -23,25 +23,25 @@ backend/
 │       ├── module_templates_schema.json
 │       └── parameter_specifications_schema.json
 ├── core/                           # Core digital twin components
-│   ├── digital_twin.py            # Central digital twin management
-│   ├── plant_builder.py           # Factory for plant configurations
-│   ├── plant_elements.py          # Core data structures (sensors, actuators)
-│   ├── sensor_catalog.py          # Centralized parameter specifications
-│   ├── protocol_mapper.py         # Protocol address mapping
-│   └── config_validator.py        # Configuration validation system
-├── simulation/                    # Physics-based simulation engine
-│   ├── simulator.py              # Simulation orchestration
-│   ├── components.py             # Simulated plant component wrappers
-│   └── process_models.py         # Physical process simulation models
-├── gateway/                       # Edge gateway for real PLCs
-│   ├── edge_gateway.py           # Production data collection gateway
-│   ├── plc_readers.py            # Async PLC communication handlers
-│   └── data_mapper.py            # Data transformation utilities
-├── protocols/                     # Industrial protocol handlers
-│   ├── modbus_handler.py         # Unified async Modbus implementation
-│   ├── protocol_registry.py      # Pluggable protocol system
-│   └── __init__.py               # Protocol package initialization
-├── main.py                        # Main unified system entry point
+│   ├── digital_twin.py             # Central digital twin management
+│   ├── plant_builder.py            # Factory for plant configurations
+│   ├── plant_elements.py           # Core data structures (sensors, actuators)
+│   ├── sensor_catalog.py           # Centralized parameter specifications
+│   ├── protocol_mapper.py          # Protocol address mapping
+│   └── config_validator.py         # Configuration validation system
+├── simulation/                     # Physics-based simulation engine
+│   ├── simulator.py                # Simulation orchestration
+│   ├── components.py               # Simulated plant component wrappers
+│   └── process_models.py           # Physical process simulation models
+├── gateway/                        # Edge gateway for real PLCs
+│   ├── edge_gateway.py             # Production data collection gateway
+│   ├── plc_readers.py              # Async PLC communication handlers
+│   └── data_mapper.py              # Data transformation utilities
+├── protocols/                      # Industrial protocol handlers
+│   ├── modbus_handler.py           # Unified async Modbus implementation
+│   ├── protocol_registry.py        # Pluggable protocol system
+│   └── __init__.py                 # Protocol package initialization
+├── main.py                         # Main unified system entry point
 └── README.md                      # System documentation
 ```
 

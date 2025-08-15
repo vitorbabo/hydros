@@ -6,9 +6,9 @@ Central registry for managing protocol handlers and their capabilities.
 """
 
 import logging
-from typing import Dict, Any, List, Type, Optional
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Any, Dict, List, Optional, Type
 
 
 class ProtocolType(Enum):
