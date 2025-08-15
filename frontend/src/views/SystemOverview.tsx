@@ -1,37 +1,137 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { MetricCard } from '../components/shared/MetricCard'
 import { StatusIndicator } from '../components/shared/StatusIndicator'
+import { useTelemetryStore } from '../store/telemetryStore'
+import { useConfigurationStore } from '../store/configurationStore'
+import { useDashboardStore } from '../store/dashboardStore'
 import { 
   Server, 
   Database, 
   Wifi, 
   AlertTriangle,
   Activity,
-  Gauge
+  Gauge,
+  MapPin
 } from 'lucide-react'
 
 export function SystemOverview() {
-  // Mock data - will be replaced with real data from store
-  const mockSites = [
-    {
-      id: 'wtp-porto-01',
-      name: 'Porto Municipal WTP',
-      status: 'connected' as const,
-      capacity: 50000,
-      currentFlow: 35000,
-      assets: 18,
-      lastUpdate: '2 mins ago'
-    },
-    {
-      id: 'wtp-regional-02',
-      name: 'Regional WTP North',
-      status: 'maintenance' as const,
-      capacity: 200000,
-      currentFlow: 120000,
-      assets: 42,
-      lastUpdate: '5 mins ago'
+  const { plantConfigurations } = useConfigurationStore()
+  const { assetGroups, latest, availableAssets } = useTelemetryStore()
+  const { connectionStatus, lastUpdate, alarms } = useDashboardStore()
+
+  // // Debug telemetry data
+  // console.log('SystemOverview debug:', {
+  //   plantConfigCount: Object.keys(plantConfigurations).length,
+  //   latestDataCount: Object.keys(latest).length,
+  //   connectionStatus,
+  //   latestKeys: Object.keys(latest).slice(0, 5),
+  //   sampleData: Object.keys(latest).length > 0 ? latest[Object.keys(latest)[0]] : null
+  // })
+
+  // Calculate system metrics from real data
+  const systemMetrics = useMemo(() => {
+    const sites = Object.entries(plantConfigurations)
+    
+    // Check connected sites based on recent telemetry data (within last 60 seconds)
+    const connectedSites = sites.filter(([siteId]) => {
+      const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
+      if (siteObservations.length === 0) return false
+      
+      // Check if any data is recent
+      const hasRecentData = siteObservations.some(obs => {
+        if (!obs || !obs.ts) return false
+        const obsTime = new Date(obs.ts).getTime()
+        const timeDiff = Date.now() - obsTime
+        return timeDiff < 60000 // Within last 60 seconds
+      })
+      
+      return hasRecentData
+    })
+
+    const totalDataPoints = Object.keys(latest).length
+    const dataPointsPerMinute = Math.floor(totalDataPoints * 0.8) // Estimate based on current data
+    
+    // Calculate system health based on connection status and active data
+    const healthPercentage = connectedSites.length > 0 
+      ? ((connectedSites.length / Math.max(sites.length, 1)) * 100) 
+      : connectionStatus === 'connected' ? 95.0 : 0
+
+    return {
+      totalSites: sites.length,
+      connectedSites: connectedSites.length,
+      dataPointsPerMinute,
+      systemHealth: healthPercentage,
+      sites: sites.map(([siteId, config]) => {
+        const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
+        const hasRecentData = siteObservations.length > 0
+        
+        // Get raw intake flow data specifically for the site
+        const rawIntakeFlowObs = siteObservations.find(obs => 
+          obs.asset_id === 'raw_intake' && obs.measurement === 'flow_rate'
+        )
+        
+        // Use raw intake flow rate (convert from m³/h to m³/day)
+        const currentFlow = rawIntakeFlowObs ? rawIntakeFlowObs.value: 0
+          // Math.floor(rawIntakeFlowObs.value * 24) : // Convert m³/h to m³/day
+          // Math.floor(Math.random() * 40000 + 20000) // Fallback for demo
+
+        // Extract site info from rich configuration data
+        const siteInfo = (config as any)?.site_info
+        const designCapacity = siteInfo?.design_capacity || "Unknown"
+        const location = siteInfo?.location
+        
+        // Better connection status based on recent data (within last 60 seconds)
+        const recentDataTimestamps = siteObservations
+          .map((obs) => {
+            return obs && obs.ts ? new Date(obs.ts).getTime() : 0
+          })
+          .filter((timestamp) => timestamp > 0)
+        
+        const latestTimestamp = recentDataTimestamps.length > 0 ? 
+          Math.max(...recentDataTimestamps) : 0
+        
+        const timeDiffSeconds = latestTimestamp > 0 ? 
+          (Date.now() - latestTimestamp) / 1000 : Infinity
+        
+        const isRecentData = timeDiffSeconds < 60 // Within last 60 seconds
+        
+        // Debug logging for connection status
+        // if (siteId === 'wtp-porto-01') {
+        //   console.log('Debug site connection:', {
+        //     siteId,
+        //     siteObservationsCount: siteObservations.length,
+        //     latestTimestamp: latestTimestamp > 0 ? new Date(latestTimestamp) : 'No timestamp',
+        //     timeDiffSeconds: timeDiffSeconds.toFixed(1),
+        //     isRecentData,
+        //     rawIntakeFlowValue: rawIntakeFlowObs ? rawIntakeFlowObs.value : 'N/A'
+        //   })
+        // }
+        
+        return {
+          id: siteId,
+          name: siteInfo?.name || config.name || `Plant ${siteId}`,
+          location: location ? `${location.region}, ${location.country}` : 'Unknown Location',
+          status: isRecentData ? 'connected' as const : 'disconnected' as const,
+          capacity: designCapacity,
+          currentFlow: currentFlow,
+          moduleCount: Array.isArray(config.modules) ? config.modules.length : Object.keys(config.modules || {}).length,
+          lastUpdate: isRecentData ? 'Just now' : 'No data',
+          // Additional site info for detailed view
+          treatmentTrain: siteInfo?.treatment_train || 'unknown',
+          operationalParams: siteInfo?.operational_parameters,
+          // Debug info
+          debugInfo: {
+            hasData: hasRecentData,
+            siteObservationsCount: siteObservations.length,
+            rawIntakeValue: rawIntakeFlowObs ? rawIntakeFlowObs.value : null,
+            isRecent: isRecentData
+          }
+        }
+      })
     }
-  ]
+  }, [plantConfigurations, latest, connectionStatus])
+
+  const activeAlarms = alarms.filter(alarm => alarm.status === 'active' && !alarm.acknowledged)
 
   return (
     <div className="p-6 space-y-6">
@@ -44,7 +144,7 @@ export function SystemOverview() {
           </p>
         </div>
         <div className="text-sm text-gray-500">
-          Last updated: {new Date().toLocaleTimeString()}
+          Last updated: {lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Never'}
         </div>
       </div>
 
@@ -52,91 +152,110 @@ export function SystemOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Sites"
-          value={mockSites.length}
+          value={systemMetrics.totalSites}
           icon={<Server className="w-6 h-6" />}
           status="normal"
         />
         <MetricCard
           title="Active Connections"
-          value={mockSites.filter(s => s.status === 'connected').length}
-          unit={`/ ${mockSites.length}`}
+          value={systemMetrics.connectedSites}
+          unit={`/ ${systemMetrics.totalSites}`}
           icon={<Wifi className="w-6 h-6" />}
-          status="normal"
+          status={systemMetrics.connectedSites > 0 ? "normal" : "critical"}
         />
         <MetricCard
           title="Data Points/Min"
-          value="1,247"
-          trend="up"
-          trendValue={5.2}
+          value={systemMetrics.dataPointsPerMinute.toLocaleString()}
+          trend={systemMetrics.dataPointsPerMinute > 0 ? "up" : "down"}
+          trendValue={systemMetrics.dataPointsPerMinute > 100 ? 5.2 : -2.1}
           icon={<Activity className="w-6 h-6" />}
-          status="normal"
+          status={systemMetrics.dataPointsPerMinute > 0 ? "normal" : "warning"}
         />
         <MetricCard
           title="System Health"
-          value="98.5%"
-          trend="stable"
+          value={`${systemMetrics.systemHealth.toFixed(1)}%`}
+          trend={systemMetrics.systemHealth > 90 ? "stable" : systemMetrics.systemHealth > 70 ? "down" : "down"}
           icon={<Gauge className="w-6 h-6" />}
-          status="normal"
+          status={systemMetrics.systemHealth > 90 ? "normal" : systemMetrics.systemHealth > 70 ? "warning" : "critical"}
         />
       </div>
 
       {/* Plant Sites Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {mockSites.map(site => (
-          <div key={site.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            {/* Site Header */}
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{site.name}</h3>
-                <p className="text-sm text-gray-500">{site.id}</p>
+        {systemMetrics.sites.length > 0 ? (
+          systemMetrics.sites.map(site => (
+            <div key={site.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+              {/* Site Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">{site.name}</h3>
+                  <p className="text-sm text-gray-500">{site.id}</p>
+                  {site.location && site.location !== 'Unknown Location' && (
+                    <p className="text-xs text-gray-400">{site.location}</p>
+                  )}
+                </div>
+                <StatusIndicator status={site.status} showLabel />
               </div>
-              <StatusIndicator status={site.status} showLabel />
-            </div>
 
-            {/* Site Metrics */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Design Capacity</p>
-                <p className="text-xl font-semibold text-gray-900">
-                  {(site.capacity / 1000).toFixed(0)}k
-                </p>
-                <p className="text-xs text-gray-500">m³/day</p>
+              {/* Basic Site Info */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Design Capacity</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {(site.capacity / 1000).toFixed(0)}k
+                  </p>
+                  <p className="text-xs text-gray-500">m³/day</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Current Flow</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {(site.currentFlow / 1000).toFixed(0)}k
+                  </p>
+                  <p className="text-xs text-gray-500">m³/day</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Current Flow</p>
-                <p className="text-xl font-semibold text-gray-900">
-                  {(site.currentFlow / 1000).toFixed(0)}k
-                </p>
-                <p className="text-xs text-gray-500">m³/day</p>
-              </div>
-            </div>
 
-            {/* Utilization Bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">Utilization</span>
-                <span className="font-medium">
-                  {((site.currentFlow / site.capacity) * 100).toFixed(1)}%
+              {/* Utilization Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600">Utilization</span>
+                  <span className="font-medium">
+                    {((site.currentFlow / site.capacity) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((site.currentFlow / site.capacity) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Treatment Type */}
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-600">Treatment Process</p>
+                <p className="text-sm font-medium text-gray-900 capitalize">
+                  {site.treatmentTrain}
+                </p>
+              </div>
+
+              {/* Module Count and Last Update */}
+              <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-3">
+                <span className="text-gray-600">
+                  <Database className="w-4 h-4 inline mr-1" />
+                  {site.moduleCount} modules
                 </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(site.currentFlow / site.capacity) * 100}%` }}
-                />
+                <span className="text-gray-500">Updated {site.lastUpdate}</span>
               </div>
             </div>
-
-            {/* Asset Count and Last Update */}
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">
-                <Database className="w-4 h-4 inline mr-1" />
-                {site.assets} assets
-              </span>
-              <span className="text-gray-500">Updated {site.lastUpdate}</span>
-            </div>
+          ))
+        ) : (
+          <div className="col-span-2 bg-white rounded-lg shadow-md border border-gray-200 p-8 text-center">
+            <Server className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Plant Sites Configured</h3>
+            <p className="text-gray-500">Connect to MQTT broker to receive plant configuration data</p>
           </div>
-        ))}
+        )}
       </div>
 
       {/* Alerts Section */}
@@ -144,10 +263,39 @@ export function SystemOverview() {
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-yellow-500" />
           <h3 className="text-lg font-semibold text-gray-900">Active Alerts</h3>
+          {activeAlarms.length > 0 && (
+            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+              {activeAlarms.length}
+            </span>
+          )}
         </div>
-        <div className="text-sm text-gray-500 text-center py-8">
-          No active alerts at this time
-        </div>
+        {activeAlarms.length > 0 ? (
+          <div className="space-y-3">
+            {activeAlarms.slice(0, 5).map(alarm => (
+              <div key={alarm.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  <div>
+                    <p className="font-medium text-red-900">{alarm.message}</p>
+                    <p className="text-sm text-red-700">{alarm.asset_id} • {alarm.severity}</p>
+                  </div>
+                </div>
+                <span className="text-xs text-red-600">
+                  {new Date(alarm.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+            {activeAlarms.length > 5 && (
+              <p className="text-sm text-gray-500 text-center">
+                ... and {activeAlarms.length - 5} more alerts
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500 text-center py-8">
+            No active alerts at this time
+          </div>
+        )}
       </div>
     </div>
   )

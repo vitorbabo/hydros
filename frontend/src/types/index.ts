@@ -16,25 +16,110 @@ export interface Observation {
   component_type: 'sensor' | 'actuator' | 'status' | 'setpoint' | 'alarm'
 }
 
+// Protocol Client Configuration
+export interface ProtocolClient {
+  client_id: string
+  protocol: string
+  description: string
+  connection: {
+    host: string
+    port: number
+    unit_id?: number
+    timeout?: number
+    retry_count?: number
+  }
+  enabled: boolean
+  modules_assigned?: string[]
+}
+
+// Control Strategy Configuration
+export interface ControlStrategy {
+  description: string
+  inputs?: string[]
+  outputs?: string[]
+  algorithm?: string
+  parameters?: Record<string, any>
+}
+
+// Alarm Definition Configuration
+export interface AlarmDefinition {
+  parameter: string
+  threshold: number
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  action: string
+}
+
+export interface AlarmDefinitions {
+  water_quality?: Record<string, AlarmDefinition>
+  equipment?: Record<string, AlarmDefinition>
+  [category: string]: Record<string, AlarmDefinition> | undefined
+}
+
+// Enhanced Plant Site with full MQTT configuration data
 export interface PlantSite {
   id: string
   name: string
   design_capacity: number
   treatment_train: string
+  location?: {
+    region: string
+    country: string
+    coordinates: [number, number] // [lat, lon]
+  }
   modules: string[]
-  parameters: {
+  operational_parameters?: {
     normal_flow_rate: number
+    design_flow_rate: number
     raw_water_quality: {
       turbidity_range: [number, number]
       ph_range: [number, number]
       temperature_range: [number, number]
     }
+    treatment_targets: {
+      finished_turbidity: number
+      finished_ph: [number, number]
+      chlorine_residual: [number, number]
+    }
   }
-  protocol_servers: ProtocolServer[]
+  protocol_clients?: ProtocolClient[]
+  control_strategies?: Record<string, ControlStrategy>
+  alarm_definitions?: AlarmDefinitions
+  mqtt_config?: {
+    topic_prefix: string
+    publish_interval: number
+    retain_messages: boolean
+    qos: number
+  }
   status: ConnectionStatus
   last_seen?: string
+  version?: string
+  timestamp?: string
 }
 
+export interface ProtocolClient {
+  client_id: string
+  protocol: string
+  description: string
+  connection: {
+    host: string
+    port: number
+    unit_id?: number
+    timeout?: number
+    retry_count?: number
+  }
+  enabled: boolean
+  modules_assigned?: string[]
+}
+
+export interface ControlStrategy {
+  description: string
+  inputs?: string[]
+  outputs?: string[]
+  algorithm?: string
+  parameters?: Record<string, any>
+}
+
+// Legacy interface for backward compatibility
 export interface ProtocolServer {
   protocol: 'modbus_tcp' | 'opcua' | 's7_server'
   enabled: boolean
@@ -173,6 +258,7 @@ export interface PlantConfig {
 
 export interface ModuleTemplate {
   type: string
+  category?: string // Added from backend data
   description: string
   required_sensors: string[]
   optional_sensors?: string[]
@@ -184,6 +270,15 @@ export interface ModuleTemplate {
   maintenance?: any
   replacement_indicators?: any
   regulatory?: string
+  typical_ranges?: Record<string, [number, number]> // Added from backend
+  inherits?: string // Added from backend
+  filtration_rate?: number // Added from backend
+  target_residual?: [number, number] // Added from backend
+  ct_requirements?: Record<string, number> // Added from backend
+  target_dose?: number // Added from backend
+  log_reduction?: number // Added from backend
+  retention_time?: number // Added from backend
+  mixing_system?: boolean // Added from backend
 }
 
 export interface EdgeGatewayConfig {

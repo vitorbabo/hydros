@@ -263,3 +263,154 @@ Transform the basic Hydros dashboard into a modern, SCADA-like interface that pr
 - Performance under actual data loads
 - Multi-site configuration handling
 - Long-running connection stability
+
+---
+
+### Phase 7: Dynamic Plant Configuration Management
+**Timeline**: Week 5 (Day 22-28)
+
+#### Overview
+Integrate the latest backend MQTT configuration publishing capabilities with the frontend to enable plant managers to dynamically update plant layout and configuration based on available modules. This phase moves away from hardcoded implementations toward a fully template-driven configuration system.
+
+#### Backend Context
+The backend now publishes comprehensive configuration data via MQTT including:
+- 58+ module templates with detailed specifications
+- Plant configuration with module assignments and parameters
+- Real-time configuration updates via structured MQTT topics
+- Template-driven parameter definitions and validation
+
+#### Current Frontend Limitations
+- Hardcoded module positions in `plantLayoutStore.ts:34-49`
+- Static module configurations in `plantLayoutStore.ts:51-141`
+- MQTT client only subscribes to observation topics (`useMqtt.ts:14`)
+- Manual plant layout generation from predefined assets
+
+#### Objectives
+- [ ] **Task 7.1**: MQTT Configuration Client - Extend MQTT integration for configuration topics
+- [ ] **Task 7.2**: Dynamic Module Library - Replace hardcoded modules with backend templates
+- [ ] **Task 7.3**: Configuration Management Interface - Visual plant configuration editing
+- [ ] **Task 7.4**: Configuration Persistence - Enable configuration updates via MQTT
+- [ ] **Task 7.5**: Advanced Plant Layout Features - Enhanced visual plant management
+
+#### Task 7.1: MQTT Configuration Client
+**Files**: `src/hooks/useMqtt.ts`, `src/store/configurationStore.ts`
+
+**Objectives**:
+- Extend MQTT client to subscribe to configuration topics:
+  - `wtp/+/configuration/plant`
+  - `wtp/+/configuration/modules`
+  - `wtp/+/configuration/templates`
+- Create dedicated configuration store for managing:
+  - Module templates from backend
+  - Plant configuration data
+  - Available modules per site
+- Add configuration message parsing and state management
+
+**Deliverables**:
+- Enhanced `useMqtt` hook supporting configuration topics
+- New `configurationStore.ts` with template and config management
+- Real-time configuration updates from backend
+
+#### Task 7.2: Dynamic Module Library
+**Files**: `src/store/plantLayoutStore.ts`, `src/components/plant/ModuleLibrary.tsx`
+
+**Objectives**:
+- Replace hardcoded module positions and configs with dynamic data
+- Create module library component for available templates
+- Implement template-based module instantiation
+- Support drag-and-drop from module library to plant layout
+
+**Deliverables**:
+- Dynamic module generation from backend templates
+- Module library sidebar with categorized templates
+- Template-driven module properties and parameters
+- Flexible positioning system for new modules
+
+#### Task 7.3: Configuration Management Interface
+**Files**: `src/views/PlantConfiguration.tsx`, `src/components/plant/ConfigurationPanel.tsx`
+
+**Objectives**:
+- Create dedicated plant configuration management view
+- Visual interface for:
+  - Adding/removing modules from plant
+  - Configuring module parameters based on templates
+  - Managing plant-level settings and connections
+  - Validating configuration against templates
+- Multi-site configuration support
+
+**Deliverables**:
+- New plant configuration view with visual editing
+- Parameter forms generated from template specifications
+- Configuration validation and error handling
+- Multi-site plant management interface
+
+#### Task 7.4: Configuration Persistence
+**Files**: `src/hooks/useConfigurationPersistence.ts`, `src/services/configApi.ts`
+
+**Objectives**:
+- Enable saving plant configuration changes
+- MQTT-based configuration publishing to backend
+- Configuration version management and rollback
+- Real-time configuration sync across clients
+
+**Deliverables**:
+- Configuration persistence service with MQTT publishing
+- Version control for plant configurations
+- Real-time configuration synchronization
+- Rollback and configuration history features
+
+#### Task 7.5: Advanced Plant Layout Features
+**Files**: `src/views/PlantLayout.tsx`, `src/components/plant/AdvancedLayoutTools.tsx`
+
+**Objectives**:
+- Enhanced plant layout editor with:
+  - Auto-layout algorithms for optimal module placement
+  - Connection validation between modules
+  - Visual connection editing (pipes, electrical, control)
+  - Export/import plant layout configurations
+- Advanced visualization features:
+  - Module grouping and hierarchical layouts
+  - Layer management (process, instrumentation, control)
+  - Template-based layout suggestions
+
+**Deliverables**:
+- Advanced layout tools with auto-positioning
+- Connection management with validation
+- Multi-layer plant visualization
+- Layout export/import functionality
+
+#### Integration Points
+
+**Backend Dependencies**:
+- MQTT configuration publishing on topics:
+  - `wtp/{site_id}/configuration/plant`
+  - `wtp/{site_id}/configuration/modules` 
+  - `wtp/{site_id}/configuration/templates`
+- Template validation and parameter specifications
+- Configuration persistence and versioning
+
+**Data Flow**:
+1. **Template Loading**: Backend templates → MQTT → Configuration store
+2. **Plant Configuration**: Visual editor → Configuration validation → MQTT publish
+3. **Real-time Sync**: Configuration changes → MQTT broadcast → UI updates
+4. **Module Management**: Template library → Drag-and-drop → Plant layout
+
+#### Success Metrics
+- Plant managers can visually configure plants without hardcoded changes
+- Configuration updates reflect immediately across all clients
+- Module library provides all available templates from backend
+- Configuration validation prevents invalid plant setups
+- Multi-site plant management with centralized templates
+
+#### Risk Mitigation
+- **Backward Compatibility**: Maintain existing hardcoded fallbacks during migration
+- **Configuration Validation**: Comprehensive validation before applying changes
+- **Real-time Sync**: Conflict resolution for concurrent configuration changes
+- **Performance**: Efficient MQTT topic management for large template libraries
+
+#### Testing Requirements
+- Configuration MQTT message handling and parsing
+- Template-based module instantiation and validation  
+- Visual plant configuration with complex module relationships
+- Multi-client configuration synchronization
+- Performance testing with large module template libraries

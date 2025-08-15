@@ -1,18 +1,31 @@
 import { useEffect, useRef, useCallback } from 'react'
 import mqtt from 'mqtt'
 import type { MqttClient } from 'mqtt'
-import type { Observation } from '../types'
+import type { Observation, PlantConfig, ModuleTemplate } from '../types'
+
+export interface ConfigurationMessage {
+  type: 'plant' | 'modules' | 'templates' | 'parameters'
+  site_id: string
+  timestamp: string
+  data: PlantConfig | Record<string, any> | Record<string, ModuleTemplate>
+}
 
 interface UseMqttOptions {
   topics?: string[]
   onMessage?: (topic: string, message: string, observation?: Observation) => void
+  onConfiguration?: (topic: string, config: ConfigurationMessage) => void
   reconnectPeriod?: number
   keepalive?: number
 }
 
 export function useMqtt({
-  topics = ['wtp/+/+/+/observation'],
+  topics = [
+    'wtp/+/+/+/observation', 
+    'wtp/+/configuration/+',
+    'wtp/global/configuration/+',
+  ],
   onMessage,
+  onConfiguration,
   reconnectPeriod = 2000,
   keepalive = 60
 }: UseMqttOptions = {}) {
@@ -21,9 +34,10 @@ export function useMqtt({
   
   // Get WebSocket URL
   const wsUrl = (() => {
-    const host = window.location.hostname
+    const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname
     const port = import.meta.env.VITE_MQTT_PORT || '9001'
-    return `ws://${host}:${port}`
+    const url = `ws://${host}:${port}`
+    return url
   })()
 
   const handleMessage = useCallback((topic: string, payload: Buffer) => {
@@ -34,8 +48,30 @@ export function useMqtt({
       const now = Date.now()
       lastMessageRef.current[topic] = now
       
+      // Parse configuration if it's a configuration topic
+      if (topic.includes('/configuration/')) {
+        try {
+          const topicParts = topic.split('/')
+          const siteId = topicParts[1]
+          const configType = topicParts[3] // plant, modules, or templates
+          
+          const backendMessage = JSON.parse(message)
+          console.log('MQTT parsing config message:', { topic, configType, backendMessage })
+          
+          const configMessage: ConfigurationMessage = {
+            type: configType as 'plant' | 'modules' | 'templates' | 'parameters',
+            site_id: siteId,
+            timestamp: backendMessage.timestamp || new Date().toISOString(),
+            data: backendMessage.data || backendMessage // Use backend's data field, fallback to entire message
+          }
+          
+          onConfiguration?.(topic, configMessage)
+        } catch (parseError) {
+          console.warn('Failed to parse configuration:', parseError)
+        }
+      }
       // Parse observation if it's a telemetry topic
-      if (topic.startsWith('wtp/') && topic.endsWith('/observation')) {
+      else if (topic.startsWith('wtp/') && topic.endsWith('/observation')) {
         try {
           const observation: Observation = JSON.parse(message)
           onMessage?.(topic, message, observation)
@@ -49,7 +85,7 @@ export function useMqtt({
     } catch (error) {
       console.error('Error handling MQTT message:', error)
     }
-  }, [onMessage])
+  }, [onMessage, onConfiguration])
 
   // Initialize connection
   useEffect(() => {

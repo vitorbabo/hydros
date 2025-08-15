@@ -8,14 +8,16 @@ import {
   Settings,
   Bell,
   Wifi,
-  WifiOff
+  WifiOff,
+  Cog
 } from 'lucide-react'
 import { StatusIndicator } from '../shared/StatusIndicator'
+import { SiteSelector } from './SiteSelector'
 import { useDashboardStore } from '../../store/dashboardStore'
 
 const navItems = [
   {
-    name: 'System Overview',
+    name: 'Overview',
     href: '/',
     icon: LayoutDashboard,
   },
@@ -23,6 +25,11 @@ const navItems = [
     name: 'Plant Layout',
     href: '/layout',
     icon: Network,
+  },
+  {
+    name: 'Configuration',
+    href: '/configuration',
+    icon: Cog,
   },
   {
     name: 'Telemetry',
@@ -58,18 +65,14 @@ export function Navigation() {
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
               <h1 className="text-xl font-bold text-gray-900">
-                Hydros IoT Hub
+                Hydros Hub
               </h1>
             </div>
             
-            {/* Current Site Indicator */}
-            {currentSite && (
-              <div className="hidden sm:block">
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Site:</span> {currentSite}
-                </div>
-              </div>
-            )}
+            {/* Site Selector */}
+            <div className="hidden sm:block">
+              <SiteSelector />
+            </div>
           </div>
 
           {/* Navigation Links */}

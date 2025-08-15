@@ -118,7 +118,7 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
   }, [observationsList])
 
   return (
-    <div className="w-96 bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
+    <div className="w-full h-full bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
         <div>
@@ -128,7 +128,7 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <StatusIndicator status={data.status} showLabel />
-            <span className="text-sm text-gray-500">• {data.type}</span>
+            <span className="text-sm text-gray-500">{data.type}</span>
           </div>
         </div>
         <button

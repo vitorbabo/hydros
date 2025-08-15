@@ -1,7 +1,51 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { Node, Edge } from '@xyflow/react'
-import type { Observation } from '../types'
+import type { Observation, ModuleTemplate } from '../types'
+import { useConfigurationStore } from './configurationStore'
+
+// Helper functions
+const inferModuleType = (moduleId: string): string => {
+  const typeMap: Record<string, string> = {
+    'intake': 'intake',
+    'pump': 'pump', 
+    'tank': 'storage',
+    'dosing': 'chemical_treatment',
+    'coagulation': 'chemical_treatment',
+    'clarifier': 'sedimentation',
+    'filter': 'filtration',
+    'chlorination': 'disinfection',
+    'finished_water': 'storage'
+  }
+  
+  for (const [keyword, type] of Object.entries(typeMap)) {
+    if (moduleId.toLowerCase().includes(keyword)) {
+      return type
+    }
+  }
+  return 'other'
+}
+
+const getDefaultIcon = (moduleId: string): string => {
+  const iconMap: Record<string, string> = {
+    'intake': '🌊',
+    'pump': '⚡',
+    'tank': '🏛️',
+    'dosing': '💧',
+    'coagulation': '🧪',
+    'clarifier': '⭕',
+    'filter': '🔍',
+    'chlorination': '🛡️',
+    'finished_water': '🏛️'
+  }
+  
+  for (const [keyword, icon] of Object.entries(iconMap)) {
+    if (moduleId.toLowerCase().includes(keyword)) {
+      return icon
+    }
+  }
+  return '⚙️'
+}
 
 interface PlantLayoutData {
   nodes: Node[]
@@ -27,9 +71,120 @@ interface PlantLayoutStore extends PlantLayoutData {
   
   // Plant generation
   generatePlantLayout: (siteId: string, availableAssets: string[]) => void
+  generatePlantFromConfig: (siteId: string) => void
 }
 
-// Default water treatment plant layout
+// Create plant nodes from configuration store templates
+const createPlantNodesFromConfig = (siteId: string): Node[] => {
+  const configStore = useConfigurationStore.getState()
+  const plantConfig = configStore.plantConfigurations[siteId]
+  
+  if (!plantConfig) {
+    console.log('No plant configuration found for site:', siteId)
+    return []
+  }
+
+  // Handle both MQTT structure (array of modules) and legacy structure (object of modules)
+  let modules: Record<string, any> = {}
+  
+  if (Array.isArray(plantConfig.modules)) {
+    // MQTT configuration structure - convert array to object
+    console.log('Processing MQTT configuration with module array:', plantConfig.modules)
+    plantConfig.modules.forEach((moduleId: string, index: number) => {
+      modules[moduleId] = {
+        template_id: moduleId,
+        position: { x: 200 + (index % 4) * 250, y: 150 + Math.floor(index / 4) * 200 },
+        parameters: {},
+        connections: []
+      }
+    })
+  } else if (plantConfig.modules && typeof plantConfig.modules === 'object') {
+    // Legacy configuration structure
+    console.log('Processing legacy configuration with module object:', plantConfig.modules)
+    modules = plantConfig.modules
+  } else {
+    console.log('No modules found in plant configuration')
+    return []
+  }
+
+  console.log('Processing modules:', modules)
+  console.log('Available templates:', Object.keys(configStore.moduleTemplates))
+
+  const nodes: Node[] = []
+  
+  Object.entries(modules).forEach(([moduleId, moduleData]) => {
+    console.log(`Processing module ${moduleId} with template_id: ${moduleData.template_id}`)
+    let template = configStore.moduleTemplates[moduleData.template_id]
+    
+    if (!template) {
+      console.warn(`Template ${moduleData.template_id} not found for module ${moduleId}`)
+      console.warn('Available templates:', Object.keys(configStore.moduleTemplates))
+      
+      // Try fallback mapping (remove numbering if not already done)
+      const fallbackTemplateId = moduleData.template_id.replace(/_\d+$/, '')
+      const fallbackTemplate = configStore.moduleTemplates[fallbackTemplateId]
+      
+      if (fallbackTemplate && fallbackTemplateId !== moduleData.template_id) {
+        console.log(`Using fallback template ${fallbackTemplateId} for module ${moduleId}`)
+        template = fallbackTemplate
+      } else {
+        // Create a default template if none exists
+        console.log(`Creating default template for module ${moduleId}`)
+        template = {
+          type: inferModuleType(moduleId),
+          description: moduleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          category: 'water_treatment',
+          parameters: [],
+          inputs: [],
+          outputs: [],
+          visual_config: {
+            icon: getDefaultIcon(moduleId),
+            color: '#3b82f6'
+          }
+        }
+      }
+    }
+
+    // Map template type to visual config
+    const getModuleVisualConfig = (template: ModuleTemplate) => {
+      const typeMap: Record<string, { icon: string; category: string }> = {
+        intake: { icon: '🌊', category: 'intake' },
+        pump: { icon: '⚡', category: 'pumps' },
+        chemical_treatment: { icon: '🧪', category: 'treatment' },
+        chemical_dosing: { icon: '💧', category: 'chemical' },
+        sedimentation: { icon: '⭕', category: 'treatment' },
+        filtration: { icon: '🔍', category: 'filtration' },
+        disinfection: { icon: '🛡️', category: 'disinfection' },
+        storage: { icon: '🏛️', category: 'storage' }
+      }
+      
+      return typeMap[template.type] || { icon: '⚙️', category: 'other' }
+    }
+
+    const visualConfig = getModuleVisualConfig(template)
+
+    nodes.push({
+      id: moduleId,
+      type: 'plantModule',
+      position: moduleData.position,
+      data: {
+        label: template.description || moduleId,
+        type: template.type,
+        icon: visualConfig.icon,
+        category: visualConfig.category,
+        assetId: moduleId,
+        template,
+        parameters: moduleData.parameters,
+        status: 'normal' as const,
+        realTimeData: {},
+      }
+    })
+  })
+
+  return nodes
+}
+
+// Default water treatment plant layout (fallback for backward compatibility)
 const createDefaultPlantNodes = (availableAssets: string[]): Node[] => {
   const modulePositions: Record<string, { x: number; y: number }> = {
     raw_intake: { x: 100, y: 200 },
@@ -274,9 +429,29 @@ export const usePlantLayoutStore = create<PlantLayoutStore>()(
     setConfigMode: (enabled) => set({ isConfigMode: enabled }),
 
     // Plant generation
-    generatePlantLayout: (siteId, availableAssets) => set(() => ({
-      nodes: createDefaultPlantNodes(availableAssets),
-      //edges: createDefaultPlantEdges(availableAssets),
+    generatePlantLayout: (siteId, availableAssets) => set(() => {
+      // Try to generate from configuration store first
+      const configNodes = createPlantNodesFromConfig(siteId)
+      
+      if (configNodes.length > 0) {
+        console.log('Generated plant layout from configuration store:', configNodes.length, 'modules')
+        return {
+          nodes: configNodes,
+          //edges: createConfigEdges(siteId), // TODO: implement config-based edges
+        }
+      }
+      
+      // Fallback to hardcoded layout for backward compatibility
+      console.log('Falling back to hardcoded plant layout')
+      return {
+        nodes: createDefaultPlantNodes(availableAssets),
+        //edges: createDefaultPlantEdges(availableAssets),
+      }
+    }),
+    
+    // Generate plant from configuration store
+    generatePlantFromConfig: (siteId: string) => set(() => ({
+      nodes: createPlantNodesFromConfig(siteId),
     })),
   }))
 )
