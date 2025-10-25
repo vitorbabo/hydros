@@ -5,31 +5,31 @@ mqtt:
 plcs:
 - connection_id: main_plc
   enabled: true
-  ip_address: ${MAIN_PLC_HOST:192.168.1.100}
-  port: ${MAIN_PLC_PORT:502}
+  ip_address: ${MAIN_PLC_HOST:localhost}
+  port: ${MAIN_PLC_PORT:5020}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: chemical_plc
   enabled: true
-  ip_address: ${CHEM_PLC_HOST:192.168.1.101}
-  port: ${CHEM_PLC_PORT:502}
+  ip_address: ${CHEM_PLC_HOST:localhost}
+  port: ${CHEM_PLC_PORT:5020}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: filtration_plc
   enabled: true
-  ip_address: ${FILT_PLC_HOST:192.168.1.102}
+  ip_address: ${FILT_PLC_HOST:localhost}
   port: ${FILT_PLC_PORT:502}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: distribution_plc
   enabled: true
-  ip_address: ${DIST_PLC_HOST:192.168.1.103}
+  ip_address: ${DIST_PLC_HOST:localhost}
   protocol: s7
   rack: ${S7_RACK:0}
   slot: ${S7_SLOT:1}
 - connection_id: advanced_monitoring
   enabled: true
-  endpoint_url: ${OPCUA_ENDPOINT:opc.tcp://192.168.1.104:4840}
+  endpoint_url: ${OPCUA_ENDPOINT:opc.tcp://localhost:4840}
   protocol: opcua
 site_id: wtp-regional-02
 tags:
@@ -56,7 +56,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-raw_intake
   tag_address: '33002'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
@@ -92,7 +92,7 @@ tags:
   scale_factor: 100.0
   sensor_id: temperature-raw_intake
   tag_address: '33005'
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
@@ -104,7 +104,7 @@ tags:
   scale_factor: 100.0
   sensor_id: conductivity-raw_intake
   tag_address: '33006'
-  unit: "\xB5S/cm"
+  unit: "µS/cm"
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
@@ -128,7 +128,7 @@ tags:
   scale_factor: 100.0
   sensor_id: chlorophyll_a-raw_intake
   tag_address: '33008'
-  unit: "\xB5g/L"
+  unit: "µg/L"
 - asset_id: raw_intake
   component_type: sensor
   data_type: REAL
@@ -152,7 +152,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-intake_pump_1
   tag_address: '33010'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
@@ -188,7 +188,7 @@ tags:
   scale_factor: 100.0
   sensor_id: motor_temperature-intake_pump_1
   tag_address: '33013'
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: intake_pump_1
   component_type: sensor
   data_type: REAL
@@ -260,7 +260,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-intake_pump_2
   tag_address: '33016'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: intake_pump_2
   component_type: sensor
   data_type: REAL
@@ -296,7 +296,7 @@ tags:
   scale_factor: 100.0
   sensor_id: motor_temperature-intake_pump_2
   tag_address: '33019'
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: intake_pump_2
   component_type: sensor
   data_type: REAL
@@ -476,7 +476,7 @@ tags:
   scale_factor: 100.0
   sensor_id: temperature-coagulation_tank
   tag_address: '33027'
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: coagulation_tank
   component_type: sensor
   data_type: REAL
@@ -620,7 +620,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-clarifier_1
   tag_address: '33041'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: clarifier_1
   component_type: sensor
   data_type: REAL
@@ -716,7 +716,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-clarifier_2
   tag_address: '33047'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: clarifier_2
   component_type: sensor
   data_type: REAL
@@ -800,7 +800,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-coagulant_dosing
   tag_address: '33035'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: coagulant_dosing
   component_type: sensor
   data_type: REAL
@@ -872,7 +872,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-ph_adjustment_dosing
   tag_address: '33038'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: ph_adjustment_dosing
   component_type: actuator
   data_type: REAL
@@ -920,7 +920,7 @@ tags:
   scale_factor: 100.0
   sensor_id: temperature-chlorination
   tag_address: '33076'
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: chlorination
   component_type: sensor
   data_type: REAL
@@ -980,7 +980,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-fluoridation
   tag_address: '33080'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: fluoridation
   component_type: actuator
   data_type: REAL
@@ -1028,7 +1028,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-filter_bed_1
   tag_address: '33053'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: filter_bed_1
   component_type: sensor
   data_type: REAL
@@ -1136,7 +1136,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-filter_bed_2
   tag_address: '33058'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: filter_bed_2
   component_type: sensor
   data_type: REAL
@@ -1244,7 +1244,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-filter_bed_3
   tag_address: '33063'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: filter_bed_3
   component_type: sensor
   data_type: REAL
@@ -1364,7 +1364,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-gac_filter_1
   tag_address: '33069'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: gac_filter_1
   component_type: actuator
   data_type: REAL
@@ -1400,7 +1400,7 @@ tags:
   scale_factor: 100.0
   sensor_id: uv_intensity-uv_disinfection
   tag_address: '33071'
-  unit: "mW/cm\xB2"
+  unit: "mW/cm²"
 - asset_id: uv_disinfection
   component_type: sensor
   data_type: REAL
@@ -1412,7 +1412,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-uv_disinfection
   tag_address: '33072'
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: uv_disinfection
   component_type: sensor
   data_type: REAL
@@ -1460,7 +1460,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-finished_water_pump_1
   tag_address: DB2.DBW36
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
@@ -1496,7 +1496,7 @@ tags:
   scale_factor: 100.0
   sensor_id: motor_temperature-finished_water_pump_1
   tag_address: DB2.DBW42
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: finished_water_pump_1
   component_type: sensor
   data_type: REAL
@@ -1568,7 +1568,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-finished_water_pump_2
   tag_address: DB2.DBW54
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: finished_water_pump_2
   component_type: sensor
   data_type: REAL
@@ -1604,7 +1604,7 @@ tags:
   scale_factor: 100.0
   sensor_id: motor_temperature-finished_water_pump_2
   tag_address: DB2.DBW60
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: finished_water_pump_2
   component_type: sensor
   data_type: REAL
@@ -1712,7 +1712,7 @@ tags:
   scale_factor: 100.0
   sensor_id: temperature-finished_water_tank
   tag_address: DB2.DBW78
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
@@ -1784,7 +1784,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-gac_filter_1
   tag_address: ns=2;i=1101
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: gac_filter_1
   component_type: actuator
   data_type: REAL
@@ -1820,7 +1820,7 @@ tags:
   scale_factor: 100.0
   sensor_id: uv_intensity-uv_disinfection
   tag_address: ns=2;i=1104
-  unit: "mW/cm\xB2"
+  unit: "mW/cm²"
 - asset_id: uv_disinfection
   component_type: sensor
   data_type: REAL
@@ -1832,7 +1832,7 @@ tags:
   scale_factor: 100.0
   sensor_id: flow_rate-uv_disinfection
   tag_address: ns=2;i=1105
-  unit: "m\xB3/h"
+  unit: "m³/h"
 - asset_id: uv_disinfection
   component_type: sensor
   data_type: REAL
@@ -1916,7 +1916,7 @@ tags:
   scale_factor: 100.0
   sensor_id: temperature-finished_water_tank
   tag_address: ns=2;i=1139
-  unit: "\xB0C"
+  unit: "°C"
 - asset_id: finished_water_tank
   component_type: sensor
   data_type: REAL
