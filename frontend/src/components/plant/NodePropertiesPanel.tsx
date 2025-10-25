@@ -1,8 +1,8 @@
 import React from 'react'
 import { StatusIndicator } from '../shared/StatusIndicator'
 import { MetricCard } from '../shared/MetricCard'
-import { 
-  Settings, 
+import {
+  Settings,
   Activity,
   Droplets,
   Thermometer,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import type { Node } from '@xyflow/react'
 import type { Observation } from '../../types'
+import { getIconByType } from '../../utils/moduleIcons'
 
 interface NodePropertiesPanelProps {
   node: Node | null
@@ -117,13 +118,16 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
     return groups
   }, [observationsList])
 
+  // Get icon component based on the icon type string
+  const ModuleIconComponent = getIconByType(data.icon || data.type)
+
   return (
     <div className="w-full h-full bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span className="text-xl">{data.icon}</span>
+            <ModuleIconComponent className="w-5 h-5 text-blue-600" />
             {data.label}
           </h3>
           <div className="flex items-center gap-2 mt-1">

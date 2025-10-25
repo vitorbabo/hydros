@@ -1,8 +1,8 @@
 import React from 'react'
 import { Handle, Position, NodeProps, Node } from '@xyflow/react'
 import { StatusIndicator } from '../shared/StatusIndicator'
-import { 
-  Settings, 
+import {
+  Settings,
   Activity,
   Droplets,
   Thermometer,
@@ -10,6 +10,7 @@ import {
   Zap
 } from 'lucide-react'
 import type { ComponentStatus, Observation } from '../../types'
+import { getIconByType } from '../../utils/moduleIcons'
 
 interface PlantModuleData extends Record<string, unknown> {
   label: string
@@ -102,6 +103,9 @@ export function PlantModuleNode({ data, selected }: NodeProps<PlantModuleNodeTyp
 
   const hasConnections = data.type !== 'chemical' // Chemical dosing usually connects from side
 
+  // Get icon component based on the icon type string
+  const ModuleIconComponent = getIconByType(data.icon || data.type)
+
   return (
     <div className={`
       plant-module-node relative min-w-[180px] rounded-lg border-2 p-3 shadow-lg transition-all duration-200
@@ -111,17 +115,17 @@ export function PlantModuleNode({ data, selected }: NodeProps<PlantModuleNodeTyp
     `}>
       {/* Input Handle */}
       {hasConnections && (
-        <Handle 
-          type="target" 
+        <Handle
+          type="target"
           position={Position.Left}
           className="w-3 h-3 !bg-blue-500 !border-2 !border-white"
         />
       )}
-      
+
       {/* Module Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{data.icon}</span>
+          <ModuleIconComponent className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <div>
             <div className="font-semibold text-sm text-gray-900 leading-tight">
               {data.label}

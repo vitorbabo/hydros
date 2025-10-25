@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import type { ModuleTemplate } from '../../types'
-import { 
-  X, 
-  Save, 
-  AlertCircle, 
-  CheckCircle, 
-  Info, 
+import {
+  X,
+  Save,
+  AlertCircle,
+  CheckCircle,
+  Info,
   Zap,
   Droplet,
   Activity,
   Settings2
 } from 'lucide-react'
+import { getIconByType } from '../../utils/moduleIcons'
 
 interface ConfigurationPanelProps {
   isVisible: boolean
@@ -270,12 +271,15 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
 
   if (!isVisible || !template) return null
 
+  // Get icon component for the template type
+  const ModuleIconComponent = getIconByType(template.type)
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
           onClick={onClose}
         />
 
@@ -284,17 +288,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="text-2xl">
-                {template.type === 'intake' && '🌊'}
-                {template.type === 'pump' && '⚡'}
-                {template.type === 'chemical_treatment' && '🧪'}
-                {template.type === 'chemical_dosing' && '💧'}
-                {template.type === 'sedimentation' && '⭕'}
-                {template.type === 'filtration' && '🔍'}
-                {template.type === 'disinfection' && '🛡️'}
-                {template.type === 'storage' && '🏛️'}
-                {!['intake', 'pump', 'chemical_treatment', 'chemical_dosing', 'sedimentation', 'filtration', 'disinfection', 'storage'].includes(template.type) && '⚙️'}
-              </div>
+              <ModuleIconComponent className="w-7 h-7 text-blue-600" />
               <div>
                 <h3 className="text-lg font-medium text-gray-900">
                   Configure {template.description || moduleId}

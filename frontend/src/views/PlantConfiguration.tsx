@@ -2,18 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useConfigurationStore } from '../store/configurationStore'
 import { useMqtt, type ConfigurationMessage } from '../hooks/useMqtt'
 import type { ModuleTemplate } from '../types'
-import { 
-  Save, 
-  RefreshCw, 
-  Plus, 
-  Trash2, 
-  Settings, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Save,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Settings,
+  AlertCircle,
+  CheckCircle,
   Info,
   Factory,
-  Cog
+  Cog,
+  Construction
 } from 'lucide-react'
+import { getIconByType } from '../utils/moduleIcons'
 
 interface ModuleInstanceProps {
   moduleId: string
@@ -52,19 +54,8 @@ const ModuleInstance: React.FC<ModuleInstanceProps> = ({
     onUpdate(moduleId, { parameters: updatedParameters })
   }
 
-  const getModuleIcon = (type: string) => {
-    const iconMap: Record<string, string> = {
-      intake: '🌊',
-      pump: '⚡',
-      chemical_treatment: '🧪',
-      chemical_dosing: '💧',
-      sedimentation: '⭕',
-      filtration: '🔍',
-      disinfection: '🛡️',
-      storage: '🏛️'
-    }
-    return iconMap[type] || '⚙️'
-  }
+  // Get icon component for the module type
+  const ModuleIconComponent = getIconByType(template?.type || 'other')
 
   if (!template) {
     return (
@@ -93,7 +84,7 @@ const ModuleInstance: React.FC<ModuleInstanceProps> = ({
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">{getModuleIcon(template.type)}</div>
+            <ModuleIconComponent className="w-6 h-6 text-blue-600" />
             <div>
               <h4 className="font-medium text-gray-900">{template.description || moduleId}</h4>
               <p className="text-sm text-gray-600 capitalize">
@@ -457,7 +448,7 @@ export function PlantConfiguration() {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    <div className="text-4xl mb-2">🏗️</div>
+                    <Construction className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p className="font-medium">No modules configured</p>
                     <p className="text-sm mt-1">Add modules to start building your plant layout</p>
                   </div>

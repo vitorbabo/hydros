@@ -28,23 +28,24 @@ const inferModuleType = (moduleId: string): string => {
 
 const getDefaultIcon = (moduleId: string): string => {
   const iconMap: Record<string, string> = {
-    'intake': '🌊',
-    'pump': '⚡',
-    'tank': '🏛️',
-    'dosing': '💧',
-    'coagulation': '🧪',
-    'clarifier': '⭕',
-    'filter': '🔍',
-    'chlorination': '🛡️',
-    'finished_water': '🏛️'
+    'intake': 'intake',
+    'pump': 'pump',
+    'tank': 'storage',
+    'dosing': 'chemical_dosing',
+    'coagulation': 'chemical_treatment',
+    'clarifier': 'sedimentation',
+    'filter': 'filtration',
+    'chlorination': 'disinfection',
+    'finished_water': 'storage',
+    'flocculation': 'flocculation'
   }
-  
+
   for (const [keyword, icon] of Object.entries(iconMap)) {
     if (moduleId.toLowerCase().includes(keyword)) {
       return icon
     }
   }
-  return '⚙️'
+  return 'other'
 }
 
 interface PlantLayoutData {
@@ -148,17 +149,18 @@ const createPlantNodesFromConfig = (siteId: string): Node[] => {
     // Map template type to visual config
     const getModuleVisualConfig = (template: ModuleTemplate) => {
       const typeMap: Record<string, { icon: string; category: string }> = {
-        intake: { icon: '🌊', category: 'intake' },
-        pump: { icon: '⚡', category: 'pumps' },
-        chemical_treatment: { icon: '🧪', category: 'treatment' },
-        chemical_dosing: { icon: '💧', category: 'chemical' },
-        sedimentation: { icon: '⭕', category: 'treatment' },
-        filtration: { icon: '🔍', category: 'filtration' },
-        disinfection: { icon: '🛡️', category: 'disinfection' },
-        storage: { icon: '🏛️', category: 'storage' }
+        intake: { icon: 'intake', category: 'intake' },
+        pump: { icon: 'pump', category: 'pumps' },
+        chemical_treatment: { icon: 'chemical_treatment', category: 'treatment' },
+        chemical_dosing: { icon: 'chemical_dosing', category: 'chemical' },
+        sedimentation: { icon: 'sedimentation', category: 'treatment' },
+        filtration: { icon: 'filtration', category: 'filtration' },
+        disinfection: { icon: 'disinfection', category: 'disinfection' },
+        storage: { icon: 'storage', category: 'storage' },
+        flocculation: { icon: 'flocculation', category: 'treatment' }
       }
-      
-      return typeMap[template.type] || { icon: '⚙️', category: 'other' }
+
+      return typeMap[template.type] || { icon: 'other', category: 'other' }
     }
 
     const visualConfig = getModuleVisualConfig(template)
@@ -203,95 +205,95 @@ const createDefaultPlantNodes = (availableAssets: string[]): Node[] => {
     finished_water_tank: { x: 1700, y: 200 },
   }
 
-  const moduleConfigs: Record<string, { 
-    label: string; 
-    type: string; 
+  const moduleConfigs: Record<string, {
+    label: string;
+    type: string;
     icon: string;
     category: string;
   }> = {
-    raw_intake: { 
-      label: 'Raw Water Intake', 
-      type: 'intake', 
-      icon: '🌊', 
-      category: 'intake' 
+    raw_intake: {
+      label: 'Raw Water Intake',
+      type: 'intake',
+      icon: 'intake',
+      category: 'intake'
     },
-    intake_pump_1: { 
-      label: 'Intake Pump 1', 
-      type: 'pump', 
-      icon: '⚡', 
-      category: 'pumps' 
+    intake_pump_1: {
+      label: 'Intake Pump 1',
+      type: 'pump',
+      icon: 'pump',
+      category: 'pumps'
     },
-    intake_pump_2: { 
-      label: 'Intake Pump 2', 
-      type: 'pump', 
-      icon: '⚡', 
-      category: 'pumps' 
+    intake_pump_2: {
+      label: 'Intake Pump 2',
+      type: 'pump',
+      icon: 'pump',
+      category: 'pumps'
     },
-    coagulation_tank: { 
-      label: 'Coagulation Tank', 
-      type: 'treatment', 
-      icon: '🧪', 
-      category: 'treatment' 
+    coagulation_tank: {
+      label: 'Coagulation Tank',
+      type: 'treatment',
+      icon: 'chemical_treatment',
+      category: 'treatment'
     },
-    coagulant_dosing: { 
-      label: 'Coagulant Dosing', 
-      type: 'chemical', 
-      icon: '💧', 
-      category: 'chemical' 
+    coagulant_dosing: {
+      label: 'Coagulant Dosing',
+      type: 'chemical',
+      icon: 'chemical_dosing',
+      category: 'chemical'
     },
-    flocculation_tank: { 
-      label: 'Flocculation Tank', 
-      type: 'treatment', 
-      icon: '🌀', 
-      category: 'treatment' 
+    flocculation_tank: {
+      label: 'Flocculation Tank',
+      type: 'treatment',
+      icon: 'flocculation',
+      category: 'treatment'
     },
-    clarifier_1: { 
-      label: 'Clarifier 1', 
-      type: 'sedimentation', 
-      icon: '⭕', 
-      category: 'treatment' 
+    clarifier_1: {
+      label: 'Clarifier 1',
+      type: 'sedimentation',
+      icon: 'sedimentation',
+      category: 'treatment'
     },
-    clarifier_2: { 
-      label: 'Clarifier 2', 
-      type: 'sedimentation', 
-      icon: '⭕', 
-      category: 'treatment' 
+    clarifier_2: {
+      label: 'Clarifier 2',
+      type: 'sedimentation',
+      icon: 'sedimentation',
+      category: 'treatment'
     },
-    filter_bed_1: { 
-      label: 'Filter Bed 1', 
-      type: 'filtration', 
-      icon: '🔍', 
-      category: 'filtration' 
+    filter_bed_1: {
+      label: 'Filter Bed 1',
+      type: 'filtration',
+      icon: 'filtration',
+      category: 'filtration'
     },
-    filter_bed_2: { 
-      label: 'Filter Bed 2', 
-      type: 'filtration', 
-      icon: '🔍', 
-      category: 'filtration' 
+    filter_bed_2: {
+      label: 'Filter Bed 2',
+      type: 'filtration',
+      icon: 'filtration',
+      category: 'filtration'
     },
-    chlorination: { 
-      label: 'Chlorination', 
-      type: 'disinfection', 
-      icon: '🛡️', 
-      category: 'disinfection' 
+    chlorination: {
+      label: 'Chlorination',
+      type: 'disinfection',
+      icon: 'disinfection',
+      category: 'disinfection'
     },
-    finished_water_pump_1: { 
-      label: 'Finished Water Pump 1', 
-      type: 'pump', 
-      icon: '⚡', 
-      category: 'pumps' 
+    finished_water_pump_1: {
+      label: 'Finished Water Pump 1',
+      type: 'pump',
+      icon: 'pump',
+      category: 'pumps'
     },
-    finished_water_pump_2: { 
-      label: 'Finished Water Pump 2', 
-      type: 'pump', 
-      icon: '⚡', 
-      category: 'pumps' 
+    finished_water_pump_2: {
+      label: 'Finished Water Pump 2',
+      type: 'pump',
+      icon: 'pump',
+      category: 'pumps'
     },
-    finished_water_tank: { 
-      label: 'Finished Water Tank', 
-      type: 'storage', 
-      icon: '🏛️', 
-      category: 'storage' 
+    finished_water_tank: {
+      label: 'Finished Water Tank',
+      type: 'storage',
+      icon: 'storage',
+      category: 'storage'
     },
   }
 

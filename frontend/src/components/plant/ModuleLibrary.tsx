@@ -1,7 +1,26 @@
 import React, { useState, useMemo } from 'react'
 import { useConfigurationStore } from '../../store/configurationStore'
 import type { ModuleTemplate } from '../../types'
-import { Search, Package, ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  Search,
+  Package,
+  ChevronDown,
+  ChevronRight,
+  Waves,
+  Wrench,
+  Zap,
+  TestTube,
+  Droplet,
+  Disc,
+  Filter,
+  ShieldCheck,
+  Sparkles,
+  Hospital,
+  Building,
+  Settings,
+  Lightbulb,
+  type LucideIcon
+} from 'lucide-react'
 
 interface ModuleLibraryProps {
   isVisible: boolean
@@ -26,38 +45,38 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
   isDraggable = false 
 }) => {
   // Get visual representation based on module type and category
-  const getModuleIcon = (type?: string, category?: string) => {
-    if (!type && !category) return '⚙️'
-    
+  const getModuleIcon = (type?: string, category?: string): LucideIcon => {
+    if (!type && !category) return Settings
+
     // Category-based icons for better organization
-    const categoryIconMap: Record<string, string> = {
-      source_water: '🌊',
-      physical_treatment: '🔧', 
-      fluid_handling: '⚡',
-      primary_treatment: '🧪',
-      chemical_feed: '💧',
-      solids_separation: '⭕',
-      tertiary_treatment: '🔍',
-      advanced_treatment: '🛡️',
-      final_treatment: '✨',
-      public_health: '🏥',
-      distribution: '🏛️'
+    const categoryIconMap: Record<string, LucideIcon> = {
+      source_water: Waves,
+      physical_treatment: Wrench,
+      fluid_handling: Zap,
+      primary_treatment: TestTube,
+      chemical_feed: Droplet,
+      solids_separation: Disc,
+      tertiary_treatment: Filter,
+      advanced_treatment: ShieldCheck,
+      final_treatment: Sparkles,
+      public_health: Hospital,
+      distribution: Building
     }
-    
+
     // Fallback to type-based icons
-    const typeIconMap: Record<string, string> = {
-      intake: '🌊',
-      pretreatment: '🔧',
-      pump: '⚡',
-      chemical_treatment: '🧪',
-      chemical_dosing: '💧',
-      sedimentation: '⭕',
-      filtration: '🔍',
-      disinfection: '🛡️',
-      storage: '🏛️'
+    const typeIconMap: Record<string, LucideIcon> = {
+      intake: Waves,
+      pretreatment: Wrench,
+      pump: Zap,
+      chemical_treatment: TestTube,
+      chemical_dosing: Droplet,
+      sedimentation: Disc,
+      filtration: Filter,
+      disinfection: ShieldCheck,
+      storage: Building
     }
-    
-    return categoryIconMap[category || ''] || typeIconMap[type || ''] || '⚙️'
+
+    return categoryIconMap[category || ''] || typeIconMap[type || ''] || Settings
   }
 
   const handleDragStart = (event: React.DragEvent) => {
@@ -72,10 +91,12 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
     onDragStart?.(event)
   }
 
+  const IconComponent = getModuleIcon(template.type, template.category)
+
   return (
     <div
       className={`
-        bg-white border border-gray-200 rounded-lg p-3 cursor-pointer 
+        bg-white border border-gray-200 rounded-lg p-3 cursor-pointer
         transition-all hover:border-blue-300 hover:shadow-md
         ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
       `}
@@ -85,7 +106,9 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
       title={`${template.description}\nType: ${template.type}\nRequired sensors: ${template.required_sensors?.join(', ') || 'None'}`}
     >
       <div className="flex items-start gap-3">
-        <div className="text-2xl">{getModuleIcon(template.type, template.category)}</div>
+        <div className="flex-shrink-0">
+          <IconComponent className="w-6 h-6 text-blue-600" />
+        </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-gray-900 text-sm truncate">
             {template.description || templateId}
@@ -361,8 +384,9 @@ export const ModuleLibrary: React.FC<ModuleLibraryProps> = ({
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <p className="text-xs text-gray-600">
-          💡 Drag modules onto the plant layout to add them
+        <p className="text-xs text-gray-600 flex items-center gap-2">
+          <Lightbulb className="w-4 h-4 text-amber-500" />
+          Drag modules onto the plant layout to add them
         </p>
       </div>
     </div>
