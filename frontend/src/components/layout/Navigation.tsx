@@ -22,7 +22,7 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    name: 'Plant Layout',
+    name: 'Layout',
     href: '/layout',
     icon: Network,
   },

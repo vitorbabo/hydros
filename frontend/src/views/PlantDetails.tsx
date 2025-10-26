@@ -1,28 +1,25 @@
-import React from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
 import { useConfigurationStore } from '../store/configurationStore'
 import { useTelemetryStore } from '../store/telemetryStore'
 import { StatusIndicator } from '../components/shared/StatusIndicator'
 import { MetricCard } from '../components/shared/MetricCard'
-import { 
-  ArrowLeft,
+import {
   MapPin,
   Settings,
   Droplets,
-  Thermometer,
   Activity,
   AlertTriangle,
   Wifi,
   Database,
-  Gauge,
-  Zap,
   Filter,
   FlaskConical
 } from 'lucide-react'
 
-export function PlantDetails() {
-  const { siteId } = useParams<{ siteId: string }>()
-  const navigate = useNavigate()
+interface PlantDetailsProps {
+  siteId: string
+  onClose?: () => void
+}
+
+export function PlantDetails({ siteId, onClose }: PlantDetailsProps) {
   const { plantConfigurations } = useConfigurationStore()
   const { latest } = useTelemetryStore()
 
@@ -31,15 +28,6 @@ export function PlantDetails() {
   if (!plantConfig) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-2xl font-semibold text-gray-900">Plant Details</h1>
-        </div>
         <div className="text-center py-12">
           <Database className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Plant Not Found</h3>
@@ -82,26 +70,33 @@ export function PlantDetails() {
   const alarmDefinitions = plantConfig.alarm_definitions || {}
 
   // Get current telemetry for this site
-  const siteAssets = Object.keys(latest).filter(key => key.includes(siteId))
-  const hasRecentData = siteAssets.length > 0
+  const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
+
+  // Check if data is recent (within last 60 seconds) - same logic as SystemOverview
+  const recentDataTimestamps = siteObservations
+    .map((obs) => {
+      return obs && obs.ts ? new Date(obs.ts).getTime() : 0
+    })
+    .filter((timestamp) => timestamp > 0)
+
+  const latestTimestamp = recentDataTimestamps.length > 0 ?
+    Math.max(...recentDataTimestamps) : 0
+
+  const timeDiffSeconds = latestTimestamp > 0 ?
+    (Date.now() - latestTimestamp) / 1000 : Infinity
+
+  const hasRecentData = timeDiffSeconds < 60 // Within last 60 seconds
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate('/')}
-          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      {/* Site Header Info */}
+      <div className="flex items-center gap-4 pb-4 border-b border-gray-200">
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-gray-900">{siteInfo.name}</h1>
-          <div className="flex items-center gap-4 mt-1">
-            <p className="text-gray-500">{siteInfo.site_id}</p>
-            <div className="flex items-center gap-1 text-gray-500">
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-500">{siteInfo.site_id}</p>
+            <div className="flex items-center gap-1 text-sm text-gray-500">
               <MapPin className="w-4 h-4" />
-              <span>{siteInfo.location.region}, {siteInfo.location.country}</span>
+              <span>{siteInfo.location?.region}, {siteInfo.location?.country}</span>
             </div>
             <StatusIndicator status={hasRecentData ? 'connected' : 'disconnected'} showLabel />
           </div>
@@ -147,9 +142,9 @@ export function PlantDetails() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Location</h4>
-            <p className="text-gray-600">{siteInfo.location.region}, {siteInfo.location.country}</p>
+            <p className="text-gray-600">{siteInfo.location?.region}, {siteInfo.location?.country}</p>
             <p className="text-sm text-gray-500 mt-1">
-              {siteInfo.location.coordinates[0].toFixed(4)}, {siteInfo.location.coordinates[1].toFixed(4)}
+              {siteInfo.location?.coordinates[0].toFixed(4)}, {siteInfo.location?.coordinates[1].toFixed(4)}
             </p>
           </div>
           <div>

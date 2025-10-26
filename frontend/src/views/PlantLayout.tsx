@@ -255,7 +255,7 @@ export default function PlantLayout() {
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Plant Layout</h2>
+                <h2 className="text-sm font-semibold text-gray-900">Layout</h2>
                 <p className="text-xs text-gray-600">{siteName}</p>
               </div>
               <div className="flex items-center gap-1">
