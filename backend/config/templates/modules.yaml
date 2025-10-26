@@ -2,410 +2,410 @@
 # These templates define standardized modules that can be used across all sites
 
 module_templates:
-  
+
   # INTAKE MODULES
   raw_intake:
     type: "intake"
     category: "source_water"
     description: "Raw water intake with basic quality monitoring"
     required_sensors:
-      - level
-      - flow_rate 
-      - turbidity
-      - ph
-      - temperature
-      - conductivity
+    - level
+    - flow_rate
+    - turbidity
+    - ph
+    - temperature
+    - conductivity
     optional_sensors:
-      - dissolved_oxygen
-      - chlorophyll_a
-      - blue_green_algae
+    - dissolved_oxygen
+    - chlorophyll_a
+    - blue_green_algae
     typical_ranges:
-      level: [0.0, 10.0]  # m
-      flow_rate: [0.0, 200.0]  # m³/h
-      turbidity: [0.0, 50.0]  # NTU
+      level: [ 0.0, 10.0 ] # m
+      flow_rate: [ 0.0, 200.0 ] # m³/h
+      turbidity: [ 0.0, 50.0 ] # NTU
     maintenance:
-      calibration_frequency: 30  # days
-  
+      calibration_frequency: 30 # days
+
   screening_system:
     type: "pretreatment"
     category: "physical_treatment"
     description: "Mechanical screening for large debris removal"
     required_sensors:
-      - differential_pressure
-      - motor_current
-      - run_status
+    - differential_pressure
+    - motor_current
+    - run_status
     actuators:
-      - screen_speed
-      - cleaning_frequency
+    - screen_speed
+    - cleaning_frequency
     alarms:
-      - high_differential_pressure
-      - motor_overload
-  
+    - high_differential_pressure
+    - motor_overload
+
   # PUMPING MODULES
   intake_pump:
     type: "pump"
     category: "fluid_handling"
     description: "Raw water intake pump with VFD control"
     required_sensors:
-      - flow_rate
-      - pressure
-      - motor_current
-      - motor_temperature
-      - vibration
-      - power_consumption
-      - run_status
+    - flow_rate
+    - pressure
+    - motor_current
+    - motor_temperature
+    - vibration
+    - power_consumption
+    - run_status
     actuators:
-      - pump_speed
+    - pump_speed
     alarms:
-      - high_vibration
-      - motor_overtemperature
-      - low_flow
-      - pump_cavitation
+    - high_vibration
+    - motor_overtemperature
+    - low_flow
+    - pump_cavitation
     control_logic: "vfd_speed_control"
     maintenance:
-      - bearing_replacement: 8760  # hours
-      - impeller_inspection: 2160  # hours
-  
+    - bearing_replacement: 8760 # hours
+    - impeller_inspection: 2160 # hours
+
   finished_water_pump:
     type: "pump"
     category: "distribution"
     description: "High-pressure distribution pump"
     required_sensors:
-      - flow_rate
-      - pressure
-      - motor_current
-      - motor_temperature
-      - vibration
-      - power_consumption
-      - run_status
+    - flow_rate
+    - pressure
+    - motor_current
+    - motor_temperature
+    - vibration
+    - power_consumption
+    - run_status
     actuators:
-      - pump_speed
+    - pump_speed
     typical_ranges:
-      pressure: [0.0, 8.0]  # bar (higher than intake pumps)
+      pressure: [ 0.0, 8.0 ] # bar (higher than intake pumps)
     alarms:
-      - high_pressure
-      - low_suction_pressure
-  
+    - high_pressure
+    - low_suction_pressure
+
   # CHEMICAL TREATMENT MODULES
   coagulation_tank:
     type: "chemical_treatment"
     category: "primary_treatment"
     description: "Rapid mixing for coagulant distribution"
     required_sensors:
-      - level
-      - ph
-      - turbidity
-      - temperature
+    - level
+    - ph
+    - turbidity
+    - temperature
     optional_sensors:
-      - alkalinity
-      - streaming_current
-      - zeta_potential
+    - alkalinity
+    - streaming_current
+    - zeta_potential
     actuators:
-      - mixer_speed
+    - mixer_speed
     control_logic: "rapid_mix_optimization"
-    retention_time: 30  # seconds
-  
+    retention_time: 30 # seconds
+
   flocculation_tank:
     type: "chemical_treatment"
     category: "primary_treatment"
     description: "Slow mixing for floc formation"
     required_sensors:
-      - level
-      - turbidity
-      - ph
+    - level
+    - turbidity
+    - ph
     actuators:
-      - mixer_speed
-      - retention_time
+    - mixer_speed
+    - retention_time
     control_logic: "gentle_mix_optimization"
-    retention_time: 1800  # seconds (30 minutes)
-  
+    retention_time: 1800 # seconds (30 minutes)
+
   # CHEMICAL DOSING MODULES
   coagulant_dosing:
     type: "chemical_dosing"
     category: "chemical_feed"
     description: "Automated coagulant dosing system"
-    chemicals: ["alum", "ferric_chloride", "pac"]
+    chemicals: [ "alum", "ferric_chloride", "pac" ]
     required_sensors:
-      - chemical_tank_level
-      - flow_rate
-      - run_status
+    - chemical_tank_level
+    - flow_rate
+    - run_status
     actuators:
-      - dose_rate
+    - dose_rate
     control_logic: "turbidity_based"
-    typical_dose_range: [5.0, 25.0]  # mg/L
+    typical_dose_range: [ 5.0, 25.0 ] # mg/L
     safety_systems:
-      - overflow_protection
-      - leak_detection
-  
+    - overflow_protection
+    - leak_detection
+
   ph_adjustment_dosing:
     type: "chemical_dosing"
     category: "chemical_feed"
     description: "pH adjustment dosing (caustic soda/acid)"
-    chemicals: ["caustic_soda", "sulfuric_acid"]
+    chemicals: [ "caustic_soda", "sulfuric_acid" ]
     required_sensors:
-      - chemical_tank_level
-      - ph_feedback
-      - flow_rate
+    - chemical_tank_level
+    - ph_feedback
+    - flow_rate
     actuators:
-      - dose_rate
+    - dose_rate
     control_logic: "ph_feedback"
-    target_ph_range: [7.0, 8.0]
+    target_ph_range: [ 7.0, 8.0 ]
     safety_systems:
-      - neutralization_tank
-      - emergency_dilution
-  
+    - neutralization_tank
+    - emergency_dilution
+
   # SEDIMENTATION MODULES
   clarifier:
     type: "sedimentation"
     category: "solids_separation"
     description: "Gravity settling tank for floc removal"
     required_sensors:
-      - level
-      - turbidity
-      - flow_rate
-      - ph
+    - level
+    - turbidity
+    - flow_rate
+    - ph
     optional_sensors:
-      - sludge_blanket_level
-      - sludge_density
+    - sludge_blanket_level
+    - sludge_density
     actuators:
-      - sludge_removal_rate
-      - overflow_weir_level
+    - sludge_removal_rate
+    - overflow_weir_level
     typical_ranges:
-      turbidity_inlet: [10.0, 100.0]  # NTU
-      turbidity_outlet: [1.0, 10.0]  # NTU
-    retention_time: 7200  # seconds (2 hours)
-  
+      turbidity_inlet: [ 10.0, 100.0 ] # NTU
+      turbidity_outlet: [ 1.0, 10.0 ] # NTU
+    retention_time: 7200 # seconds (2 hours)
+
   # FILTRATION MODULES
   filter_bed:
     type: "filtration"
     category: "tertiary_treatment"
     description: "Conventional rapid sand filtration"
     required_sensors:
-      - differential_pressure
-      - turbidity
-      - flow_rate
-      - level
-      - run_status
+    - differential_pressure
+    - turbidity
+    - flow_rate
+    - level
+    - run_status
     optional_sensors:
-      - particle_count
+    - particle_count
     actuators:
-      - backwash_initiation
-      - filter_to_waste
+    - backwash_initiation
+    - filter_to_waste
     control_logic: "differential_pressure_or_time"
     backwash_criteria:
-      max_pressure: 350  # mbar
-      max_runtime: 24    # hours
-      min_runtime: 8     # hours
+      max_pressure: 350 # mbar
+      max_runtime: 24 # hours
+      min_runtime: 8 # hours
     media_specifications:
       sand_size: "0.5-1.0 mm"
-      bed_depth: 1.2     # meters
-  
+      bed_depth: 1.2 # meters
+
   rapid_sand_filter:
     type: "filtration"
     category: "tertiary_treatment"
     description: "High-rate sand filtration"
     inherits: "filter_bed"
-    filtration_rate: 15  # m/h
+    filtration_rate: 15 # m/h
     typical_ranges:
-      turbidity_outlet: [0.1, 1.0]  # NTU
-  
+      turbidity_outlet: [ 0.1, 1.0 ] # NTU
+
   gac_filter:
     type: "filtration"
     category: "advanced_treatment"
     description: "Granular Activated Carbon filter"
     required_sensors:
-      - differential_pressure
-      - turbidity
-      - toc
-      - flow_rate
+    - differential_pressure
+    - turbidity
+    - toc
+    - flow_rate
     actuators:
-      - backwash_initiation
+    - backwash_initiation
     replacement_indicators:
-      - carbon_bed_life
-      - toc_breakthrough
+    - carbon_bed_life
+    - toc_breakthrough
     typical_ranges:
-      toc_removal: 70    # percentage
+      toc_removal: 70 # percentage
     maintenance:
-      carbon_replacement: 8760  # hours (1 year)
-  
+      carbon_replacement: 8760 # hours (1 year)
+
   membrane_filter:
-    type: "filtration"  
+    type: "filtration"
     category: "advanced_treatment"
     description: "Membrane filtration (MF/UF)"
     required_sensors:
-      - transmembrane_pressure
-      - turbidity
-      - flow_rate
-      - temperature
+    - transmembrane_pressure
+    - turbidity
+    - flow_rate
+    - temperature
     actuators:
-      - cleaning_cycle
-      - backwash_pressure
+    - cleaning_cycle
+    - backwash_pressure
     maintenance:
-      - chemical_cleaning_frequency: 168  # hours (weekly)
-      - membrane_replacement: 17520      # hours (2 years)
+    - chemical_cleaning_frequency: 168 # hours (weekly)
+    - membrane_replacement: 17520 # hours (2 years)
     typical_ranges:
-      turbidity_outlet: [0.01, 0.1]  # NTU
-  
+      turbidity_outlet: [ 0.01, 0.1 ] # NTU
+
   # DISINFECTION MODULES
   chlorination:
-    type: "disinfection" 
+    type: "disinfection"
     category: "final_treatment"
     description: "Chlorine disinfection system"
     required_sensors:
-      - chlorine_residual
-      - ph
-      - temperature
-      - chemical_tank_level
+    - chlorine_residual
+    - ph
+    - temperature
+    - chemical_tank_level
     actuators:
-      - dose_rate
+    - dose_rate
     control_logic: "ct_value_calculation"
-    target_residual: [0.5, 2.0]  # mg/L
+    target_residual: [ 0.5, 2.0 ] # mg/L
     safety_systems:
-      - chlorine_leak_detection
-      - emergency_shutdown
-      - scrubber_system
+    - chlorine_leak_detection
+    - emergency_shutdown
+    - scrubber_system
     ct_requirements:
-      giardia: 0.5   # mg*min/L
-      virus: 6.0     # mg*min/L
-      crypto: 15.0   # mg*min/L (requires additional treatment)
-  
+      giardia: 0.5 # mg*min/L
+      virus: 6.0 # mg*min/L
+      crypto: 15.0 # mg*min/L (requires additional treatment)
+
   uv_disinfection:
     type: "disinfection"
     category: "advanced_treatment"
     description: "UV disinfection system"
     required_sensors:
-      - uv_transmittance
-      - uv_intensity
-      - flow_rate
-      - lamp_status
+    - uv_transmittance
+    - uv_intensity
+    - flow_rate
+    - lamp_status
     actuators:
-      - lamp_power
-      - cleaning_cycle
+    - lamp_power
+    - cleaning_cycle
     control_logic: "uv_dose_calculation"
-    target_dose: 40  # mJ/cm²
-    log_reduction: 4.0  # 4-log virus reduction
+    target_dose: 40 # mJ/cm²
+    log_reduction: 4.0 # 4-log virus reduction
     maintenance:
-      - lamp_replacement_hours: 8760   # hours
-      - quartz_sleeve_cleaning: 720    # hours
-  
+    - lamp_replacement_hours: 8760 # hours
+    - quartz_sleeve_cleaning: 720 # hours
+
   fluoridation:
     type: "chemical_treatment"
     category: "public_health"
-    description: "Fluoride dosing for dental health"
+    description: "Fluoride dosing"
     required_sensors:
-      - fluoride_residual
-      - chemical_tank_level
-      - flow_rate
+    - fluoride_residual
+    - chemical_tank_level
+    - flow_rate
     actuators:
-      - dose_rate
-    target_residual: [0.7, 1.2]  # mg/L
+    - dose_rate
+    target_residual: [ 0.7, 1.2 ] # mg/L
     regulatory: "public_health_requirement"
     safety_systems:
-      - overfeed_protection
-      - fluoride_analyzer
-  
+    - overfeed_protection
+    - fluoride_analyzer
+
   # STORAGE MODULES
   finished_water_tank:
     type: "storage"
     category: "distribution"
     description: "Finished water storage reservoir"
     required_sensors:
-      - level
-      - chlorine_residual
-      - ph
-      - temperature
+    - level
+    - chlorine_residual
+    - ph
+    - temperature
     optional_sensors:
-      - water_age
-      - heterotrophic_plate_count
+    - water_age
+    - heterotrophic_plate_count
     alarms:
-      - low_level
-      - high_level
-      - low_chlorine_residual
-      - water_age_exceeded
+    - low_level
+    - high_level
+    - low_chlorine_residual
+    - water_age_exceeded
     mixing_system: true
-    retention_time: 14400  # seconds (4 hours)
+    retention_time: 14400 # seconds (4 hours)
 
 # Process Control Strategy Templates
 control_strategy_templates:
-  
+
   turbidity_based_coagulation:
     description: "Standard turbidity-based coagulant dosing"
-    applicable_modules: ["coagulant_dosing"]
-    inputs: ["raw_intake.turbidity", "raw_intake.ph", "raw_intake.temperature"]
-    outputs: ["coagulant_dosing.dose_rate"]
+    applicable_modules: [ "coagulant_dosing" ]
+    inputs: [ "raw_intake.turbidity", "raw_intake.ph", "raw_intake.temperature" ]
+    outputs: [ "coagulant_dosing.dose_rate" ]
     algorithm: "pid_with_feedforward"
     parameters:
-      base_dose: 8.0  # mg/L
-      turbidity_factor: 0.5  # mg/L per NTU
+      base_dose: 8.0 # mg/L
+      turbidity_factor: 0.5 # mg/L per NTU
       ph_correction: true
       temperature_correction: true
-  
+
   differential_pressure_backwash:
     description: "Filter backwash based on differential pressure"
-    applicable_modules: ["filter_bed", "rapid_sand_filter", "gac_filter"]
-    inputs: ["*.differential_pressure", "*.filter_runtime"]
-    outputs: ["*.backwash_trigger"]
+    applicable_modules: [ "filter_bed", "rapid_sand_filter", "gac_filter" ]
+    inputs: [ "*.differential_pressure", "*.filter_runtime" ]
+    outputs: [ "*.backwash_trigger" ]
     algorithm: "threshold_based"
     parameters:
-      max_pressure: 350  # mbar
-      max_runtime: 24    # hours
-      min_runtime: 8     # hours
-  
+      max_pressure: 350 # mbar
+      max_runtime: 24 # hours
+      min_runtime: 8 # hours
+
   ct_value_disinfection:
     description: "CT value calculation for pathogen inactivation"
-    applicable_modules: ["chlorination"]
-    inputs: ["*.chlorine_residual", "*.contact_time", "*.ph", "*.temperature"]
-    outputs: ["*.chlorine_dose_rate"]
+    applicable_modules: [ "chlorination" ]
+    inputs: [ "*.chlorine_residual", "*.contact_time", "*.ph", "*.temperature" ]
+    outputs: [ "*.chlorine_dose_rate" ]
     algorithm: "ct_calculation"
     requirements:
-      giardia_ct: 0.5    # mg*min/L
-      virus_ct: 6.0      # mg*min/L
-      crypto_ct: 15.0    # mg*min/L (requires additional treatment)
+      giardia_ct: 0.5 # mg*min/L
+      virus_ct: 6.0 # mg*min/L
+      crypto_ct: 15.0 # mg*min/L (requires additional treatment)
 
 # Alarm Definition Templates
 alarm_templates:
-  
+
   water_quality:
     high_turbidity:
-      applicable_modules: ["raw_intake", "clarifier", "filter_bed"]
+      applicable_modules: [ "raw_intake", "clarifier", "filter_bed" ]
       parameter: "turbidity"
-      threshold_factor: 2.0  # x times normal range
+      threshold_factor: 2.0 # x times normal range
       severity: "high"
       action: "reduce_production_rate"
-    
+
     ph_out_of_range:
-      applicable_modules: ["*"]
+      applicable_modules: [ "*" ]
       parameter: "ph"
       low_threshold: 6.5
       high_threshold: 8.5
       severity: "medium"
       action: "adjust_chemical_dosing"
-    
+
     low_disinfectant_residual:
-      applicable_modules: ["chlorination", "finished_water_tank"]
+      applicable_modules: [ "chlorination", "finished_water_tank" ]
       parameter: "chlorine_residual"
-      threshold: 0.2  # mg/L
+      threshold: 0.2 # mg/L
       severity: "high"
       action: "increase_dose"
-  
+
   equipment:
     high_vibration:
-      applicable_modules: ["intake_pump", "finished_water_pump"]
+      applicable_modules: [ "intake_pump", "finished_water_pump" ]
       parameter: "vibration"
-      threshold: 4.0  # mm/s
+      threshold: 4.0 # mm/s
       severity: "medium"
       action: "schedule_maintenance"
-    
+
     motor_overtemperature:
-      applicable_modules: ["intake_pump", "finished_water_pump"]
+      applicable_modules: [ "intake_pump", "finished_water_pump" ]
       parameter: "motor_temperature"
-      threshold: 70  # °C
+      threshold: 70 # °C
       severity: "high"
       action: "shutdown_equipment"
-    
+
     filter_clogged:
-      applicable_modules: ["filter_bed", "rapid_sand_filter", "gac_filter"]
+      applicable_modules: [ "filter_bed", "rapid_sand_filter", "gac_filter" ]
       parameter: "differential_pressure"
-      threshold: 400  # mbar
+      threshold: 400 # mbar
       severity: "medium"
       action: "initiate_backwash"
