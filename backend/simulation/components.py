@@ -9,7 +9,7 @@ These classes wrap the PlantComponent dataclass to provide update() and get_para
 import math
 import random
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from core.plant_elements import (
     ComponentRole,
@@ -17,6 +17,8 @@ from core.plant_elements import (
     PlantParameter,
     SensorType,
 )
+from core.sensor_catalog import get_parameter_library, ParameterSpecification
+from .values_generator import SimulationValueGenerator, SimulationContext
 
 
 class SimulatedPlantComponent:
@@ -27,7 +29,7 @@ class SimulatedPlantComponent:
     to make parameters change over time with realistic behavior patterns.
     """
 
-    def __init__(self, wtp_component: PlantComponent):
+    def __init__(self, wtp_component: PlantComponent, module_type: Optional[str] = None):
         self.component = wtp_component
         self.current_values = {}
         self.last_update = time.time()
@@ -37,12 +39,48 @@ class SimulatedPlantComponent:
         self.operating = True
         self.fault_probability = 0.001  # 0.1% chance of fault per update
 
+        # Module type for context-aware simulation
+        self.module_type = module_type or wtp_component.component_type
+
+        # Initialize realistic value generator
+        try:
+            self.value_generator = SimulationValueGenerator(get_parameter_library())
+        except Exception as e:
+            # Fallback to None if parameter library not available
+            import logging
+            logging.warning(f"Failed to load parameter library for realistic simulation: {e}")
+            self.value_generator = None
+
+        # Simulation context
+        self.context = SimulationContext(
+            module_type=self.module_type,
+            quality_target="good",  # Default to good quality operation
+            operating=self.operating,
+            simulation_time=0.0,
+        )
+
         # Initialize parameter values
         self._initialize_values()
 
     def _initialize_values(self):
         """Initialize parameter values within realistic ranges"""
         for param in self.component.parameters:
+            param_name = self._get_parameter_name(param)
+
+            # Try to use realistic value generator if available
+            if self.value_generator and param_name:
+                try:
+                    initial_value = self.value_generator.get_initial_value(
+                        param_name, self.context
+                    )
+                    self.current_values[param_name] = initial_value
+                    continue
+                except Exception as e:
+                    # Fall through to legacy initialization
+                    import logging
+                    logging.debug(f"Failed to generate realistic value for {param_name}: {e}")
+
+            # Legacy initialization as fallback
             if param.component_role == ComponentRole.SENSOR:
                 # Initialize sensors to mid-range with slight variation
                 mid_value = (param.min_value + param.max_value) / 2
@@ -83,7 +121,6 @@ class SimulatedPlantComponent:
             else:
                 initial_value = round(initial_value, param.precision)
 
-            param_name = self._get_parameter_name(param)
             self.current_values[param_name] = initial_value
 
     def _get_parameter_name(self, param: PlantParameter) -> str:
@@ -124,11 +161,39 @@ class SimulatedPlantComponent:
         self.last_update = current_time
         self.simulation_time += dt
 
+        # Update simulation context
+        self.context.simulation_time = self.simulation_time
+        self.context.operating = self.operating
+
+        # Update temperature and flow rate from current values if available
+        if "temperature" in self.current_values:
+            self.context.temperature = self.current_values["temperature"]
+        if "flow_rate" in self.current_values:
+            self.context.flow_rate = self.current_values["flow_rate"]
+
         # Update each parameter based on its type and behavior
         for param in self.component.parameters:
             param_name = self._get_parameter_name(param)
             current_value = self.current_values[param_name]
 
+            # Try realistic value generator first
+            if self.value_generator and param_name:
+                try:
+                    # Handle status parameters separately
+                    if param.component_role == ComponentRole.STATUS:
+                        new_value = self._simulate_status_behavior(param, current_value, dt)
+                    else:
+                        new_value = self.value_generator.simulate_value_update(
+                            param_name, current_value, dt, self.context
+                        )
+                    self.current_values[param_name] = new_value
+                    continue
+                except Exception as e:
+                    # Fall through to legacy simulation
+                    import logging
+                    logging.debug(f"Failed to update realistic value for {param_name}: {e}")
+
+            # Legacy simulation as fallback
             if param.component_role == ComponentRole.SENSOR:
                 new_value = self._simulate_sensor_behavior(param, current_value, dt)
             elif param.component_role == ComponentRole.ACTUATOR:
@@ -296,9 +361,29 @@ class SimulatedPlantComponent:
     def set_operating_state(self, operating: bool):
         """Set component operating state"""
         self.operating = operating
+        self.context.operating = operating
         # Update run_status parameter if it exists
         for param in self.component.parameters:
             if param.sensor_type == SensorType.RUN_STATUS:
                 param_name = self._get_parameter_name(param)
                 self.current_values[param_name] = 1.0 if operating else 0.0
                 break
+
+    def set_quality_target(self, quality: str):
+        """
+        Set the quality target for simulation.
+
+        Args:
+            quality: One of "excellent", "good", "acceptable", "poor"
+        """
+        valid_qualities = ["excellent", "good", "acceptable", "poor"]
+        if quality in valid_qualities:
+            self.context.quality_target = quality
+        else:
+            import logging
+            logging.warning(f"Invalid quality target: {quality}. Must be one of {valid_qualities}")
+
+    def set_module_type(self, module_type: str):
+        """Set the module type for context-aware simulation"""
+        self.module_type = module_type
+        self.context.module_type = module_type
