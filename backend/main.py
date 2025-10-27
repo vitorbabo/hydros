@@ -216,9 +216,17 @@ class HydrosSystem:
             templates_dir=str(self.templates_dir),
         )
 
+        # Determine Modbus server port based on site_id to avoid conflicts
+        # wtp-porto-01: port 5020, wtp-regional-02: port 5021, etc.
+        site_port_map = {
+            "wtp-porto-01": 5020,
+            "wtp-regional-02": 5021,
+        }
+        modbus_port = site_port_map.get(self.site_id, 5020)
+
         # Create Modbus server for serving simulated data
         modbus_server = self.protocol_registry.create_modbus_server(
-            "sim_modbus_server", host="0.0.0.0", port=5020
+            "sim_modbus_server", host="0.0.0.0", port=modbus_port
         )
 
         if modbus_server:

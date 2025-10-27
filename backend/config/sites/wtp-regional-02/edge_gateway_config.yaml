@@ -6,19 +6,19 @@ plcs:
 - connection_id: main_plc
   enabled: true
   ip_address: ${MAIN_PLC_HOST:localhost}
-  port: ${MAIN_PLC_PORT:5020}
+  port: ${MAIN_PLC_PORT:5021}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: chemical_plc
   enabled: true
   ip_address: ${CHEM_PLC_HOST:localhost}
-  port: ${CHEM_PLC_PORT:5020}
+  port: ${CHEM_PLC_PORT:5021}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: filtration_plc
   enabled: true
   ip_address: ${FILT_PLC_HOST:localhost}
-  port: ${FILT_PLC_PORT:502}
+  port: ${FILT_PLC_PORT:5021}
   protocol: modbus_tcp
   unit_id: 1
 - connection_id: distribution_plc

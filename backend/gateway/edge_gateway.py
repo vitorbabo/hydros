@@ -157,6 +157,7 @@ class EdgeGateway:
                 port = plc_config.get("port", 502)
                 device_id = plc_config.get("device_id", plc_config.get("unit_id", 1))
 
+                # Create base connection object
                 plc_conn = PLCConnection(
                     plc_id=plc_id,
                     protocol=protocol,
@@ -165,6 +166,16 @@ class EdgeGateway:
                     device_id=device_id,
                     enabled=plc_config.get("enabled", True),
                 )
+
+                # Store protocol-specific parameters as attributes for later use
+                # These will be used when creating the PLCDataReader
+                if protocol == "s7":
+                    plc_conn.rack = plc_config.get("rack", 0)
+                    plc_conn.slot = plc_config.get("slot", 1)
+                elif protocol == "opcua":
+                    plc_conn.endpoint_url = plc_config.get("endpoint_url", f"opc.tcp://{host}:4840")
+                    plc_conn.security_policy = plc_config.get("security_policy", "None")
+
                 self.plc_connections[plc_conn.plc_id] = plc_conn
 
             # Load parameter mappings (handle both formats)
@@ -222,43 +233,75 @@ class EdgeGateway:
                     "s7": PLCProtocol.S7_COMM,
                 }
 
-                reader_conn = ReaderPLCConnection(
-                    connection_id=plc_id,
-                    ip_address=plc_conn.host,  # map host to ip_address
-                    port=plc_conn.port,
-                    protocol=protocol_map.get(
-                        plc_conn.protocol, PLCProtocol.MODBUS_TCP
-                    ),
-                    unit_id=plc_conn.device_id,
-                    timeout_ms=int(plc_conn.timeout * 1000),
-                    retry_attempts=plc_conn.retry_count,
-                    enabled=plc_conn.enabled,
-                )
+                # Build reader connection with protocol-specific parameters
+                reader_conn_kwargs = {
+                    "connection_id": plc_id,
+                    "ip_address": plc_conn.host,  # map host to ip_address
+                    "port": plc_conn.port,
+                    "protocol": protocol_map.get(plc_conn.protocol, PLCProtocol.MODBUS_TCP),
+                    "unit_id": plc_conn.device_id,
+                    "timeout_ms": int(plc_conn.timeout * 1000),
+                    "retry_attempts": plc_conn.retry_count,
+                    "enabled": plc_conn.enabled,
+                }
+
+                # Add S7-specific parameters
+                if plc_conn.protocol == "s7":
+                    reader_conn_kwargs["rack"] = getattr(plc_conn, "rack", 0)
+                    reader_conn_kwargs["slot"] = getattr(plc_conn, "slot", 1)
+
+                # Add OPC UA-specific parameters
+                if plc_conn.protocol == "opcua":
+                    reader_conn_kwargs["endpoint_url"] = getattr(
+                        plc_conn, "endpoint_url", f"opc.tcp://{plc_conn.host}:4840"
+                    )
+                    reader_conn_kwargs["security_mode"] = getattr(plc_conn, "security_policy", "None")
+
+                reader_conn = ReaderPLCConnection(**reader_conn_kwargs)
 
                 reader = create_plc_reader(reader_conn)
-                # Connect using async client only
-                if hasattr(reader, "connect_async"):
-                    try:
-                        await reader.connect_async()
-                        self.plc_readers[plc_id] = reader
-                        self.logger.info(
-                            f"Connected PLC reader: {plc_id} ({plc_conn.protocol})"
-                        )
-                    except Exception as e:
+
+                # Connect using appropriate method based on protocol
+                if plc_conn.protocol in ["modbus", "modbus_tcp"]:
+                    # Modbus uses async connection
+                    if hasattr(reader, "connect_async"):
+                        try:
+                            await reader.connect_async()
+                            self.plc_readers[plc_id] = reader
+                            self.logger.info(
+                                f"Connected PLC reader: {plc_id} ({plc_conn.protocol})"
+                            )
+                        except Exception as e:
+                            self.logger.error(
+                                f"Failed to connect async client for {plc_id}: {e}"
+                            )
+                    else:
                         self.logger.error(
-                            f"Failed to connect async client for {plc_id}: {e}"
+                            f"Async client not available for PLC reader: {plc_id}"
                         )
                 else:
-                    self.logger.error(
-                        f"Async client not available for PLC reader: {plc_id}"
-                    )
+                    # S7 and OPC UA use sync connection
+                    try:
+                        if reader.connect():
+                            self.plc_readers[plc_id] = reader
+                            self.logger.info(
+                                f"Connected PLC reader: {plc_id} ({plc_conn.protocol})"
+                            )
+                        else:
+                            self.logger.warning(
+                                f"Failed to connect to {plc_id} ({plc_conn.protocol}) - will retry later"
+                            )
+                    except Exception as e:
+                        self.logger.warning(
+                            f"Failed to connect to {plc_id} ({plc_conn.protocol}): {e}"
+                        )
 
-        except ImportError:
-            self.logger.error("PLC readers not available - cannot connect to real PLCs")
+        except ImportError as e:
+            self.logger.error(f"PLC readers not available - cannot connect to real PLCs: {e}")
             raise
 
     async def read_plc_data(self) -> Dict[str, Any]:
-        """Read data from all connected PLCs (async)"""
+        """Read data from all connected PLCs (supports both async and sync readers)"""
         start_time = time.perf_counter()
         all_data = {}
 
@@ -274,9 +317,17 @@ class EdgeGateway:
 
             reader = self.plc_readers[plc_id]
             try:
-                value, quality = await reader.read_tag_async(
-                    address, mapping.get("data_type", "REAL")
-                )
+                # Use async method if available (Modbus), otherwise use sync method (S7, OPC UA)
+                if hasattr(reader, "read_tag_async"):
+                    value, quality = await reader.read_tag_async(
+                        address, mapping.get("data_type", "REAL")
+                    )
+                else:
+                    # Sync read for protocols without async support
+                    value, quality = reader.read_tag(
+                        address, mapping.get("data_type", "REAL")
+                    )
+
                 if value is not None and quality.value == "good":
                     # Apply scaling
                     scale = mapping.get("scale_factor", 1.0)
