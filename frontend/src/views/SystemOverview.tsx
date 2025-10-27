@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { MetricCard } from '../components/shared/MetricCard'
 import { StatusIndicator } from '../components/shared/StatusIndicator'
 import { Modal } from '../components/shared/Modal'
@@ -25,6 +25,9 @@ export function SystemOverview() {
   // Modal state for plant details
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null)
 
+  // Use ref to cache flow rates (prevents flickering to zero without causing re-renders)
+  const flowRateCacheRef = useRef<Record<string, { currentFlowRate: number, dailyTotalFlow: number }>>({})
+
   // Debug telemetry data
   // console.log('SystemOverview debug:', {
   //   plantConfigCount: Object.keys(plantConfigurations).length,
@@ -37,12 +40,12 @@ export function SystemOverview() {
   // Calculate system metrics from real data
   const systemMetrics = useMemo(() => {
     const sites = Object.entries(plantConfigurations)
-    
+
     // Check connected sites based on recent telemetry data (within last 60 seconds)
     const connectedSites = sites.filter(([siteId]) => {
       const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
       if (siteObservations.length === 0) return false
-      
+
       // Check if any data is recent
       const hasRecentData = siteObservations.some(obs => {
         if (!obs || !obs.ts) return false
@@ -50,41 +53,59 @@ export function SystemOverview() {
         const timeDiff = Date.now() - obsTime
         return timeDiff < 60000 // Within last 60 seconds
       })
-      
+
       return hasRecentData
     })
 
     // System data points
     const totalDataPoints = Object.keys(latest).length
     const dataPointsPerMinute = Math.floor(totalDataPoints * 0.8) // Estimate based on current data
-    
+
     // Calculate system health based on connection status and active data
-    // const healthPercentage = connectedSites.length > 0 
-    //   ? ((connectedSites.length / Math.max(sites.length, 1)) * 100) 
+    // const healthPercentage = connectedSites.length > 0
+    //   ? ((connectedSites.length / Math.max(sites.length, 1)) * 100)
     //   : connectionStatus === 'connected' ? 95.0 : 0
     const healthPercentage = 95
 
-    return {
-      totalSites: sites.length,
-      connectedSites: connectedSites.length,
-      dataPointsPerMinute,
-      systemHealth: healthPercentage,
-      sites: sites.map(([siteId, config]) => {
-        const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
-        const hasRecentData = siteObservations.length > 0
-        
-        // Get raw intake flow data specifically for the site
-        const rawIntakeFlowObs = siteObservations.find(obs => 
-          obs.asset_id === 'raw_intake' && obs.measurement === 'flow_rate'
-        )
-        
-        // Simplification to show case flow feature
-        // Use raw intake flow rate (convert from m³/h to m³/day)
-        const currentFlow = rawIntakeFlowObs ? rawIntakeFlowObs.value: 0
-        
+    const sitesList = sites.map(([siteId, config]) => {
+      const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
+      const hasRecentData = siteObservations.length > 0
+
+      // Get raw intake flow data specifically for the site
+      const rawIntakeFlowObs = siteObservations.find(obs =>
+        obs.asset_id === 'raw_intake' && obs.measurement === 'flow_rate'
+      )
+
+      // Get daily total flow observation
+      const dailyTotalFlowObs = siteObservations.find(obs =>
+        obs.asset_id === 'raw_intake' && obs.measurement === 'daily_flow_total'
+      )
+
+      // Get cached values for this site
+      const cachedValues = flowRateCacheRef.current[siteId] || { currentFlowRate: 0, dailyTotalFlow: 0 }
+
+      // Current flow rate in m³/h - use cached value if observation is missing
+      const currentFlowRate = rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate
+
+      // Daily total flow - use cached value if observation is missing
+      const dailyTotalFlow = dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+
+      // Update cache with latest values (only if we have valid observations)
+      if (rawIntakeFlowObs || dailyTotalFlowObs) {
+        flowRateCacheRef.current[siteId] = {
+          currentFlowRate: rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate,
+          dailyTotalFlow: dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+        }
+      }
+
         // Extract site info from rich configuration data
         const siteInfo = (config as any)?.site_info
-        const designCapacity = siteInfo?.design_capacity || "Unknown"
+        const operationalParams = siteInfo?.operational_parameters
+
+        // Use design_flow_rate from operational parameters (m³/h)
+        const designFlowRate = operationalParams?.design_flow_rate ||
+                               (siteInfo?.design_capacity / 24) || 0
+
         const location = siteInfo?.location
         
         // Better connection status based on recent data (within last 60 seconds)
@@ -114,27 +135,35 @@ export function SystemOverview() {
         //   })
         // }
         
-        return {
-          id: siteId,
-          name: siteInfo?.name || config.name || `Plant ${siteId}`,
-          location: location ? `${location.region}, ${location.country}` : 'Unknown Location',
-          status: isRecentData ? 'connected' as const : 'disconnected' as const,
-          capacity: designCapacity,
-          currentFlow: currentFlow,
-          moduleCount: Array.isArray(config.modules) ? config.modules.length : Object.keys(config.modules || {}).length,
-          lastUpdate: isRecentData ? 'Just now' : 'No data',
-          // Additional site info for detailed view
-          treatmentTrain: siteInfo?.treatment_train || 'unknown',
-          operationalParams: siteInfo?.operational_parameters,
-          // Debug info
-          debugInfo: {
-            hasData: hasRecentData,
-            siteObservationsCount: siteObservations.length,
-            rawIntakeValue: rawIntakeFlowObs ? rawIntakeFlowObs.value : null,
-            isRecent: isRecentData
-          }
+      return {
+        id: siteId,
+        name: siteInfo?.name || config.name || `Plant ${siteId}`,
+        location: location ? `${location.region}, ${location.country}` : 'Unknown Location',
+        status: isRecentData ? 'connected' as const : 'disconnected' as const,
+        designFlowRate: designFlowRate,
+        currentFlowRate: currentFlowRate,
+        dailyTotalFlow: dailyTotalFlow,
+        moduleCount: Array.isArray(config.modules) ? config.modules.length : Object.keys(config.modules || {}).length,
+        lastUpdate: isRecentData ? 'Just now' : 'No data',
+        // Additional site info for detailed view
+        treatmentTrain: siteInfo?.treatment_train || 'unknown',
+        operationalParams: siteInfo?.operational_parameters,
+        // Debug info
+        debugInfo: {
+          hasData: hasRecentData,
+          siteObservationsCount: siteObservations.length,
+          rawIntakeValue: rawIntakeFlowObs ? rawIntakeFlowObs.value : null,
+          isRecent: isRecentData
         }
-      })
+      }
+    })
+
+    return {
+      totalSites: sites.length,
+      connectedSites: connectedSites.length,
+      dataPointsPerMinute,
+      systemHealth: healthPercentage,
+      sites: sitesList
     }
   }, [plantConfigurations, latest, connectionStatus])
 
@@ -208,21 +237,28 @@ export function SystemOverview() {
                 <StatusIndicator status={site.status} showLabel />
               </div>
 
-              {/* Basic Site Info */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              {/* Basic Site Info - 3 Metrics */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Design Capacity</p>
+                  <p className="text-sm font-medium text-gray-600">Design Flow</p>
                   <p className="text-xl font-semibold text-gray-900">
-                    {(site.capacity / 1000).toFixed(0)}k
+                    {(site.designFlowRate / 1000).toFixed(1)}k
                   </p>
-                  <p className="text-xs text-gray-500">m³/day</p>
+                  <p className="text-xs text-gray-500">m³/h</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Current Flow</p>
                   <p className="text-xl font-semibold text-gray-900">
-                    {(site.currentFlow / 1000).toFixed(0)}k
+                    {(site.currentFlowRate / 1000).toFixed(1)}k
                   </p>
-                  <p className="text-xs text-gray-500">m³/day</p>
+                  <p className="text-xs text-gray-500">m³/h</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Daily Total</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {(site.dailyTotalFlow / 1000).toFixed(1)}k
+                  </p>
+                  <p className="text-xs text-gray-500">m³</p>
                 </div>
               </div>
 
@@ -231,13 +267,13 @@ export function SystemOverview() {
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600">Utilization</span>
                   <span className="font-medium">
-                    {((site.currentFlow / site.capacity) * 100).toFixed(1)}%
+                    {((site.currentFlowRate / site.designFlowRate) * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min((site.currentFlow / site.capacity) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((site.currentFlowRate / site.designFlowRate) * 100, 100)}%` }}
                   />
                 </div>
               </div>

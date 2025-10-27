@@ -16,10 +16,13 @@ Usage:
 import argparse
 import asyncio
 import logging
+import os
 import signal
 import sys
 from pathlib import Path
 from typing import Optional
+
+from dotenv import load_dotenv
 
 from core.config_publisher import ConfigurationPublisher
 from core.config_validator import ConfigurationValidationError, ConfigValidator
@@ -27,6 +30,8 @@ from core.digital_twin import DigitalTwin
 from gateway.edge_gateway import EdgeGateway, GatewayMode
 from protocols.mqtt_handler import MQTTHandler
 from protocols.protocol_registry import ProtocolRegistry
+from services.influxdb_query_service import InfluxDBQueryService
+from services.aggregation_publisher import AggregationPublisher
 from simulation.simulator import SimulationEngine, SimulationMode
 
 
@@ -47,6 +52,10 @@ class HydrosSystem:
         self.protocol_registry = ProtocolRegistry()
         self.mqtt_handler: Optional[MQTTHandler] = None
         self.config_publisher: Optional[ConfigurationPublisher] = None
+
+        # InfluxDB and aggregation services
+        self.influxdb_service: Optional[InfluxDBQueryService] = None
+        self.aggregation_publisher: Optional[AggregationPublisher] = None
 
         # Mode-specific components
         self.simulation_engine: Optional[SimulationEngine] = None
@@ -169,13 +178,66 @@ class HydrosSystem:
     def initialize_config_publisher(self):
         """Initialize MQTT configuration publisher using shared MQTT handler"""
         self.logger.info("Initializing configuration publisher")
-        
+
         self.config_publisher = ConfigurationPublisher(
             site_id=self.site_id,
             mqtt_handler=self.mqtt_handler
         )
-        
+
         self.logger.info(f"Configuration publisher initialized for site {self.site_id}")
+
+    async def initialize_influxdb_service(self):
+        """Initialize InfluxDB query service from environment variables"""
+        # Get InfluxDB configuration from environment
+        influxdb_url = os.getenv("INFLUXDB_URL", "http://localhost:8086")
+        influxdb_token = os.getenv("INFLUXDB_TOKEN", "")
+        influxdb_org = os.getenv("INFLUXDB_ORG", "hydros")
+        influxdb_bucket = os.getenv("INFLUXDB_BUCKET", "telemetry")
+
+        if not influxdb_token:
+            self.logger.warning("INFLUXDB_TOKEN not set - InfluxDB integration disabled")
+            return False
+
+        self.logger.info(f"Initializing InfluxDB service: {influxdb_url}")
+
+        try:
+            self.influxdb_service = InfluxDBQueryService(
+                url=influxdb_url,
+                token=influxdb_token,
+                org=influxdb_org,
+                bucket=influxdb_bucket
+            )
+
+            # Connect to InfluxDB
+            await self.influxdb_service.connect()
+            self.logger.info("InfluxDB service initialized successfully")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to initialize InfluxDB service: {e}")
+            self.influxdb_service = None
+            return False
+
+    def initialize_aggregation_publisher(self, site_ids: list):
+        """Initialize aggregation publisher service"""
+        if not self.influxdb_service or not self.mqtt_handler:
+            self.logger.warning("Cannot initialize aggregation publisher - dependencies not available")
+            return False
+
+        self.logger.info("Initializing aggregation publisher")
+
+        # Get publish interval from environment (default: 300s = 5 minutes)
+        publish_interval = float(os.getenv("AGGREGATION_PUBLISH_INTERVAL", "300"))
+
+        self.aggregation_publisher = AggregationPublisher(
+            influxdb_service=self.influxdb_service,
+            mqtt_handler=self.mqtt_handler,
+            site_ids=site_ids,
+            publish_interval=publish_interval
+        )
+
+        self.logger.info(f"Aggregation publisher initialized for {len(site_ids)} sites")
+        return True
 
     async def start_config_publishing(self):
         """Start configuration publishing service"""
@@ -278,6 +340,18 @@ class HydrosSystem:
         if not config_publishing_started:
             self.logger.warning("Configuration publishing failed to start")
 
+        # Initialize InfluxDB service
+        influxdb_initialized = await self.initialize_influxdb_service()
+        if influxdb_initialized:
+            # Initialize and start aggregation publisher
+            if self.initialize_aggregation_publisher([self.site_id]):
+                await self.aggregation_publisher.start()
+                self.logger.info("Aggregation publisher started")
+            else:
+                self.logger.warning("Failed to initialize aggregation publisher")
+        else:
+            self.logger.warning("InfluxDB integration disabled - daily totals will not be available")
+
         # Start edge gateway
         gateway_task = asyncio.create_task(self.edge_gateway.start())
 
@@ -290,7 +364,19 @@ class HydrosSystem:
         config_publishing_started = await self.start_config_publishing()
         if not config_publishing_started:
             self.logger.warning("Configuration publishing failed to start")
-        
+
+        # Initialize InfluxDB service
+        influxdb_initialized = await self.initialize_influxdb_service()
+        if influxdb_initialized:
+            # Initialize and start aggregation publisher
+            if self.initialize_aggregation_publisher([self.site_id]):
+                await self.aggregation_publisher.start()
+                self.logger.info("Aggregation publisher started")
+            else:
+                self.logger.warning("Failed to initialize aggregation publisher")
+        else:
+            self.logger.warning("InfluxDB integration disabled - daily totals will not be available")
+
         await self.edge_gateway.start()
 
     async def _update_modbus_server_loop(self, modbus_server):
@@ -386,6 +472,14 @@ class HydrosSystem:
         self.logger.info("Stopping Hydros system")
         self.running = False
 
+        # Stop aggregation publisher
+        if self.aggregation_publisher:
+            await self.aggregation_publisher.stop()
+
+        # Stop InfluxDB service
+        if self.influxdb_service:
+            await self.influxdb_service.disconnect()
+
         # Stop configuration publisher
         if self.config_publisher:
             await self.config_publisher.disconnect()
@@ -426,6 +520,17 @@ class HydrosSystem:
                 "sequence_number": self.config_publisher.sequence_number
             }
 
+        if self.influxdb_service:
+            status["influxdb"] = {
+                "connected": self.influxdb_service.client is not None,
+                "url": self.influxdb_service.url,
+                "org": self.influxdb_service.org,
+                "bucket": self.influxdb_service.bucket
+            }
+
+        if self.aggregation_publisher:
+            status["aggregation_publisher"] = self.aggregation_publisher.get_status()
+
         if self.simulation_engine:
             status["simulation"] = self.simulation_engine.get_simulation_statistics()
 
@@ -457,6 +562,9 @@ def setup_logging(level: str = "INFO"):
 
 async def main():
     """Main entry point"""
+    # Load environment variables from .env file (for local development)
+    load_dotenv()
+
     parser = argparse.ArgumentParser(
         description="Unified Hydros WTP System",
         epilog="""

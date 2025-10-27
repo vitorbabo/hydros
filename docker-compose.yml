@@ -53,10 +53,16 @@ services:
       - PLC_PORT=${PLC_PORT:-5020}
       - MODE=${HYDROS_MODE:-simulation}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=hydros-token
+      - INFLUXDB_ORG=hydros
+      - INFLUXDB_BUCKET=wtp
+      - AGGREGATION_PUBLISH_INTERVAL=300
     ports:
       - "5020:5020"  # Modbus TCP server port
     depends_on:
       - mosquitto
+      - influxdb
     restart: unless-stopped
     command: python main.py --mode ${HYDROS_MODE:-simulation} --log-level ${LOG_LEVEL:-INFO}
     volumes:

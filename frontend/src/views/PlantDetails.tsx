@@ -1,3 +1,4 @@
+import { useMemo, useRef } from 'react'
 import { useConfigurationStore } from '../store/configurationStore'
 import { useTelemetryStore } from '../store/telemetryStore'
 import { StatusIndicator } from '../components/shared/StatusIndicator'
@@ -11,7 +12,8 @@ import {
   Wifi,
   Database,
   Filter,
-  FlaskConical
+  FlaskConical,
+  Gauge
 } from 'lucide-react'
 
 interface PlantDetailsProps {
@@ -22,6 +24,12 @@ interface PlantDetailsProps {
 export function PlantDetails({ siteId, onClose }: PlantDetailsProps) {
   const { plantConfigurations } = useConfigurationStore()
   const { latest } = useTelemetryStore()
+
+  // Use ref to cache flow rates (prevents flickering to zero without causing re-renders)
+  const flowRateCacheRef = useRef<{ currentFlowRate: number, dailyTotalFlow: number }>({
+    currentFlowRate: 0,
+    dailyTotalFlow: 0
+  })
 
   const plantConfig = siteId ? plantConfigurations[siteId] : null
 
@@ -69,6 +77,41 @@ export function PlantDetails({ siteId, onClose }: PlantDetailsProps) {
   const controlStrategies = plantConfig.control_strategies || {}
   const alarmDefinitions = plantConfig.alarm_definitions || {}
 
+  // Get current telemetry for this site with caching
+  const { currentFlowRate, dailyTotalFlow } = useMemo(() => {
+    const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
+
+    // Get current flow rate from telemetry
+    const rawIntakeFlowObs = siteObservations.find(obs =>
+      obs.asset_id === 'raw_intake' && obs.measurement === 'flow_rate'
+    )
+
+    // Get daily total flow
+    const dailyTotalFlowObs = siteObservations.find(obs =>
+      obs.asset_id === 'raw_intake' && obs.measurement === 'daily_flow_total'
+    )
+
+    // Get cached values
+    const cachedValues = flowRateCacheRef.current
+
+    // Use cached values if observations are missing (prevents flickering to zero)
+    const newFlowRate = rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate
+    const newDailyTotal = dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+
+    // Update cache if we have new valid values
+    if (rawIntakeFlowObs || dailyTotalFlowObs) {
+      flowRateCacheRef.current = {
+        currentFlowRate: rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate,
+        dailyTotalFlow: dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+      }
+    }
+
+    return {
+      currentFlowRate: newFlowRate,
+      dailyTotalFlow: newDailyTotal
+    }
+  }, [latest, siteId])
+
   // Get current telemetry for this site
   const siteObservations = Object.values(latest).filter(obs => obs.site_id === siteId)
 
@@ -106,23 +149,24 @@ export function PlantDetails({ siteId, onClose }: PlantDetailsProps) {
       {/* Plant Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Design Capacity"
-          value={`${(siteInfo.design_capacity / 1000).toFixed(0)}k`}
-          unit="m³/day"
+          title="Design Flow Rate"
+          value={`${(operationalParams.design_flow_rate / 1000).toFixed(1)}k`}
+          unit="m³/h"
           icon={<Droplets className="w-6 h-6" />}
           status="normal"
         />
         <MetricCard
-          title="Normal Flow Rate"
-          value={operationalParams.normal_flow_rate}
+          title="Current Flow Rate"
+          value={`${(currentFlowRate / 1000).toFixed(1)}k`}
           unit="m³/h"
           icon={<Activity className="w-6 h-6" />}
           status="normal"
         />
         <MetricCard
-          title="Treatment Train"
-          value={siteInfo.treatment_train}
-          icon={<Filter className="w-6 h-6" />}
+          title="Daily Total Flow"
+          value={`${(dailyTotalFlow / 1000).toFixed(1)}k`}
+          unit="m³"
+          icon={<Gauge className="w-6 h-6" />}
           status="normal"
         />
         <MetricCard
