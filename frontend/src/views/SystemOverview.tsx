@@ -145,12 +145,12 @@ export function SystemOverview() {
       {/* Page Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">System Overview</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">System Overview</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Monitor all water treatment plant sites and system health
           </p>
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           Last updated: {lastUpdate ? new Date(lastUpdate).toLocaleTimeString() : 'Never'}
         </div>
       </div>
@@ -193,16 +193,16 @@ export function SystemOverview() {
           systemMetrics.sites.map(site => (
             <div
               key={site.id}
-              className="bg-white rounded-lg shadow-md border border-gray-200 p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200"
+              className="bg-white dark:bg-gray-900/50 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 p-6 cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-200"
               onClick={() => setSelectedPlantId(site.id)}
             >
               {/* Site Header */}
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{site.name}</h3>
-                  <p className="text-sm text-gray-500">{site.id}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{site.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{site.id}</p>
                   {site.location && site.location !== 'Unknown Location' && (
-                    <p className="text-xs text-gray-400">{site.location}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{site.location}</p>
                   )}
                 </div>
                 <StatusIndicator status={site.status} showLabel />
@@ -211,32 +211,32 @@ export function SystemOverview() {
               {/* Basic Site Info */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Design Capacity</p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Design Capacity</p>
+                  <p className="text-xl font-semibold text-gray-900 dark:text-white">
                     {(site.capacity / 1000).toFixed(0)}k
                   </p>
-                  <p className="text-xs text-gray-500">m³/day</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">m³/day</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Current Flow</p>
-                  <p className="text-xl font-semibold text-gray-900">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Flow</p>
+                  <p className="text-xl font-semibold text-gray-900 dark:text-white">
                     {(site.currentFlow / 1000).toFixed(0)}k
                   </p>
-                  <p className="text-xs text-gray-500">m³/day</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">m³/day</p>
                 </div>
               </div>
 
               {/* Utilization Bar */}
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Utilization</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">Utilization</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {((site.currentFlow / site.capacity) * 100).toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{ width: `${Math.min((site.currentFlow / site.capacity) * 100, 100)}%` }}
                   />
                 </div>
@@ -244,44 +244,44 @@ export function SystemOverview() {
 
               {/* Treatment Type */}
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-600">Treatment Process</p>
-                <p className="text-sm font-medium text-gray-900 capitalize">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Treatment Process</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
                   {site.treatmentTrain}
                 </p>
               </div>
 
               {/* Module Count and Last Update */}
-              <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-3">
-                <span className="text-gray-600">
+              <div className="flex justify-between items-center text-sm border-t border-gray-100 dark:border-gray-800 pt-3">
+                <span className="text-gray-600 dark:text-gray-400">
                   <Database className="w-4 h-4 inline mr-1" />
                   {site.moduleCount} modules
                 </span>
-                <span className="text-gray-500">Updated {site.lastUpdate}</span>
+                <span className="text-gray-500 dark:text-gray-400">Updated {site.lastUpdate}</span>
               </div>
 
               {/* View Details Indicator */}
-              <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-gray-100 text-blue-600 font-medium text-sm group-hover:text-blue-700">
+              <div className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-primary font-medium text-sm">
                 <span>View Details</span>
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-2 bg-white rounded-lg shadow-md border border-gray-200 p-8 text-center">
+          <div className="col-span-2 bg-white dark:bg-gray-900/50 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 p-8 text-center">
             <Server className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Plant Sites Configured</h3>
-            <p className="text-gray-500">Connect to MQTT broker to receive plant configuration data</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Plant Sites Configured</h3>
+            <p className="text-gray-500 dark:text-gray-400">Connect to MQTT broker to receive plant configuration data</p>
           </div>
         )}
       </div>
 
       {/* Alerts Section */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-900/50 rounded-lg shadow-md border border-gray-200 dark:border-gray-800 p-6">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-yellow-500" />
-          <h3 className="text-lg font-semibold text-gray-900">Active Alerts</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Alerts</h3>
           {activeAlarms.length > 0 && (
-            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+            <span className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 text-xs font-medium px-2 py-1 rounded-full">
               {activeAlarms.length}
             </span>
           )}
@@ -289,27 +289,27 @@ export function SystemOverview() {
         {activeAlarms.length > 0 ? (
           <div className="space-y-3">
             {activeAlarms.slice(0, 5).map(alarm => (
-              <div key={alarm.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+              <div key={alarm.id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                 <div className="flex items-center gap-3">
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                   <div>
-                    <p className="font-medium text-red-900">{alarm.message}</p>
-                    <p className="text-sm text-red-700">{alarm.asset_id} • {alarm.severity}</p>
+                    <p className="font-medium text-red-900 dark:text-red-300">{alarm.message}</p>
+                    <p className="text-sm text-red-700 dark:text-red-400">{alarm.asset_id} • {alarm.severity}</p>
                   </div>
                 </div>
-                <span className="text-xs text-red-600">
+                <span className="text-xs text-red-600 dark:text-red-400">
                   {new Date(alarm.timestamp).toLocaleTimeString()}
                 </span>
               </div>
             ))}
             {activeAlarms.length > 5 && (
-              <p className="text-sm text-gray-500 text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                 ... and {activeAlarms.length - 5} more alerts
               </p>
             )}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 text-center py-8">
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
             No active alerts at this time
           </div>
         )}

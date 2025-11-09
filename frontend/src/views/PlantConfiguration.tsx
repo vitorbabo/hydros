@@ -80,14 +80,14 @@ const ModuleInstance: React.FC<ModuleInstanceProps> = ({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ModuleIconComponent className="w-6 h-6 text-blue-600" />
+            <ModuleIconComponent className="w-6 h-6 text-primary" />
             <div>
-              <h4 className="font-medium text-gray-900">{template.description || moduleId}</h4>
-              <p className="text-sm text-gray-600 capitalize">
+              <h4 className="font-medium text-gray-900 dark:text-white">{template.description || moduleId}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
                 {template.type.replace('_', ' ')} • Position: ({moduleData.position.x}, {moduleData.position.y})
               </p>
             </div>
@@ -95,7 +95,7 @@ const ModuleInstance: React.FC<ModuleInstanceProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-gray-600 hover:text-gray-800 p-1 rounded"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-1 rounded"
             >
               <Settings className="w-4 h-4" />
             </button>
