@@ -16,6 +16,7 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
 import { useConfigurationStore } from './store/configurationStore'
+import { useThemeStore } from './store/themeStore'
 import { useMqtt, type ConfigurationMessage } from './hooks/useMqtt'
 import type { Observation } from './types'
 
@@ -34,6 +35,17 @@ function AppContent() {
   const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError } = useDashboardStore()
   const { addObservation, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
+  const { theme } = useThemeStore()
+
+  // Apply theme to document root
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }, [theme])
 
   // Handle MQTT configuration messages
   const handleMqttConfiguration = useCallback((topic: string, config: ConfigurationMessage) => {

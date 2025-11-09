@@ -7,10 +7,13 @@ import {
   Calendar,
   Wifi,
   WifiOff,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { Breadcrumbs } from '../shared/Breadcrumbs'
 import { StatusIndicator } from '../shared/StatusIndicator'
 import { useDashboardStore } from '../../store/dashboardStore'
+import { useThemeStore } from '../../store/themeStore'
 import { clsx } from 'clsx'
 
 interface TopBarProps {
@@ -24,6 +27,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     alarms,
     lastUpdate,
   } = useDashboardStore()
+
+  const { theme, toggleTheme } = useThemeStore()
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isTimeRangeOpen, setIsTimeRangeOpen] = useState(false)
@@ -107,6 +112,19 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               )}
             </div>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center h-10 w-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {theme === 'light' ? (
+              <Moon className="w-5 h-5" />
+            ) : (
+              <Sun className="w-5 h-5" />
+            )}
+          </button>
 
           {/* Notifications Bell */}
           <button className="relative flex items-center justify-center h-10 w-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
