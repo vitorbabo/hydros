@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Use the Dashboard component for high-level system overview or navigate to individual
+ * site pages for detailed information.
+ */
+
 import React, { useMemo, useState } from 'react'
 import { MetricCard } from '../components/shared/MetricCard'
 import { StatusIndicator } from '../components/shared/StatusIndicator'

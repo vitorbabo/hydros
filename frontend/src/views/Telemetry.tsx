@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Use the SiteTelemetry component within site detail pages for site-specific telemetry monitoring.
+ */
+
 import React, { useMemo, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { StatusIndicator } from '../components/shared/StatusIndicator'

@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is deprecated and will be removed in a future version.
+ * Use the SiteOverview component within site detail pages which includes all this
+ * information and more.
+ */
+
 import { useConfigurationStore } from '../store/configurationStore'
 import { useTelemetryStore } from '../store/telemetryStore'
 import { StatusIndicator } from '../components/shared/StatusIndicator'

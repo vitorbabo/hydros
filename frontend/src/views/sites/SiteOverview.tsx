@@ -1,8 +1,10 @@
 import React from 'react'
-import { Droplets, Filter, Beaker, Database, ChevronRight } from 'lucide-react'
+import { Droplets, Filter, Beaker, Database, ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical } from 'lucide-react'
 import { ModuleStatusCard } from '../../components/plant/ModuleStatusCard'
+import { StatusIndicator } from '../../components/shared/StatusIndicator'
 import type { PlantSite, ComponentStatus } from '../../types'
 import { useTelemetryStore } from '../../store/telemetryStore'
+import { useConfigurationStore } from '../../store/configurationStore'
 
 interface SiteOverviewProps {
   site: PlantSite
@@ -10,6 +12,15 @@ interface SiteOverviewProps {
 
 export function SiteOverview({ site }: SiteOverviewProps) {
   const { getLatestByAsset } = useTelemetryStore()
+  const { plantConfigurations } = useConfigurationStore()
+
+  // Get full configuration for this site
+  const plantConfig = plantConfigurations[site.id]
+  const siteInfo = plantConfig?.site_info || {}
+  const operationalParams = plantConfig?.operational_parameters || {}
+  const protocolClients = plantConfig?.protocol_clients || []
+  const controlStrategies = plantConfig?.control_strategies || {}
+  const alarmDefinitions = plantConfig?.alarm_definitions || {}
 
   // Map module types to display information
   const getModuleInfo = (moduleId: string) => {
@@ -169,6 +180,249 @@ export function SiteOverview({ site }: SiteOverviewProps) {
           </p>
         </div>
       </div>
+
+      {/* Site Information */}
+      {siteInfo.location && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-primary" />
+            Site Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Location</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                {siteInfo.location?.region}, {siteInfo.location?.country}
+              </p>
+              {siteInfo.location?.coordinates && (
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                  {siteInfo.location.coordinates[0].toFixed(4)}, {siteInfo.location.coordinates[1].toFixed(4)}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Design Parameters</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                Capacity: {site.design_capacity.toLocaleString()} m³/day
+              </p>
+              <p className="text-gray-600 dark:text-gray-400">Type: {site.treatment_train}</p>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-2">Flow Rates</h4>
+              <p className="text-gray-600 dark:text-gray-400">
+                Normal: {operationalParams.normal_flow_rate || 'N/A'} m³/h
+              </p>
+              <p className="text-gray-600 dark:text-gray-400">
+                Design: {operationalParams.design_flow_rate || 'N/A'} m³/h
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Water Quality Parameters */}
+      {operationalParams.raw_water_quality && operationalParams.treatment_targets && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <FlaskConical className="w-5 h-5 text-primary" />
+            Water Quality Parameters
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Raw Water Quality</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Turbidity Range:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {operationalParams.raw_water_quality.turbidity_range[0]} -{' '}
+                    {operationalParams.raw_water_quality.turbidity_range[1]} NTU
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">pH Range:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {operationalParams.raw_water_quality.ph_range[0]} -{' '}
+                    {operationalParams.raw_water_quality.ph_range[1]}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Temperature Range:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {operationalParams.raw_water_quality.temperature_range[0]} -{' '}
+                    {operationalParams.raw_water_quality.temperature_range[1]}°C
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Treatment Targets</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Finished Turbidity:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    ≤ {operationalParams.treatment_targets.finished_turbidity} NTU
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Finished pH:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {operationalParams.treatment_targets.finished_ph[0]} -{' '}
+                    {operationalParams.treatment_targets.finished_ph[1]}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Chlorine Residual:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {operationalParams.treatment_targets.chlorine_residual[0]} -{' '}
+                    {operationalParams.treatment_targets.chlorine_residual[1]} mg/L
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Protocol Clients */}
+      {protocolClients.length > 0 && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Wifi className="w-5 h-5 text-primary" />
+            Protocol Clients
+          </h3>
+          <div className="space-y-4">
+            {protocolClients.map((client: any, index: number) => (
+              <div
+                key={index}
+                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900 dark:text-white">{client.client_id}</h4>
+                  <StatusIndicator
+                    status={client.enabled ? 'connected' : 'disconnected'}
+                    showLabel
+                  />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{client.description}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Protocol:</span>
+                    <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                      {client.protocol}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Connection:</span>
+                    <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                      {client.connection.host}:{client.connection.port}
+                    </span>
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="text-gray-500 dark:text-gray-400">Modules Assigned:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {client.modules_assigned?.length || 0} modules
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Control Strategies */}
+      {Object.keys(controlStrategies).length > 0 && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Settings className="w-5 h-5 text-primary" />
+            Control Strategies
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {Object.entries(controlStrategies).map(([strategyId, strategy]: [string, any]) => (
+              <div
+                key={strategyId}
+                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+              >
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                  {strategyId.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                </h4>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{strategy.description}</p>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Inputs:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {strategy.inputs?.length || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Outputs:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white">
+                      {strategy.outputs?.length || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Algorithm:</span>
+                    <span className="ml-2 font-medium text-gray-900 dark:text-white">
+                      {strategy.algorithm}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alarm Definitions */}
+      {Object.keys(alarmDefinitions).length > 0 && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-primary" />
+            Alarm Definitions
+          </h3>
+          <div className="space-y-6">
+            {Object.entries(alarmDefinitions).map(([category, alarms]: [string, any]) => (
+              <div key={category}>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
+                  {category.replace(/_/g, ' ')}
+                </h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {Object.entries(alarms).map(([alarmId, alarm]: [string, any]) => (
+                    <div
+                      key={alarmId}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-3"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900 dark:text-white text-sm">
+                          {alarmId.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </h5>
+                        <span
+                          className={`px-2 py-1 text-xs rounded ${
+                            alarm.severity === 'critical'
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                              : alarm.severity === 'high'
+                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
+                              : alarm.severity === 'medium'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                              : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                          }`}
+                        >
+                          {alarm.severity}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div>Parameter: {alarm.parameter}</div>
+                        <div>Threshold: {alarm.threshold}</div>
+                        <div>Action: {alarm.action}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
