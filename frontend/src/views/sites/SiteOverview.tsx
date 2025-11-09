@@ -41,19 +41,19 @@ export function SiteOverview({ site }: SiteOverviewProps) {
     const metrics: Array<{ label: string; value: string }> = []
 
     // Add relevant metrics based on available data
-    if (flowObs) {
+    if (flowObs && typeof flowObs.value === 'number') {
       metrics.push({ label: 'Flow', value: `${flowObs.value.toFixed(1)} ${flowObs.unit}` })
     }
-    if (pressureObs) {
+    if (pressureObs && typeof pressureObs.value === 'number') {
       metrics.push({ label: 'Pressure', value: `${pressureObs.value.toFixed(1)} ${pressureObs.unit}` })
     }
-    if (levelObs) {
+    if (levelObs && typeof levelObs.value === 'number') {
       metrics.push({ label: 'Level', value: `${levelObs.value.toFixed(1)} ${levelObs.unit}` })
     }
-    if (turbidityObs) {
+    if (turbidityObs && typeof turbidityObs.value === 'number') {
       metrics.push({ label: 'Turbidity', value: `${turbidityObs.value.toFixed(2)} ${turbidityObs.unit}` })
     }
-    if (chlorineObs) {
+    if (chlorineObs && typeof chlorineObs.value === 'number') {
       metrics.push({ label: 'Cl', value: `${chlorineObs.value.toFixed(1)} ${chlorineObs.unit}` })
     }
 
@@ -69,12 +69,12 @@ export function SiteOverview({ site }: SiteOverviewProps) {
     }
 
     // Special case for reservoir level (from design example)
-    if (moduleId === 'finished_water_tank' && levelObs && levelObs.value > 95) {
+    if (moduleId === 'finished_water_tank' && levelObs && typeof levelObs.value === 'number' && levelObs.value > 95) {
       status = 'alarm'
     }
 
     // Special case for chlorine (from design example)
-    if (moduleId === 'chlorination' && chlorineObs && chlorineObs.value < 2.0) {
+    if (moduleId === 'chlorination' && chlorineObs && typeof chlorineObs.value === 'number' && chlorineObs.value < 2.0) {
       status = 'warning'
     }
 
