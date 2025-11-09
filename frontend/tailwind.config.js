@@ -9,14 +9,15 @@ export default {
       colors: {
         // SCADA-inspired color palette
         primary: {
+          DEFAULT: '#135bec', // Main primary color from design
           50: '#eff6ff',
           100: '#dbeafe',
           200: '#bfdbfe',
           300: '#93c5fd',
           400: '#60a5fa',
           500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
+          600: '#135bec', // Updated to match design
+          700: '#0d47c1',  // Darker shade
           800: '#1e40af',
           900: '#1e3a8a',
         },

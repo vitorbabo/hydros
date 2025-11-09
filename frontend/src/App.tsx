@@ -1,8 +1,14 @@
 import React, { useCallback, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Navigation } from './components/layout/Navigation'
-import { SystemOverview } from './views/SystemOverview'
+import { AppShell } from './components/layout/AppShell'
+import { Dashboard } from './views/Dashboard'
+import { Sites } from './views/Sites'
+import { Alerts } from './views/Alerts'
+import { Reports } from './views/Reports'
+import { Analytics } from './views/Analytics'
+import { Settings } from './views/Settings'
+import { Admin } from './views/Admin'
 import PlantLayout from './views/PlantLayout'
 import { PlantConfiguration } from './views/PlantConfiguration'
 import { Telemetry } from './views/Telemetry'
@@ -222,33 +228,35 @@ function AppContent() {
 
   return (
     <Router>
-      <div className="h-screen bg-gray-50 flex flex-col">
-        <Navigation />
-        <main className="flex-1 overflow-hidden">
-          <Routes>
-            <Route path="/" element={
-              <div className="max-w-7xl mx-auto h-full">
-                <SystemOverview />
-              </div>
-            } />
-            <Route path="/layout" element={
-              <div className="h-full">
-                <PlantLayout />
-              </div>
-            } />
-            <Route path="/configuration" element={
-              <div className="max-w-7xl mx-auto h-full">
-                <PlantConfiguration />
-              </div>
-            } />
-            <Route path="/telemetry" element={
-              <div className="max-w-7xl mx-auto h-full">
-                <Telemetry />
-              </div>
-            } />
-          </Routes>
-        </main>
-      </div>
+      <Routes>
+        <Route element={<AppShell />}>
+          {/* New navigation structure */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/sites" element={<Sites />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<Admin />} />
+
+          {/* Legacy routes (backward compatibility) */}
+          <Route path="/layout" element={
+            <div className="h-full">
+              <PlantLayout />
+            </div>
+          } />
+          <Route path="/configuration" element={
+            <div className="max-w-7xl mx-auto p-6 h-full">
+              <PlantConfiguration />
+            </div>
+          } />
+          <Route path="/telemetry" element={
+            <div className="max-w-7xl mx-auto p-6 h-full">
+              <Telemetry />
+            </div>
+          } />
+        </Route>
+      </Routes>
     </Router>
   )
 }
