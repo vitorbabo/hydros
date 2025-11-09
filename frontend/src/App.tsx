@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
 })
 
 function AppContent() {
-  const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError } = useDashboardStore()
+  const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites } = useDashboardStore()
   const { addObservation, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
   const { theme } = useThemeStore()
@@ -89,7 +89,26 @@ function AppContent() {
       
       // Update plant configuration
       updatePlantConfiguration(config.site_id, plantConfig)
-      
+
+      // Also update dashboardStore.sites for the Sites page
+      const currentSites = useDashboardStore.getState().sites
+      const siteInfo = plantData.site_info || {}
+      setSites({
+        ...currentSites,
+        [config.site_id]: {
+          id: config.site_id,
+          name: siteInfo.name || plantConfig.name || config.site_id,
+          design_capacity: siteInfo.design_capacity || 0,
+          treatment_train: siteInfo.treatment_train || 'unknown',
+          modules: Array.isArray(plantData.modules) ? plantData.modules : Object.keys(plantData.modules || {}),
+          operational_parameters: plantData.operational_parameters,
+          protocol_clients: plantData.protocol_clients,
+          status: 'connected',
+          location: siteInfo.location,
+          last_seen: config.timestamp,
+        }
+      })
+
       // Set current site if not already set
       if (!useDashboardStore.getState().currentSite) {
         setCurrentSite(config.site_id)
@@ -99,7 +118,7 @@ function AppContent() {
       const templates = config.data as Record<string, any>
       setModuleTemplates(templates)
     }
-  }, [updatePlantConfiguration, setModuleTemplates, setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError])
+  }, [updatePlantConfiguration, setModuleTemplates, setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites])
 
   // Handle MQTT messages
   const handleMqttMessage = useCallback((topic: string, message: string, observation?: Observation) => {
@@ -150,94 +169,6 @@ function AppContent() {
       setConnectionStatus('connecting')
     }
   }, [connected, setConnectionStatus])
-
-  // Initialize mock site data
-  useEffect(() => {
-    // In a real implementation, this would load from configuration or API
-    useDashboardStore.getState().setSites({
-      'wtp-porto-01': {
-        id: 'wtp-porto-01',
-        name: 'Porto Municipal WTP',
-        design_capacity: 50000,
-        treatment_train: 'conventional',
-        modules: ['raw_intake', 'intake_pump_1', 'coagulation_tank', 'clarifier_1', 'filter_bed_1', 'chlorination', 'finished_water_tank'],
-        operational_parameters: {
-          normal_flow_rate: 35.0,
-          design_flow_rate: 50.0,
-          raw_water_quality: {
-            turbidity_range: [2.0, 15.0],
-            ph_range: [7.2, 8.1],
-            temperature_range: [12.0, 20.0]
-          },
-          treatment_targets: {
-            finished_turbidity: 0.3,
-            finished_ph: [7.0, 8.5],
-            chlorine_residual: [0.2, 1.0]
-          }
-        },
-        protocol_clients: [
-          {
-            client_id: 'porto_modbus_client',
-            protocol: 'modbus_tcp',
-            description: 'Main PLC Modbus TCP client',
-            connection: {
-              host: '192.168.1.100',
-              port: 502,
-              unit_id: 1,
-              timeout: 5000,
-              retry_count: 3
-            },
-            enabled: true,
-            modules_assigned: ['intake_pump_1', 'coagulation_tank']
-          }
-        ],
-        status: 'connected'
-      },
-      'wtp-regional-02': {
-        id: 'wtp-regional-02',
-        name: 'Regional WTP North',
-        design_capacity: 200000,
-        treatment_train: 'advanced',
-        modules: ['raw_intake', 'intake_pump_1', 'intake_pump_2', 'coagulation_tank', 'clarifier_1', 'clarifier_2', 'filter_bed_1', 'filter_bed_2', 'chlorination', 'finished_water_tank'],
-        operational_parameters: {
-          normal_flow_rate: 140.0,
-          design_flow_rate: 200.0,
-          raw_water_quality: {
-            turbidity_range: [1.0, 25.0],
-            ph_range: [6.8, 8.3],
-            temperature_range: [8.0, 24.0]
-          },
-          treatment_targets: {
-            finished_turbidity: 0.3,
-            finished_ph: [7.0, 8.5],
-            chlorine_residual: [0.2, 1.0]
-          }
-        },
-        protocol_clients: [
-          {
-            client_id: 'regional_modbus_client',
-            protocol: 'modbus_tcp',
-            description: 'Regional PLC Modbus TCP client',
-            connection: {
-              host: '192.168.1.200',
-              port: 502,
-              unit_id: 1,
-              timeout: 5000,
-              retry_count: 3
-            },
-            enabled: true,
-            modules_assigned: ['intake_pump_1', 'intake_pump_2', 'clarifier_1', 'clarifier_2']
-          }
-        ],
-        status: 'maintenance'
-      }
-    })
-
-    // Set default current site
-    if (!useDashboardStore.getState().currentSite) {
-      setCurrentSite('wtp-porto-01')
-    }
-  }, [setCurrentSite])
 
   return (
     <Router>
