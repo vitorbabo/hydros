@@ -1,10 +1,11 @@
 import React from 'react'
-import { Droplets, Filter, Beaker, Database, ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical } from 'lucide-react'
+import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight } from 'lucide-react'
 import { ModuleStatusCard } from '../../components/plant/ModuleStatusCard'
 import { StatusIndicator } from '../../components/shared/StatusIndicator'
 import type { PlantSite, ComponentStatus } from '../../types'
 import { useTelemetryStore } from '../../store/telemetryStore'
 import { useConfigurationStore } from '../../store/configurationStore'
+import { getModuleIconComponent } from '../../utils/moduleIcons'
 
 interface SiteOverviewProps {
   site: PlantSite
@@ -12,7 +13,7 @@ interface SiteOverviewProps {
 
 export function SiteOverview({ site }: SiteOverviewProps) {
   const { getLatestByAsset } = useTelemetryStore()
-  const { plantConfigurations } = useConfigurationStore()
+  const { plantConfigurations, moduleTemplates } = useConfigurationStore()
 
   // Get full configuration for this site
   const plantConfig = plantConfigurations[site.id]
@@ -22,22 +23,46 @@ export function SiteOverview({ site }: SiteOverviewProps) {
   const controlStrategies = plantConfig?.control_strategies || {}
   const alarmDefinitions = plantConfig?.alarm_definitions || {}
 
-  // Map module types to display information
+  // Get module information from configuration and templates
   const getModuleInfo = (moduleId: string) => {
-    const moduleTypeMap: Record<string, { name: string; icon: React.ReactNode; type: string }> = {
-      raw_intake: { name: 'Intake', icon: <Droplets className="w-6 h-6" />, type: 'intake' },
-      intake_pump_1: { name: 'Intake Pump 1', icon: <Droplets className="w-6 h-6" />, type: 'pump' },
-      intake_pump_2: { name: 'Intake Pump 2', icon: <Droplets className="w-6 h-6" />, type: 'pump' },
-      coagulation_tank: { name: 'Coagulation', icon: <Beaker className="w-6 h-6" />, type: 'chemical_treatment' },
-      clarifier_1: { name: 'Clarifier 1', icon: <Filter className="w-6 h-6" />, type: 'sedimentation' },
-      clarifier_2: { name: 'Clarifier 2', icon: <Filter className="w-6 h-6" />, type: 'sedimentation' },
-      filter_bed_1: { name: 'Filter 1', icon: <Filter className="w-6 h-6" />, type: 'filtration' },
-      filter_bed_2: { name: 'Filter 2', icon: <Filter className="w-6 h-6" />, type: 'filtration' },
-      chlorination: { name: 'Disinfection', icon: <Beaker className="w-6 h-6" />, type: 'disinfection' },
-      finished_water_tank: { name: 'Reservoir', icon: <Database className="w-6 h-6" />, type: 'storage' },
+    const module = plantConfig?.modules?.[moduleId]
+    if (!module) {
+      return {
+        name: moduleId,
+        icon: <Settings className="w-6 h-6" />,
+        type: 'unknown',
+        category: 'other'
+      }
     }
 
-    return moduleTypeMap[moduleId] || { name: moduleId, icon: <Droplets className="w-6 h-6" />, type: 'unknown' }
+    const template = moduleTemplates[module.template_id]
+    if (!template) {
+      return {
+        name: moduleId,
+        icon: <Settings className="w-6 h-6" />,
+        type: 'unknown',
+        category: 'other'
+      }
+    }
+
+    // Get icon component based on template type and category
+    const IconComponent = getModuleIconComponent(template.type, template.category)
+
+    // Generate display name from moduleId (capitalize and remove underscores/numbers)
+    const displayName = moduleId
+      .replace(/_/g, ' ')
+      .replace(/\d+$/, '')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+      .trim()
+
+    return {
+      name: displayName,
+      icon: <IconComponent className="w-6 h-6" />,
+      type: template.type,
+      category: template.category || 'other'
+    }
   }
 
   // Get module status and metrics from telemetry
@@ -115,28 +140,32 @@ export function SiteOverview({ site }: SiteOverviewProps) {
           Plant Schematic
         </h3>
 
-        {/* Module Flow */}
-        <div className="flex items-center justify-between space-x-2 text-sm text-center overflow-x-auto pb-4">
-          {site.modules.map((moduleId, index) => {
-            const moduleInfo = getModuleInfo(moduleId)
-            const { status, metrics } = getModuleStatus(moduleId)
+        {/* Module Flow - Flexible Grid Layout */}
+        {plantConfig?.modules && Object.keys(plantConfig.modules).length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {Object.keys(plantConfig.modules).map((moduleId) => {
+              const moduleInfo = getModuleInfo(moduleId)
+              const { status, metrics } = getModuleStatus(moduleId)
 
-            return (
-              <React.Fragment key={moduleId}>
+              return (
                 <ModuleStatusCard
+                  key={moduleId}
                   name={moduleInfo.name}
                   icon={moduleInfo.icon}
                   status={status}
                   metrics={metrics}
-                  className="flex-1 min-w-[140px]"
+                  className="w-full"
                 />
-                {index < site.modules.length - 1 && (
-                  <ChevronRight className="flex-shrink-0 w-6 h-6 text-gray-300 dark:text-gray-600" />
-                )}
-              </React.Fragment>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              No modules configured for this site. Visit the Configuration tab to add modules.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Key Metrics */}
