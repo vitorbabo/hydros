@@ -1,5 +1,6 @@
 import React from 'react'
-import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight, Maximize2 } from 'lucide-react'
 import { ModuleStatusCard } from '../../components/plant/ModuleStatusCard'
 import { StatusIndicator } from '../../components/shared/StatusIndicator'
 import type { PlantSite, ComponentStatus } from '../../types'
@@ -12,6 +13,7 @@ interface SiteOverviewProps {
 }
 
 export function SiteOverview({ site }: SiteOverviewProps) {
+  const navigate = useNavigate()
   const { getLatestByAsset } = useTelemetryStore()
   const { plantConfigurations, moduleTemplates } = useConfigurationStore()
 
@@ -136,9 +138,18 @@ export function SiteOverview({ site }: SiteOverviewProps) {
 
       {/* Plant Schematic Section */}
       <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          Plant Schematic
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+            Plant Schematic
+          </h3>
+          <button
+            onClick={() => navigate(`/sites/${site.id}/layout`)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Maximize2 className="w-4 h-4" />
+            <span className="font-medium">Open Full Layout</span>
+          </button>
+        </div>
 
         {/* Module Flow - Flexible Grid Layout */}
         {plantConfig?.modules && Object.keys(plantConfig.modules).length > 0 ? (

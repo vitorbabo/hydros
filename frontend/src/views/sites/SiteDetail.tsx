@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, List, Settings as SettingsIcon, Network, Activity } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, List, Settings as SettingsIcon, Activity } from 'lucide-react'
 import { useDashboardStore } from '../../store/dashboardStore'
 import { TabNavigation, type Tab } from '../../components/shared/TabNavigation'
 import { SiteOverview } from './SiteOverview'
 import { SiteAnalytics } from './SiteAnalytics'
 import { SiteEvents } from './SiteEvents'
 import { SiteConfiguration } from './SiteConfiguration'
-import { SitePlantLayout } from './SitePlantLayout'
 import { SiteTelemetry } from './SiteTelemetry'
 
 export function SiteDetail() {
@@ -42,11 +41,6 @@ export function SiteDetail() {
       icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
-      id: 'layout',
-      label: 'Plant Layout',
-      icon: <Network className="w-5 h-5" />,
-    },
-    {
       id: 'analytics',
       label: 'Performance Analytics',
       icon: <TrendingUp className="w-5 h-5" />,
@@ -76,7 +70,6 @@ export function SiteDetail() {
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'overview' && <SiteOverview site={site} />}
-        {activeTab === 'layout' && <SitePlantLayout site={site} />}
         {activeTab === 'analytics' && <SiteAnalytics site={site} />}
         {activeTab === 'telemetry' && <SiteTelemetry site={site} />}
         {activeTab === 'events' && <SiteEvents site={site} />}

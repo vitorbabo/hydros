@@ -5,6 +5,7 @@ import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './views/Dashboard'
 import { Sites } from './views/Sites'
 import { SiteDetail } from './views/sites/SiteDetail'
+import { SiteLayoutFullscreen } from './views/sites/SiteLayoutFullscreen'
 import { Alerts } from './views/Alerts'
 import { Reports } from './views/Reports'
 import { Analytics } from './views/Analytics'
@@ -177,6 +178,7 @@ function AppContent() {
           {/* New navigation structure */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/sites" element={<Sites />} />
+          <Route path="/sites/:siteId/layout" element={<SiteLayoutFullscreen />} />
           <Route path="/sites/:siteId" element={<SiteDetail />} />
           <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
           <Route path="/alerts" element={<Alerts />} />
