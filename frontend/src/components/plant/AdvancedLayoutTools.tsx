@@ -17,7 +17,8 @@ import {
   Maximize2,
   GitBranch,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react'
 
 interface AdvancedLayoutToolsProps {
@@ -292,24 +293,25 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-96 bg-white shadow-xl border-l border-gray-200 flex flex-col">
+    <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-gray-900 shadow-xl border-l border-gray-200 dark:border-gray-800 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
             Layout Tools
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label="Close"
           >
-            ×
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex mt-4 bg-gray-100 rounded-lg p-1">
+        <div className="flex mt-4 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           {[
             { id: 'autolayout', label: 'Auto-Layout', icon: Grid3X3 },
             { id: 'connections', label: 'Connections', icon: GitBranch },
@@ -323,8 +325,8 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-md text-xs font-medium transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white dark:bg-gray-900 text-primary shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -341,18 +343,18 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
         {activeTab === 'autolayout' && (
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Auto-Layout Algorithms</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Auto-Layout Algorithms</h4>
               <div className="space-y-3">
                 <button
                   onClick={applyProcessFlowLayout}
                   disabled={isProcessing}
-                  className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 text-left"
+                  className="w-full p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50 text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <ArrowLeftRight className="w-5 h-5 text-blue-600" />
+                    <ArrowLeftRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <div className="font-medium text-blue-900">Process Flow Layout</div>
-                      <div className="text-sm text-blue-700">Arrange modules in process sequence</div>
+                      <div className="font-medium text-blue-900 dark:text-blue-100">Process Flow Layout</div>
+                      <div className="text-sm text-blue-700 dark:text-blue-300">Arrange modules in process sequence</div>
                     </div>
                   </div>
                 </button>
@@ -360,13 +362,13 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
                 <button
                   onClick={applyGridLayout}
                   disabled={isProcessing}
-                  className="w-full p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50 text-left"
+                  className="w-full p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors disabled:opacity-50 text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <Grid3X3 className="w-5 h-5 text-green-600" />
+                    <Grid3X3 className="w-5 h-5 text-green-600 dark:text-green-400" />
                     <div>
-                      <div className="font-medium text-green-900">Grid Layout</div>
-                      <div className="text-sm text-green-700">Organize modules in a grid pattern</div>
+                      <div className="font-medium text-green-900 dark:text-green-100">Grid Layout</div>
+                      <div className="text-sm text-green-700 dark:text-green-300">Organize modules in a grid pattern</div>
                     </div>
                   </div>
                 </button>
@@ -374,13 +376,13 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
                 <button
                   onClick={applyCircularLayout}
                   disabled={isProcessing}
-                  className="w-full p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50 text-left"
+                  className="w-full p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors disabled:opacity-50 text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <RefreshCw className="w-5 h-5 text-purple-600" />
+                    <RefreshCw className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <div>
-                      <div className="font-medium text-purple-900">Circular Layout</div>
-                      <div className="text-sm text-purple-700">Arrange modules in a circle</div>
+                      <div className="font-medium text-purple-900 dark:text-purple-100">Circular Layout</div>
+                      <div className="text-sm text-purple-700 dark:text-purple-300">Arrange modules in a circle</div>
                     </div>
                   </div>
                 </button>
@@ -388,10 +390,10 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
             </div>
 
             {isProcessing && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-sm text-blue-800">Applying layout...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                  <span className="text-sm text-blue-800 dark:text-blue-300">Applying layout...</span>
                 </div>
               </div>
             )}
@@ -402,22 +404,22 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
         {activeTab === 'connections' && (
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Connection Management</h4>
-              
-              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Connection Management</h4>
+
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Total Connections:</span>
-                  <span className="font-medium">{edges.length}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Total Connections:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{edges.length}</span>
                 </div>
               </div>
 
               {connectionIssues.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
-                    <span className="font-medium text-red-800">Connection Issues</span>
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    <span className="font-medium text-red-800 dark:text-red-300">Connection Issues</span>
                   </div>
-                  <ul className="text-sm text-red-700 space-y-1">
+                  <ul className="text-sm text-red-700 dark:text-red-400 space-y-1">
                     {connectionIssues.map((issue, index) => (
                       <li key={index}>• {issue}</li>
                     ))}
@@ -430,7 +432,7 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
                   // TODO: Implement auto-connect based on process flow
                   console.log('Auto-connecting modules...')
                 }}
-                className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full p-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               >
                 Auto-Connect Modules
               </button>
@@ -442,23 +444,23 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
         {activeTab === 'layers' && (
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">View Layers</h4>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">View Layers</h4>
               <div className="space-y-2">
                 {layers.map(layer => (
-                  <div key={layer.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-200">
+                  <div key={layer.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50">
                     <div className="flex items-center gap-3">
-                      <div 
-                        className="w-4 h-4 rounded" 
+                      <div
+                        className="w-4 h-4 rounded"
                         style={{ backgroundColor: layer.color }}
                       />
                       <div>
-                        <div className="font-medium text-sm">{layer.name}</div>
-                        <div className="text-xs text-gray-500">{layer.description}</div>
+                        <div className="font-medium text-sm text-gray-900 dark:text-white">{layer.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{layer.description}</div>
                       </div>
                     </div>
                     <button
                       onClick={() => toggleLayer(layer.id)}
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                      className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       {layer.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
@@ -473,32 +475,32 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
         {activeTab === 'validation' && (
           <div className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Layout Validation</h4>
-              
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Layout Validation</h4>
+
               <div className="space-y-3">
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Modules Configured</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Modules Configured</span>
                     <div className="flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="font-medium">{nodes.length}</span>
+                      <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
+                      <span className="font-medium text-gray-900 dark:text-white">{nodes.length}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Connections</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Connections</span>
                     <div className="flex items-center gap-1">
                       {connectionIssues.length > 0 ? (
                         <>
-                          <AlertTriangle className="w-4 h-4 text-red-500" />
-                          <span className="font-medium text-red-600">{connectionIssues.length} issues</span>
+                          <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" />
+                          <span className="font-medium text-red-600 dark:text-red-400">{connectionIssues.length} issues</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="font-medium">Valid</span>
+                          <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
+                          <span className="font-medium text-gray-900 dark:text-white">Valid</span>
                         </>
                       )}
                     </div>
@@ -506,9 +508,9 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
                 </div>
 
                 {connectionIssues.length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="text-sm font-medium text-red-800 mb-2">Issues Found:</div>
-                    <ul className="text-xs text-red-700 space-y-1">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                    <div className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">Issues Found:</div>
+                    <ul className="text-xs text-red-700 dark:text-red-400 space-y-1">
                       {connectionIssues.map((issue, index) => (
                         <li key={index}>• {issue}</li>
                       ))}
@@ -522,11 +524,11 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex gap-2">
           <button
             onClick={exportLayout}
-            className="flex-1 p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm"
+            className="flex-1 p-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <Download className="w-4 h-4" />
             Export
@@ -536,7 +538,7 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
               // TODO: Implement import functionality
               console.log('Import layout...')
             }}
-            className="flex-1 p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm"
+            className="flex-1 p-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
           >
             <Upload className="w-4 h-4" />
             Import

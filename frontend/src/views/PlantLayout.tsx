@@ -30,7 +30,7 @@ const nodeTypes = {
 }
 
 export default function PlantLayout() {
-  const [isModuleLibraryVisible, setIsModuleLibraryVisible] = useState(true)
+  const [isModuleLibraryVisible, setIsModuleLibraryVisible] = useState(false)
   const [isAdvancedToolsVisible, setIsAdvancedToolsVisible] = useState(false)
   
   const {
@@ -240,7 +240,7 @@ export default function PlantLayout() {
     <div className="h-full w-full relative overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Left Sidebar - Module Library (Overlay) */}
       {isModuleLibraryVisible && (
-        <div className="absolute left-0 top-0 bottom-0 z-20 w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl">
+        <div className="absolute left-0 top-0 bottom-0 z-20">
           <ModuleLibrary
             isVisible={isModuleLibraryVisible}
             onClose={() => setIsModuleLibraryVisible(false)}
@@ -334,7 +334,7 @@ export default function PlantLayout() {
 
       {/* Right Sidebar - Module Details (Overlay) */}
       {selectedNode && (
-        <div className="absolute right-0 top-0 bottom-0 z-20 w-80 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-xl">
+        <div className="absolute right-0 top-0 bottom-0 z-20">
           <NodePropertiesPanel
             node={selectedNodeData}
             onClose={() => setSelectedNode(null)}

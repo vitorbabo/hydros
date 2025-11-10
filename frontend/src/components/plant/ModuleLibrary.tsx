@@ -19,6 +19,7 @@ import {
   Building,
   Settings,
   Lightbulb,
+  X,
   type LucideIcon
 } from 'lucide-react'
 
@@ -96,8 +97,8 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
   return (
     <div
       className={`
-        bg-white border border-gray-200 rounded-lg p-3 cursor-pointer
-        transition-all hover:border-blue-300 hover:shadow-md
+        bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 cursor-pointer
+        transition-all hover:border-primary dark:hover:border-primary hover:shadow-md
         ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
       `}
       onClick={onSelect}
@@ -107,17 +108,17 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
-          <IconComponent className="w-6 h-6 text-blue-600" />
+          <IconComponent className="w-6 h-6 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-gray-900 text-sm truncate">
+          <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">
             {template.description || templateId}
           </h4>
-          <p className="text-xs text-gray-600 capitalize">
+          <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
             {template.type ? template.type.replace('_', ' ') : 'Unknown'}
           </p>
           {template.required_sensors && template.required_sensors.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
               {template.required_sensors.length} sensors required
             </p>
           )}
@@ -162,19 +163,19 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     <div className="mb-4">
       <button
         onClick={onToggleExpanded}
-        className="flex items-center w-full p-2 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+        className="flex items-center w-full p-2 text-left bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
       >
         {isExpanded ? (
-          <ChevronDown className="w-4 h-4 mr-2 text-gray-600" />
+          <ChevronDown className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
         ) : (
-          <ChevronRight className="w-4 h-4 mr-2 text-gray-600" />
+          <ChevronRight className="w-4 h-4 mr-2 text-gray-600 dark:text-gray-400" />
         )}
-        <span className="font-medium text-gray-900 text-sm">{displayName}</span>
-        <span className="ml-auto text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+        <span className="font-medium text-gray-900 dark:text-white text-sm">{displayName}</span>
+        <span className="ml-auto text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">
           {templates.length}
         </span>
       </button>
-      
+
       {isExpanded && (
         <div className="mt-2 space-y-2">
           {templates.map(({ id, template }) => {
@@ -183,7 +184,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               console.warn(`Skipping invalid template ${id}:`, template)
               return null
             }
-            
+
             return (
               <ModuleCard
                 key={id}
@@ -281,49 +282,50 @@ export const ModuleLibrary: React.FC<ModuleLibraryProps> = ({
   if (!isVisible) return null
 
   return (
-    <div className="w-80 h-full bg-white border-l border-gray-200 flex flex-col">
+    <div className="w-72 h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 flex flex-col shadow-xl">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-            <Package className="w-5 h-5 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+            <Package className="w-5 h-5 mr-2 text-primary" />
             Module Library
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label="Close"
           >
-            ×
+            <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
           <input
             type="text"
             placeholder="Search modules..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
           />
         </div>
-        
+
         {/* Controls */}
         <div className="flex items-center justify-between mt-3">
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
             {totalCount} module{totalCount !== 1 ? 's' : ''}
           </span>
           <div className="flex gap-2">
             <button
               onClick={handleExpandAll}
-              className="text-xs text-blue-600 hover:text-blue-800"
+              className="text-xs text-primary hover:text-primary/80"
             >
               Expand All
             </button>
             <button
               onClick={handleCollapseAll}
-              className="text-xs text-blue-600 hover:text-blue-800"
+              className="text-xs text-primary hover:text-primary/80"
             >
               Collapse All
             </button>
@@ -334,21 +336,21 @@ export const ModuleLibrary: React.FC<ModuleLibraryProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading && (
-          <div className="text-center text-gray-500 py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
             Loading module templates...
           </div>
         )}
 
         {error && (
-          <div className="text-center text-red-600 py-8">
+          <div className="text-center text-red-600 dark:text-red-400 py-8">
             <p className="text-sm">Failed to load module templates</p>
-            <p className="text-xs text-gray-500 mt-1">{error}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{error}</p>
           </div>
         )}
 
         {!isLoading && !error && totalCount === 0 && (
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
             {searchQuery ? (
               <>
                 <p className="text-sm">No modules match your search</p>
@@ -383,9 +385,9 @@ export const ModuleLibrary: React.FC<ModuleLibraryProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <p className="text-xs text-gray-600 flex items-center gap-2">
-          <Lightbulb className="w-4 h-4 text-amber-500" />
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+        <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
+          <Lightbulb className="w-4 h-4 text-amber-500 dark:text-amber-400" />
           Drag modules onto the plant layout to add them
         </p>
       </div>
