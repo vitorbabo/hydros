@@ -15,9 +15,9 @@ interface MetricCardProps {
 }
 
 const statusColors = {
-  normal: 'border-green-200 bg-green-50',
-  warning: 'border-yellow-200 bg-yellow-50',
-  critical: 'border-red-200 bg-red-50'
+  normal: 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20',
+  warning: 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20',
+  critical: 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
 }
 
 const trendIcons = {
@@ -27,9 +27,9 @@ const trendIcons = {
 }
 
 const trendColors = {
-  up: 'text-green-600',
-  down: 'text-red-600',
-  stable: 'text-gray-500'
+  up: 'text-green-600 dark:text-green-400',
+  down: 'text-red-600 dark:text-red-400',
+  stable: 'text-gray-500 dark:text-gray-400'
 }
 
 export function MetricCard({
@@ -58,23 +58,23 @@ export function MetricCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{title}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
               {typeof value === 'number' ? value.toLocaleString() : value}
             </p>
             {unit && (
-              <p className="text-sm text-gray-500 font-medium">{unit}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{unit}</p>
             )}
           </div>
         </div>
         {icon && (
-          <div className="text-gray-400 flex-shrink-0">
+          <div className="text-gray-400 dark:text-gray-500 flex-shrink-0">
             {icon}
           </div>
         )}
       </div>
-      
+
       {(trend && TrendIcon) && (
         <div className={clsx('flex items-center gap-1 mt-2', trendColors[trend])}>
           <TrendIcon className="w-4 h-4" />
@@ -83,7 +83,7 @@ export function MetricCard({
               {trendValue > 0 ? '+' : ''}{trendValue}%
             </span>
           )}
-          <span className="text-xs text-gray-500">vs last period</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">vs last period</span>
         </div>
       )}
     </div>
