@@ -7,9 +7,5 @@ interface SiteConfigurationProps {
 }
 
 export function SiteConfiguration({ site }: SiteConfigurationProps) {
-  return (
-    <div>
-      <PlantConfiguration />
-    </div>
-  )
+  return <PlantConfiguration siteId={site.id} />
 }

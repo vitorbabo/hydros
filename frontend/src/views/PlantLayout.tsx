@@ -237,71 +237,62 @@ export default function PlantLayout() {
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) ?? null : null
 
   return (
-    <div className="h-full flex overflow-hidden max-w-full">
-      {/* Left Sidebar - Module Library */}
-      <div className={`transition-all duration-300 ${isModuleLibraryVisible ? 'w-80' : 'w-0'} bg-gray-50 border-r border-gray-200 overflow-hidden flex-shrink-0`}>
-        <ModuleLibrary
-          isVisible={isModuleLibraryVisible}
-          onClose={() => setIsModuleLibraryVisible(false)}
-          onModuleSelect={handleModuleSelect}
-          onDragStart={handleModuleDragStart}
-        />
-      </div>
+    <div className="h-full w-full relative overflow-hidden bg-gray-50 dark:bg-gray-900">
+      {/* Left Sidebar - Module Library (Overlay) */}
+      {isModuleLibraryVisible && (
+        <div className="absolute left-0 top-0 bottom-0 z-20 w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl">
+          <ModuleLibrary
+            isVisible={isModuleLibraryVisible}
+            onClose={() => setIsModuleLibraryVisible(false)}
+            onModuleSelect={handleModuleSelect}
+            onDragStart={handleModuleDragStart}
+          />
+        </div>
+      )}
 
       {/* Main Flow Diagram */}
-      <div className="flex-1 relative h-full overflow-hidden min-w-0">
-        {/* Header Controls */}
-        <div className="absolute top-4 left-4 z-10">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3 border border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">Layout</h2>
-                <p className="text-xs text-gray-600">{siteName}</p>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setIsModuleLibraryVisible(!isModuleLibraryVisible)}
-                  className={`p-1.5 rounded transition-colors ${
-                    isModuleLibraryVisible 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                  title="Toggle Module Library"
-                >
-                  <Package className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setIsAdvancedToolsVisible(!isAdvancedToolsVisible)}
-                  className={`p-1.5 rounded transition-colors ${
-                    isAdvancedToolsVisible 
-                      ? 'bg-purple-100 text-purple-600' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                  title="Advanced Tools"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setConfigMode(!isConfigMode)}
-                  className={`p-1.5 rounded transition-colors ${
-                    isConfigMode 
-                      ? 'bg-blue-100 text-blue-600' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                  title="Configuration Mode"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-            <div className="space-y-1 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Modules:</span>
-                <span className="font-medium">{nodes.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Templates:</span>
-                <span className="font-medium text-green-600">{Object.keys(moduleTemplates).length}</span>
+      <div className="h-full w-full">
+        {/* Compact Header Controls */}
+        <div className="absolute top-2 left-2 z-10">
+          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-lg p-2 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsModuleLibraryVisible(!isModuleLibraryVisible)}
+                className={`p-1.5 rounded transition-colors ${
+                  isModuleLibraryVisible
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+                title="Toggle Module Library"
+              >
+                <Package className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsAdvancedToolsVisible(!isAdvancedToolsVisible)}
+                className={`p-1.5 rounded transition-colors ${
+                  isAdvancedToolsVisible
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+                title="Advanced Tools"
+              >
+                <Zap className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setConfigMode(!isConfigMode)}
+                className={`p-1.5 rounded transition-colors ${
+                  isConfigMode
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+                title={isConfigMode ? "View Mode" : "Edit Mode"}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <div className="h-5 w-px bg-gray-300 dark:bg-gray-700 mx-1" />
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-white">{nodes.length}</span>
+                <span>modules</span>
               </div>
             </div>
           </div>
@@ -324,27 +315,38 @@ export default function PlantLayout() {
             elementsSelectable={true}
             fitView
             style={{ width: '100%', height: '100%' }}
-            className="bg-gray-50"
+            className="bg-gray-50 dark:bg-gray-900"
           >
-            <Controls showInteractive={false} />
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <Controls
+              showInteractive={false}
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+            />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              className="dark:opacity-30"
+              color="#9ca3af"
+            />
           </ReactFlow>
         </div>
       </div>
 
-      {/* Right Sidebar - Module Details */}
-      <div className={`transition-all duration-300 ${selectedNode ? 'w-80' : 'w-0'} bg-gray-50 border-l border-gray-200 overflow-hidden flex-shrink-0`}>
-        <NodePropertiesPanel 
-          node={selectedNodeData}
-          onClose={() => setSelectedNode(null)}
-          onConfigChange={updateNodeData}
-        />
-      </div>
+      {/* Right Sidebar - Module Details (Overlay) */}
+      {selectedNode && (
+        <div className="absolute right-0 top-0 bottom-0 z-20 w-80 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-xl">
+          <NodePropertiesPanel
+            node={selectedNodeData}
+            onClose={() => setSelectedNode(null)}
+            onConfigChange={updateNodeData}
+          />
+        </div>
+      )}
 
       {/* Advanced Layout Tools Modal */}
       {isAdvancedToolsVisible && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div className="absolute inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full mx-4 border border-gray-200 dark:border-gray-700">
             <AdvancedLayoutTools
               isVisible={isAdvancedToolsVisible}
               onClose={() => setIsAdvancedToolsVisible(false)}

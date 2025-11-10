@@ -16,7 +16,7 @@ export function SitePlantLayout({ site }: SitePlantLayoutProps) {
   }, [site.id, setCurrentSite])
 
   return (
-    <div className="h-[calc(100vh-16rem)]">
+    <div className="h-[calc(100vh-12rem)] w-full">
       <PlantLayout />
     </div>
   )
