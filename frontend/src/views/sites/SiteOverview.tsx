@@ -1,6 +1,6 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight, Maximize2, Droplets, Activity, Gauge } from 'lucide-react'
+import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight, Maximize2, Droplets, Activity, Gauge, ChevronDown } from 'lucide-react'
 import { ModuleStatusCard } from '../../components/plant/ModuleStatusCard'
 import { StatusIndicator } from '../../components/shared/StatusIndicator'
 import type { PlantSite, ComponentStatus } from '../../types'
@@ -16,6 +16,14 @@ export function SiteOverview({ site }: SiteOverviewProps) {
   const navigate = useNavigate()
   const { getLatestByAsset, latest } = useTelemetryStore()
   const { plantConfigurations, moduleTemplates } = useConfigurationStore()
+
+  // Collapse state for each section
+  const [isSchematicOpen, setIsSchematicOpen] = useState(true)
+  const [isSiteInfoOpen, setIsSiteInfoOpen] = useState(true)
+  const [isWaterQualityOpen, setIsWaterQualityOpen] = useState(true)
+  const [isProtocolClientsOpen, setIsProtocolClientsOpen] = useState(false)
+  const [isControlStrategiesOpen, setIsControlStrategiesOpen] = useState(false)
+  const [isAlarmDefinitionsOpen, setIsAlarmDefinitionsOpen] = useState(false)
 
   // Get full configuration for this site
   const plantConfig = plantConfigurations[site.id]
@@ -81,8 +89,18 @@ export function SiteOverview({ site }: SiteOverviewProps) {
   }, [latest, site.id])
 
   // Calculate design flow rate from operational parameters
+  // Note: design_capacity is in m³/day, so divide by 24 to get m³/h
+  // design_flow_rate from operationalParams is expected to be in m³/h
   const designFlowRate = operationalParams.design_flow_rate ||
     (site.design_capacity / 24) || 0
+
+  // Helper function to format flow values - handles both small and large numbers
+  const formatFlowValue = (value: number): string => {
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}k`
+    }
+    return value.toFixed(1)
+  }
 
   // Get module information from configuration and templates
   const getModuleInfo = (moduleId: string) => {
@@ -195,49 +213,6 @@ export function SiteOverview({ site }: SiteOverviewProps) {
         </div>
       </div>
 
-      {/* Plant Schematic Section */}
-      <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            Plant Schematic
-          </h3>
-          <button
-            onClick={() => navigate(`/sites/${site.id}/layout`)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Maximize2 className="w-4 h-4" />
-            <span className="font-medium">Open Full Layout</span>
-          </button>
-        </div>
-
-        {/* Module Flow - Flexible Grid Layout */}
-        {plantConfig?.modules && Object.keys(plantConfig.modules).length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            {Object.keys(plantConfig.modules).map((moduleId) => {
-              const moduleInfo = getModuleInfo(moduleId)
-              const { status, metrics } = getModuleStatus(moduleId)
-
-              return (
-                <ModuleStatusCard
-                  key={moduleId}
-                  name={moduleInfo.name}
-                  icon={moduleInfo.icon}
-                  status={status}
-                  metrics={metrics}
-                  className="w-full"
-                />
-              )
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">
-              No modules configured for this site. Visit the Configuration tab to add modules.
-            </p>
-          </div>
-        )}
-      </div>
-
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Design Flow Rate */}
@@ -249,7 +224,7 @@ export function SiteOverview({ site }: SiteOverviewProps) {
             </h4>
           </div>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {(designFlowRate / 1000).toFixed(1)}k
+            {formatFlowValue(designFlowRate)}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             m³/h
@@ -265,7 +240,7 @@ export function SiteOverview({ site }: SiteOverviewProps) {
             </h4>
           </div>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {(currentFlowRate / 1000).toFixed(1)}k
+            {formatFlowValue(currentFlowRate)}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             m³/h {!hasRecentData && <span className="text-orange-500">⚠</span>}
@@ -281,7 +256,7 @@ export function SiteOverview({ site }: SiteOverviewProps) {
             </h4>
           </div>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {(dailyTotalFlow / 1000).toFixed(1)}k
+            {formatFlowValue(dailyTotalFlow)}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             m³
@@ -307,13 +282,87 @@ export function SiteOverview({ site }: SiteOverviewProps) {
         </div>
       )}
 
+      {/* Plant Schematic Section */}
+      <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+        <div
+          className="p-6 flex items-center justify-between cursor-pointer"
+          onClick={() => setIsSchematicOpen(!isSchematicOpen)}
+        >
+          <div className="flex items-center gap-2">
+            <ChevronDown
+              className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                isSchematicOpen ? 'rotate-0' : '-rotate-90'
+              }`}
+            />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              Plant Schematic
+            </h3>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/sites/${site.id}/layout`)
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Maximize2 className="w-4 h-4" />
+            <span className="font-medium">Open Full Layout</span>
+          </button>
+        </div>
+
+        {isSchematicOpen && (
+          <div className="px-6 pb-6">
+            {/* Module Flow - Flexible Grid Layout */}
+            {plantConfig?.modules && Object.keys(plantConfig.modules).length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {Object.keys(plantConfig.modules).map((moduleId) => {
+                  const moduleInfo = getModuleInfo(moduleId)
+                  const { status, metrics } = getModuleStatus(moduleId)
+
+                  return (
+                    <ModuleStatusCard
+                      key={moduleId}
+                      name={moduleInfo.name}
+                      icon={moduleInfo.icon}
+                      status={status}
+                      metrics={metrics}
+                      className="w-full"
+                    />
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No modules configured for this site. Visit the Configuration tab to add modules.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Site Information */}
       {siteInfo.location && (
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            Site Information
-          </h3>
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div
+            className="p-6 flex items-center justify-between cursor-pointer"
+            onClick={() => setIsSiteInfoOpen(!isSiteInfoOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                  isSiteInfoOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+              <MapPin className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Site Information
+              </h3>
+            </div>
+          </div>
+          {isSiteInfoOpen && (
+            <div className="px-6 pb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-2">Location</h4>
@@ -343,16 +392,32 @@ export function SiteOverview({ site }: SiteOverviewProps) {
               </p>
             </div>
           </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Water Quality Parameters */}
       {operationalParams.raw_water_quality && operationalParams.treatment_targets && (
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <FlaskConical className="w-5 h-5 text-primary" />
-            Water Quality Parameters
-          </h3>
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div
+            className="p-6 flex items-center justify-between cursor-pointer"
+            onClick={() => setIsWaterQualityOpen(!isWaterQualityOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                  isWaterQualityOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+              <FlaskConical className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Water Quality Parameters
+              </h3>
+            </div>
+          </div>
+          {isWaterQualityOpen && (
+            <div className="px-6 pb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 className="font-medium text-gray-900 dark:text-white mb-3">Raw Water Quality</h4>
@@ -406,16 +471,32 @@ export function SiteOverview({ site }: SiteOverviewProps) {
               </div>
             </div>
           </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Protocol Clients */}
       {protocolClients.length > 0 && (
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Wifi className="w-5 h-5 text-primary" />
-            Protocol Clients
-          </h3>
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div
+            className="p-6 flex items-center justify-between cursor-pointer"
+            onClick={() => setIsProtocolClientsOpen(!isProtocolClientsOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                  isProtocolClientsOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+              <Wifi className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Protocol Clients
+              </h3>
+            </div>
+          </div>
+          {isProtocolClientsOpen && (
+            <div className="px-6 pb-6">
           <div className="space-y-4">
             {protocolClients.map((client: any, index: number) => (
               <div
@@ -453,16 +534,32 @@ export function SiteOverview({ site }: SiteOverviewProps) {
               </div>
             ))}
           </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Control Strategies */}
       {Object.keys(controlStrategies).length > 0 && (
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" />
-            Control Strategies
-          </h3>
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div
+            className="p-6 flex items-center justify-between cursor-pointer"
+            onClick={() => setIsControlStrategiesOpen(!isControlStrategiesOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                  isControlStrategiesOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+              <Settings className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Control Strategies
+              </h3>
+            </div>
+          </div>
+          {isControlStrategiesOpen && (
+            <div className="px-6 pb-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {Object.entries(controlStrategies).map(([strategyId, strategy]: [string, any]) => (
               <div
@@ -496,16 +593,32 @@ export function SiteOverview({ site }: SiteOverviewProps) {
               </div>
             ))}
           </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Alarm Definitions */}
       {Object.keys(alarmDefinitions).length > 0 && (
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-primary" />
-            Alarm Definitions
-          </h3>
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div
+            className="p-6 flex items-center justify-between cursor-pointer"
+            onClick={() => setIsAlarmDefinitionsOpen(!isAlarmDefinitionsOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${
+                  isAlarmDefinitionsOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+              <AlertTriangle className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Alarm Definitions
+              </h3>
+            </div>
+          </div>
+          {isAlarmDefinitionsOpen && (
+            <div className="px-6 pb-6">
           <div className="space-y-6">
             {Object.entries(alarmDefinitions).map(([category, alarms]: [string, any]) => (
               <div key={category}>
@@ -547,6 +660,8 @@ export function SiteOverview({ site }: SiteOverviewProps) {
               </div>
             ))}
           </div>
+            </div>
+          )}
         </div>
       )}
     </div>
