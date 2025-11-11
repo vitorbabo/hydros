@@ -11,8 +11,13 @@ import { SiteLayout } from './views/sites/SiteLayout'
 import AlertsDashboard from './views/alerts/AlertsDashboard'
 import AlertHistory from './views/alerts/AlertHistory'
 import AlertConfiguration from './views/alerts/AlertConfiguration'
-import { Reports } from './views/Reports'
-import { Analytics } from './views/Analytics'
+import ReportsDashboard from './views/reports/ReportsDashboard'
+import ReportBuilder from './views/reports/ReportBuilder'
+import ReportTemplates from './views/reports/ReportTemplates'
+import AnalyticsDashboard from './views/analytics/AnalyticsDashboard'
+import CrossSiteComparison from './views/analytics/CrossSiteComparison'
+import EfficiencyMetrics from './views/analytics/EfficiencyMetrics'
+import TrendAnalysis from './views/analytics/TrendAnalysis'
 import { Settings } from './views/Settings'
 import { UserManagement } from './views/admin/UserManagement'
 import { RoleManagement } from './views/admin/RoleManagement'
@@ -275,8 +280,13 @@ function AppContent() {
           <Route path="/alerts" element={<AlertsDashboard />} />
           <Route path="/alerts/history" element={<AlertHistory />} />
           <Route path="/alerts/configuration" element={<AlertConfiguration />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/reports" element={<ReportsDashboard />} />
+          <Route path="/reports/builder" element={<ReportBuilder />} />
+          <Route path="/reports/templates" element={<ReportTemplates />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/analytics/comparison" element={<CrossSiteComparison />} />
+          <Route path="/analytics/efficiency" element={<EfficiencyMetrics />} />
+          <Route path="/analytics/trends" element={<TrendAnalysis />} />
           <Route path="/settings" element={<Settings />} />
 
           {/* Admin routes - Only accessible by admin */}
