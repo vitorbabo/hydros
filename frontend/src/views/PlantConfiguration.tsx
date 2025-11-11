@@ -350,7 +350,7 @@ export function PlantConfiguration({ siteId }: PlantConfigurationProps) {
             {/* Plant Overview */}
             <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Plant Overview</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 border border-primary/20">
                   <div className="text-2xl font-bold text-primary">{currentModules}</div>
                   <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">Configured Modules</div>
@@ -358,12 +358,6 @@ export function PlantConfiguration({ siteId }: PlantConfigurationProps) {
                 <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">{availableTemplates}</div>
                   <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">Available Templates</div>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {currentPlantConfig?.layout.width || 2000}×{currentPlantConfig?.layout.height || 1200}
-                  </div>
-                  <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">Layout Size (px)</div>
                 </div>
                 <div className={`rounded-lg p-4 border ${
                   availableTemplates > 0 && currentModules > 0
