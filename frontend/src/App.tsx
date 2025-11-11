@@ -5,15 +5,12 @@ import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './views/Dashboard'
 import { Sites } from './views/Sites'
 import { SiteDetail } from './views/sites/SiteDetail'
-import { SiteLayoutFullscreen } from './views/sites/SiteLayoutFullscreen'
+import { SiteLayout } from './views/sites/SiteLayout'
 import { Alerts } from './views/Alerts'
 import { Reports } from './views/Reports'
 import { Analytics } from './views/Analytics'
 import { Settings } from './views/Settings'
 import { Admin } from './views/Admin'
-import PlantLayout from './views/PlantLayout'
-import { PlantConfiguration } from './views/PlantConfiguration'
-import { Telemetry } from './views/Telemetry'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
@@ -178,7 +175,7 @@ function AppContent() {
           {/* New navigation structure */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/sites" element={<Sites />} />
-          <Route path="/sites/:siteId/layout" element={<SiteLayoutFullscreen />} />
+          <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
           <Route path="/sites/:siteId" element={<SiteDetail />} />
           <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
           <Route path="/alerts" element={<Alerts />} />
@@ -186,23 +183,6 @@ function AppContent() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
-
-          {/* Legacy routes (backward compatibility) */}
-          <Route path="/layout" element={
-            <div className="h-full">
-              <PlantLayout />
-            </div>
-          } />
-          <Route path="/configuration" element={
-            <div className="max-w-7xl mx-auto p-6 h-full">
-              <PlantConfiguration />
-            </div>
-          } />
-          <Route path="/telemetry" element={
-            <div className="max-w-7xl mx-auto p-6 h-full">
-              <Telemetry />
-            </div>
-          } />
         </Route>
       </Routes>
     </Router>

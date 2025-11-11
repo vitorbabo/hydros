@@ -5,7 +5,7 @@ import PlantLayout from '../PlantLayout'
 import { useConfigurationStore } from '../../store/configurationStore'
 import { useDashboardStore } from '../../store/dashboardStore'
 
-export function SiteLayoutFullscreen() {
+export function SiteLayout() {
   const { siteId } = useParams<{ siteId: string }>()
   const navigate = useNavigate()
   const { setCurrentSite } = useConfigurationStore()
