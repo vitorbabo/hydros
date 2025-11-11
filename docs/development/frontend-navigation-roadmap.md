@@ -1614,23 +1614,290 @@ Enhanced `telemetryStore.ts`:
 
 ---
 
+### Phase 4: User Management ✅ **COMPLETED**
+
+**Status**: Fully implemented and tested
+**Completion Date**: 2025-11-11
+
+#### Completed Pages
+
+1. ✅ **Login Page** (`/views/Login.tsx`)
+   - Professional login interface with Hydros branding
+   - Email and password authentication
+   - Remember me functionality
+   - Password show/hide toggle
+   - Error handling with user feedback
+   - Demo credentials display for testing
+   - Redirect to intended page after login
+   - Loading states
+   - Full dark mode support
+
+2. ✅ **User Management** (`/views/admin/UserManagement.tsx`)
+   - Comprehensive user list table with search and filters
+   - Add/Edit/Delete user actions
+   - Filter by role (Admin, Site Manager, Technician, Operator, Viewer)
+   - Filter by assigned sites
+   - Search by name, email, or phone
+   - User statistics display
+   - Role badges with color coding
+   - Site assignment indicators
+   - Delete confirmation modal
+   - Admin-only access enforcement
+   - Dark mode support
+
+3. ✅ **User Form Modal** (`/components/admin/UserFormModal.tsx`)
+   - Create and edit user modal
+   - Form fields: name, email, phone, role, site assignments
+   - Role selection with descriptions
+   - Multi-site assignment with checkboxes
+   - Form validation with error messages
+   - Email uniqueness check
+   - Admin auto-assigned to all sites
+   - Dark mode support
+
+4. ✅ **Role Management** (`/views/admin/RoleManagement.tsx`)
+   - Role definitions display with cards
+   - Comprehensive permission matrix view
+   - Feature categories organization
+   - Visual permission indicators (checkmarks/x marks)
+   - Role hierarchy explanation
+   - Permission count per role
+   - Role descriptions
+   - Dark mode support
+
+5. ✅ **Site Access Control** (`/views/admin/SiteAccessControl.tsx`)
+   - Interactive user × site matrix
+   - One-click access toggle (checkmark/x)
+   - Filter by role and site
+   - Visual access indicators
+   - Bulk access management capability
+   - Export to CSV functionality
+   - Admin users excluded (auto-access to all)
+   - User statistics display
+   - Dark mode support
+
+6. ✅ **Audit Logs** (`/views/admin/AuditLogs.tsx`)
+   - Comprehensive audit log table
+   - Search functionality across all fields
+   - Filter by action type
+   - Filter by resource type
+   - Date range filters (7d, 30d, 90d, all time)
+   - Action badges with color coding
+   - Export to CSV functionality
+   - Clear logs with confirmation
+   - Timestamp formatting
+   - Mock data for development
+   - Dark mode support
+
+#### Completed Components
+
+1. ✅ **RequireAuth** (`/components/auth/RequireAuth.tsx`)
+   - Route guard for authentication
+   - Redirects to login if not authenticated
+   - Preserves intended destination
+   - Session restoration from localStorage
+   - Initialization on mount
+
+2. ✅ **RequireRole** (`/components/auth/RequireRole.tsx`)
+   - Role-based access control guard
+   - 403 Forbidden error for insufficient permissions
+   - User role and required roles display
+   - Customizable fallback content
+   - Back navigation button
+
+#### Store Implementation
+
+✅ **Auth Store** (`/store/authStore.ts`)
+- Complete authentication state management
+- User session tracking
+- Login/logout functionality
+- Permission checking helpers (hasPermission, canAccessSite, canEditSiteConfig)
+- localStorage persistence for session
+- Session timeout (30 minutes)
+- Mock users for testing all roles
+- Role-based permissions matrix
+- TypeScript interfaces:
+  - `User`: Complete user object with role and site assignments
+  - `UserRole`: Type-safe role enumeration
+  - `rolePermissions`: Permission definitions per role
+  - `roleDescriptions`: Human-readable role descriptions
+
+✅ **User Management Store** (`/store/userManagementStore.ts`)
+- User CRUD operations
+- Site assignment management
+- Audit log tracking
+- User filtering capabilities
+- Role management
+- TypeScript interfaces:
+  - `Role`: Role definition with permissions
+  - `AuditLog`: Activity tracking structure
+- Mock data for development testing
+
+#### Route Guards Implementation
+
+✅ **Updated App.tsx**:
+- Imported auth components and admin pages
+- Added `/login` public route
+- Wrapped all protected routes with `RequireAuth`
+- Created admin section with `RequireRole` guards
+- Admin routes require 'admin' role explicitly
+- Initialize auth session on mount
+- Fallback route for undefined paths
+
+#### Navigation Integration
+
+✅ **Updated Sidebar**:
+- Integrated with authStore for real user data
+- Display user name and role from auth state
+- User avatar or initials display
+- Role-based menu visibility
+- Admin menu item (only visible to admins)
+- Logout functionality with redirect to login
+- User profile section with proper styling
+- Dark mode support
+
+#### Features Implemented
+
+1. **Authentication Flow**:
+   - Mock authentication without backend
+   - Five test users (one per role)
+   - Login form with validation
+   - Session persistence in localStorage
+   - Auto-redirect after login to intended page
+   - Session timeout (30 minutes)
+   - Logout with session cleanup
+
+2. **Role-Based Access Control**:
+   - Five user roles: Admin, Site Manager, Technician, Operator, Viewer
+   - Permission matrix defining capabilities per role
+   - Route-level access control
+   - Component-level permission checks
+   - Admin-only pages (User Management, Role Management, Site Access, Audit Logs)
+   - Site-based access restrictions
+
+3. **User Administration**:
+   - Full user CRUD operations
+   - User search and filtering
+   - Role assignment
+   - Multi-site assignment
+   - Email uniqueness validation
+   - Phone number optional
+   - User statistics
+
+4. **Permission Matrix**:
+   - 10 feature categories
+   - 20+ individual permissions
+   - Visual matrix display
+   - Feature-based organization
+   - Clear permission indicators
+
+5. **Site Access Management**:
+   - Interactive matrix interface
+   - One-click access toggle
+   - Visual confirmation (green checkmarks)
+   - Bulk operations support
+   - CSV export for reporting
+
+6. **Audit Logging**:
+   - Automatic action logging structure
+   - User action tracking
+   - Resource change tracking
+   - Timestamp recording
+   - Detail capture (old/new values)
+   - Comprehensive filtering
+   - Export capability
+
+7. **Mock Users for Testing**:
+   ```
+   - admin@hydros.io / admin123 (Admin)
+   - manager@hydros.io / manager123 (Site Manager)
+   - tech@hydros.io / tech123 (Technician)
+   - operator@hydros.io / operator123 (Operator)
+   - viewer@hydros.io / viewer123 (Viewer)
+   ```
+
+#### Routing Structure
+
+```typescript
+/login                  → Login page (public)
+/                       → Dashboard (protected)
+/sites                  → Sites list (protected)
+/sites/:siteId          → Site detail (protected)
+/alerts                 → Alerts dashboard (protected)
+/reports                → Reports (protected)
+/analytics              → Analytics (protected)
+/settings               → Settings (protected)
+/admin                  → Redirect to /admin/users (admin only)
+/admin/users            → User Management (admin only)
+/admin/roles            → Role Management (admin only)
+/admin/access           → Site Access Control (admin only)
+/admin/audit            → Audit Logs (admin only)
+```
+
+#### Permission Helpers
+
+Implemented helper functions in authStore:
+- `hasPermission(permission: string)`: Check if user has specific permission
+- `canAccessSite(siteId: string)`: Check site access
+- `canEditSiteConfig(siteId: string)`: Check config edit rights
+- `canManageUsers()`: Check user management rights
+- `canConfigureAlerts(siteId?: string)`: Check alert configuration rights
+
+#### Technical Highlights
+
+1. **Type Safety**: Full TypeScript implementation with strict typing
+2. **State Management**: Zustand stores with optimized selectors
+3. **Session Management**: localStorage with expiration handling
+4. **User Experience**:
+   - Responsive design for all screen sizes
+   - Loading states and error handling
+   - Confirmation dialogs for destructive actions
+   - Clear visual feedback
+5. **Security**:
+   - Client-side role checking
+   - Route-level guards
+   - Component-level permissions
+   - Session timeout
+6. **Performance**:
+   - Memoized filtered lists
+   - Efficient re-rendering
+   - Optimized search and filtering
+
+#### Mock Data
+
+- **Users**: 5 users (one per role) with realistic data
+- **Audit Logs**: 4 sample logs showing different action types
+
+#### Build Status
+
+✅ **Frontend Build**: Successful compilation with no errors
+- Vite build completed in 14.78s
+- Bundle size: 1.4 MB (gzipped: 397 KB)
+- All TypeScript checks passed
+
+---
+
 ## Conclusion
 
 This roadmap provides a comprehensive, phased approach to transforming the Hydros IoT Hub frontend into a production-ready, enterprise-grade application. Each phase builds upon the previous, ensuring stability and allowing for iterative feedback.
 
-**Phases 1, 2, and 3 are now complete**, providing a solid foundation with:
-- Modern sidebar navigation
+**Phases 1, 2, 3, and 4 are now complete**, providing a comprehensive foundation with:
+- Modern sidebar navigation with user authentication
 - Comprehensive multi-site management
 - Real-time data integration
 - Full alerts and notifications system
 - Alert rule configuration
-- Full dark mode support
+- Complete user management with role-based access control
+- Five user roles with granular permissions
+- Admin pages for user administration
+- Audit logging infrastructure
+- Full dark mode support across all pages
 - Responsive design
 - Enhanced plant layout tools
 
-The focus on user roles, multi-site management, and AI-powered analytics positions Hydros as a modern, intelligent water treatment monitoring platform.
+The focus on user roles, multi-site management, authentication, and AI-powered analytics positions Hydros as a modern, intelligent water treatment monitoring platform ready for enterprise deployment.
 
-**Next Steps**: Begin Phase 4 implementation (User Management)
+**Next Steps**: Begin Phase 5 implementation (Reports & Analytics with AI Assistant)
 
 ---
 
@@ -1642,4 +1909,5 @@ This document will be updated as implementation progresses and requirements evol
 - v1.0 (2025-11-09): Initial roadmap document created
 - v1.1 (2025-11-11): Updated with Phase 1 & 2 completion status and implementation details
 - v1.2 (2025-11-11): Updated with Phase 3 completion status - Alerts & Notifications fully implemented
+- v1.3 (2025-11-11): Updated with Phase 4 completion status - User Management with role-based access control fully implemented
 

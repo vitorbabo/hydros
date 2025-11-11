@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
   HelpCircle,
   LogOut,
 } from 'lucide-react'
+import { useAuthStore } from '../../store/authStore'
 
 interface NavItem {
   name: string
@@ -68,19 +69,45 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
-  // TODO: Get from auth store when implemented
-  const currentUser = {
-    name: 'John Doe',
-    role: 'Operator',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkTuIfbb6UVUKU_GrpU7z4WJ5QMmoqxQhGNZVqUbkudfJXIc-JAZa74YcUicdxDHxg3Jean9boMSzo4-IHiEiA06Za56GcOJzLbP2t1O-3_ebvzj91YZu8CxwENu9jvQKgZjO_Al9i1BqPaljsBEHpm1cpbfzUda-Eg5TMNEPNnRkEQP5fXHsx1mI7PlJZtcu_JyQ10UmwNQbOdhqM9zL2smoCkqbk5x2uFUCWXjunux8zVcGHVxTY8EVuisrGYWV_DEc2l0lTHV0',
+  const { user, logout } = useAuthStore()
+  const navigate = useNavigate()
+
+  // Fallback for when user is not authenticated (shouldn't happen in protected routes)
+  const currentUser = user || {
+    name: 'Guest',
+    role: 'viewer' as const,
+    avatar: undefined,
   }
 
-  // TODO: Get from auth store when implemented
-  const userRole = 'operator' // 'admin' | 'site_manager' | 'technician' | 'operator' | 'viewer'
+  const userRole = currentUser.role
 
   const canAccessItem = (item: NavItem): boolean => {
     if (!item.roles || item.roles.length === 0) return true
     return item.roles.includes(userRole)
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      admin: 'Admin',
+      site_manager: 'Site Manager',
+      technician: 'Technician',
+      operator: 'Operator',
+      viewer: 'Viewer',
+    }
+    return labels[role] || role
+  }
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
   }
 
   return (
@@ -127,16 +154,24 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           <div className="flex flex-col gap-4">
             {/* User Profile */}
             <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-800">
-              <div
-                className="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 flex-shrink-0"
-                style={{ backgroundImage: `url("${currentUser.avatar}")` }}
-              />
+              {currentUser.avatar ? (
+                <div
+                  className="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 flex-shrink-0"
+                  style={{ backgroundImage: `url("${currentUser.avatar}")` }}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary font-semibold text-sm">
+                    {getUserInitials(currentUser.name)}
+                  </span>
+                </div>
+              )}
               <div className="flex flex-col min-w-0">
                 <h2 className="text-gray-900 dark:text-white text-base font-medium leading-normal truncate">
                   {currentUser.name}
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">
-                  {currentUser.role}
+                  {getRoleLabel(currentUser.role)}
                 </p>
               </div>
             </div>
@@ -211,10 +246,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             </button>
             <button
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              onClick={() => {
-                // TODO: Implement logout
-                console.log('Logout clicked')
-              }}
+              onClick={handleLogout}
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm font-medium">Logout</p>
