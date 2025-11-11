@@ -293,7 +293,7 @@ export const AdvancedLayoutTools: React.FC<AdvancedLayoutToolsProps> = ({
   if (!isVisible) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-gray-900 shadow-xl border-l border-gray-200 dark:border-gray-800 flex flex-col">
+    <div className="w-80 h-full bg-white dark:bg-gray-900 shadow-xl border-l border-gray-200 dark:border-gray-800 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between">

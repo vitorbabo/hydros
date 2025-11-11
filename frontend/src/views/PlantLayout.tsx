@@ -332,6 +332,17 @@ export default function PlantLayout() {
         </div>
       </div>
 
+      {/* Right Sidebar - Advanced Layout Tools (Overlay) */}
+      {isAdvancedToolsVisible && (
+        <div className="absolute right-0 top-0 bottom-0 z-20">
+          <AdvancedLayoutTools
+            isVisible={isAdvancedToolsVisible}
+            onClose={() => setIsAdvancedToolsVisible(false)}
+            siteId={currentSiteId || 'wtp-porto-01'}
+          />
+        </div>
+      )}
+
       {/* Right Sidebar - Module Details (Overlay) */}
       {selectedNode && (
         <div className="absolute right-0 top-0 bottom-0 z-20">
@@ -340,19 +351,6 @@ export default function PlantLayout() {
             onClose={() => setSelectedNode(null)}
             onConfigChange={updateNodeData}
           />
-        </div>
-      )}
-
-      {/* Advanced Layout Tools Modal */}
-      {isAdvancedToolsVisible && (
-        <div className="absolute inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full mx-4 border border-gray-200 dark:border-gray-700">
-            <AdvancedLayoutTools
-              isVisible={isAdvancedToolsVisible}
-              onClose={() => setIsAdvancedToolsVisible(false)}
-              siteId={currentSiteId || 'wtp-porto-01'}
-            />
-          </div>
         </div>
       )}
     </div>
