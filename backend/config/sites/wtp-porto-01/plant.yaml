@@ -4,7 +4,7 @@
 site_info:
   site_id: wtp-porto-01
   name: "Porto Municipal WTP"
-  design_capacity: 50000 # m3/day
+  design_capacity: 300000 # m3/day
   treatment_train: "conventional"
   location:
     region: "Porto"
