@@ -6,7 +6,9 @@ import { Dashboard } from './views/Dashboard'
 import { Sites } from './views/Sites'
 import { SiteDetail } from './views/sites/SiteDetail'
 import { SiteLayout } from './views/sites/SiteLayout'
-import { Alerts } from './views/Alerts'
+import AlertsDashboard from './views/alerts/AlertsDashboard'
+import AlertHistory from './views/alerts/AlertHistory'
+import AlertConfiguration from './views/alerts/AlertConfiguration'
 import { Reports } from './views/Reports'
 import { Analytics } from './views/Analytics'
 import { Settings } from './views/Settings'
@@ -16,6 +18,7 @@ import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
 import { useConfigurationStore } from './store/configurationStore'
 import { useThemeStore } from './store/themeStore'
+import { useAlertStore } from './store/alertStore'
 import { useMqtt, type ConfigurationMessage } from './hooks/useMqtt'
 import type { Observation } from './types'
 
@@ -34,6 +37,7 @@ function AppContent() {
   const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites } = useDashboardStore()
   const { addObservation, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
+  const { addAlert } = useAlertStore()
   const { theme } = useThemeStore()
 
   // Apply theme to document root
@@ -118,18 +122,83 @@ function AppContent() {
     }
   }, [updatePlantConfiguration, setModuleTemplates, setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites])
 
+  // Handle MQTT alert messages
+  const handleMqttAlert = useCallback((topic: string, message: string) => {
+    try {
+      const alertData = JSON.parse(message)
+
+      // Parse topic to extract site_id and other info
+      // Topic patterns: wtp/{site_id}/alerts/{alert_type}
+      //                 wtp/{site_id}/{module_id}/alerts/{alert_type}
+      //                 wtp/global/alerts/{alert_type}
+      const topicParts = topic.split('/')
+
+      let siteId = 'unknown'
+      let moduleId: string | undefined
+
+      if (topicParts[1] === 'global') {
+        siteId = 'global'
+      } else if (topicParts.length === 4) {
+        // Site-level alert: wtp/{site_id}/alerts/{alert_type}
+        siteId = topicParts[1]
+      } else if (topicParts.length === 5) {
+        // Module-level alert: wtp/{site_id}/{module_id}/alerts/{alert_type}
+        siteId = topicParts[1]
+        moduleId = topicParts[2]
+      }
+
+      // Get site name from dashboard store
+      const sites = useDashboardStore.getState().sites
+      const siteName = sites[siteId]?.name
+
+      // Create alert object
+      const alert = {
+        id: alertData.id || `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        siteId,
+        siteName,
+        moduleId,
+        moduleName: alertData.module_name,
+        assetId: alertData.asset_id,
+        assetName: alertData.asset_name,
+        severity: alertData.severity || 'warning',
+        title: alertData.title || 'Alert',
+        description: alertData.description || '',
+        timestamp: alertData.timestamp || new Date().toISOString(),
+        resolved: false,
+        measurement: alertData.measurement,
+        value: alertData.value,
+        threshold: alertData.threshold
+      }
+
+      console.log('Received alert:', alert)
+      addAlert(alert)
+
+      updateLastUpdate()
+      setConnectionStatus('connected')
+      setConnectionError(null)
+    } catch (error) {
+      console.error('Error parsing alert message:', error, message)
+    }
+  }, [addAlert, updateLastUpdate, setConnectionStatus, setConnectionError])
+
   // Handle MQTT messages
   const handleMqttMessage = useCallback((topic: string, message: string, observation?: Observation) => {
     updateLastUpdate()
     setConnectionStatus('connected')
     setConnectionError(null)
-    
+
+    // Check if this is an alert topic
+    if (topic.includes('/alerts/')) {
+      handleMqttAlert(topic, message)
+      return
+    }
+
     if (observation) {
       //console.log('Received observation:', observation)
-      
+
       // Add observation to telemetry store
       addObservation(observation)
-      
+
       // Set current site if not already set
       if (observation.site_id && !useDashboardStore.getState().currentSite) {
         setCurrentSite(observation.site_id)
@@ -137,7 +206,7 @@ function AppContent() {
     } else {
       console.log('Received message on topic:', topic, message)
     }
-  }, [setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation])
+  }, [setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation, handleMqttAlert])
 
   // Clean up old telemetry data periodically
   useEffect(() => {
@@ -148,12 +217,15 @@ function AppContent() {
     return () => clearInterval(cleanupInterval)
   }, [clearOldData])
 
-  // Initialize MQTT connection with both telemetry and configuration topics
+  // Initialize MQTT connection with telemetry, configuration, and alert topics
   const { connected } = useMqtt({
     topics: [
       'wtp/+/+/+/observation',        // Telemetry data
       'wtp/+/configuration/+',        // Plant configurations
-      'wtp/global/configuration/+'    // Global configurations like templates
+      'wtp/global/configuration/+',   // Global configurations like templates
+      'wtp/+/alerts/+',               // Site-level alerts
+      'wtp/+/+/alerts/+',             // Module-level alerts
+      'wtp/global/alerts/+'           // System-wide alerts
     ],
     onMessage: handleMqttMessage,
     onConfiguration: handleMqttConfiguration,
@@ -178,7 +250,9 @@ function AppContent() {
           <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
           <Route path="/sites/:siteId" element={<SiteDetail />} />
           <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
-          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/alerts" element={<AlertsDashboard />} />
+          <Route path="/alerts/history" element={<AlertHistory />} />
+          <Route path="/alerts/configuration" element={<AlertConfiguration />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />

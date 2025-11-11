@@ -1437,21 +1437,200 @@ Enhanced `telemetryStore.ts`:
 
 ---
 
+### Phase 3: Alerts & Notifications ✅ **COMPLETED**
+
+**Status**: Fully implemented and tested
+**Completion Date**: 2025-11-11
+
+#### Completed Pages
+
+1. ✅ **Alerts Dashboard** (`/views/alerts/AlertsDashboard.tsx`)
+   - Active alerts feed with real-time updates
+   - Filter by severity (Critical, Warning, Info)
+   - Filter by site and module
+   - Bulk acknowledge and dismiss actions
+   - Statistics dashboard (Total, Critical, Warning, Info, Unacknowledged)
+   - Select all functionality
+   - Dark mode support
+
+2. ✅ **Alert History** (`/views/alerts/AlertHistory.tsx`)
+   - Historical alert table with comprehensive filtering
+   - Date range picker with presets (7 days, 30 days, 90 days, all time, custom)
+   - Search functionality across title, description, and site
+   - Severity filtering
+   - Export to CSV functionality
+   - Statistics display
+   - Clear history action with confirmation
+   - Dark mode support
+
+3. ✅ **Alert Configuration** (`/views/alerts/AlertConfiguration.tsx`)
+   - Alert rule management interface
+   - Create, edit, delete, and toggle alert rules
+   - Site-based filtering
+   - Rule statistics (Total, Enabled, Disabled, Critical)
+   - Visual rule cards with metadata
+   - Modal-based rule editor
+   - Dark mode support
+
+#### Completed Components
+
+1. ✅ **AlertSeverityBadge** (`/components/alerts/AlertSeverityBadge.tsx`)
+   - Color-coded severity badges (Critical: red, Warning: yellow, Info: blue)
+   - Icon display (AlertCircle, AlertTriangle, Info)
+   - Configurable size (sm, md, lg)
+   - Full dark mode support
+
+2. ✅ **AlertCard** (`/components/alerts/AlertCard.tsx`)
+   - Comprehensive alert display card
+   - Acknowledge and dismiss actions
+   - Selectable for bulk actions
+   - Metadata display (site, module, measurement, timestamp)
+   - Acknowledged status indicator
+   - Time-relative timestamps using date-fns
+   - Dark mode support
+
+3. ✅ **AlertRuleEditor** (`/components/alerts/AlertRuleEditor.tsx`)
+   - Modal-based rule creation/editing form
+   - Site and asset selection
+   - Common measurement dropdown (turbidity, pH, chlorine_residual, etc.)
+   - Condition types (above, below, equal, between)
+   - Threshold configuration (single value or range)
+   - Severity selection (critical, warning, info)
+   - Notification channel selection (email, sms, push)
+   - Enable/disable toggle
+   - Form validation with error messages
+   - Dark mode support
+
+#### Store Implementation
+
+✅ **Alert Store** (`/store/alertStore.ts`)
+- Complete state management for alerts and alert rules
+- Active alerts tracking
+- Alert history management
+- Alert rule CRUD operations
+- Filtering capabilities (severity, site, module)
+- Bulk operations (acknowledge, dismiss)
+- Mock data for development testing
+- TypeScript interfaces:
+  - `Alert`: Full alert object with metadata
+  - `AlertRule`: Complete rule definition
+  - `AlertSeverity`: Type-safe severity levels
+  - `AlertCondition`: Condition operators
+
+#### Routing Updates
+
+✅ **Updated App.tsx routing**:
+```typescript
+<Route path="/alerts" element={<AlertsDashboard />} />
+<Route path="/alerts/history" element={<AlertHistory />} />
+<Route path="/alerts/configuration" element={<AlertConfiguration />} />
+```
+
+#### MQTT Integration
+
+✅ **Alert Topic Subscriptions** (in `App.tsx`):
+- `wtp/+/alerts/+` - Site-level alerts
+- `wtp/+/+/alerts/+` - Module-level alerts
+- `wtp/global/alerts/+` - System-wide alerts
+
+✅ **Alert Message Handler**:
+- Topic parsing to extract site and module information
+- JSON message parsing
+- Site name resolution from dashboard store
+- Alert object creation and validation
+- Integration with alert store
+- Error handling and logging
+
+#### Navigation Integration
+
+✅ **Sidebar Navigation**:
+- Alerts menu item already present with Bell icon
+- Links to `/alerts` route
+- Active state highlighting
+- Dark mode support
+
+#### Features Implemented
+
+1. **Alert Management**:
+   - Real-time alert display
+   - Acknowledge functionality with user tracking
+   - Bulk acknowledge for multiple alerts
+   - Dismiss alerts to history
+   - Bulk dismiss functionality
+
+2. **Filtering & Search**:
+   - Severity-based filtering (All, Critical, Warning, Info)
+   - Site-based filtering
+   - Module-based filtering
+   - Text search in alert history
+   - Date range filtering with presets
+
+3. **Alert Rules**:
+   - Rule creation with comprehensive form
+   - Rule editing with pre-populated data
+   - Rule deletion with confirmation
+   - Enable/disable toggle for rules
+   - Condition builder (above, below, equal, between)
+   - Multi-channel notifications
+   - Site and asset association
+
+4. **Data Export**:
+   - CSV export of alert history
+   - Includes all relevant fields (timestamp, severity, site, title, etc.)
+   - Acknowledgement and resolution tracking
+
+5. **Statistics**:
+   - Alert count by severity
+   - Unacknowledged alert count
+   - Rule statistics (enabled, disabled, critical)
+   - Resolved alert tracking
+
+6. **Dark Mode**:
+   - Full dark mode support across all alert pages
+   - Consistent color palette
+   - Badge and severity colors optimized for dark backgrounds
+
+#### Mock Data
+
+✅ **Development Mock Data**:
+- 4 sample alerts with different severities and states
+- 4 sample alert rules covering common scenarios
+- Automatic loading on first page visit
+
+#### Technical Highlights
+
+1. **Type Safety**: Full TypeScript implementation with strict typing
+2. **State Management**: Zustand store with optimized selectors
+3. **Real-time Updates**: MQTT integration for live alert streaming
+4. **User Experience**:
+   - Responsive design for all screen sizes
+   - Loading states and empty states
+   - Confirmation dialogs for destructive actions
+   - Relative time formatting with date-fns
+5. **Performance**:
+   - Memoized filtered lists (useMemo)
+   - Efficient re-rendering
+   - Optimized bulk operations
+
+---
+
 ## Conclusion
 
 This roadmap provides a comprehensive, phased approach to transforming the Hydros IoT Hub frontend into a production-ready, enterprise-grade application. Each phase builds upon the previous, ensuring stability and allowing for iterative feedback.
 
-**Phases 1 and 2 are now complete**, providing a solid foundation with:
+**Phases 1, 2, and 3 are now complete**, providing a solid foundation with:
 - Modern sidebar navigation
 - Comprehensive multi-site management
 - Real-time data integration
+- Full alerts and notifications system
+- Alert rule configuration
 - Full dark mode support
 - Responsive design
 - Enhanced plant layout tools
 
 The focus on user roles, multi-site management, and AI-powered analytics positions Hydros as a modern, intelligent water treatment monitoring platform.
 
-**Next Steps**: Begin Phase 3 implementation (Alerts & Notifications)
+**Next Steps**: Begin Phase 4 implementation (User Management)
 
 ---
 
@@ -1462,4 +1641,5 @@ This document will be updated as implementation progresses and requirements evol
 **Version History**:
 - v1.0 (2025-11-09): Initial roadmap document created
 - v1.1 (2025-11-11): Updated with Phase 1 & 2 completion status and implementation details
+- v1.2 (2025-11-11): Updated with Phase 3 completion status - Alerts & Notifications fully implemented
 
