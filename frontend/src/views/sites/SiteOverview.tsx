@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight, Maximize2 } from 'lucide-react'
+import { ChevronRight, MapPin, Settings, AlertTriangle, Wifi, FlaskConical, ArrowRight, Maximize2, Droplets, Activity, Gauge } from 'lucide-react'
 import { ModuleStatusCard } from '../../components/plant/ModuleStatusCard'
 import { StatusIndicator } from '../../components/shared/StatusIndicator'
 import type { PlantSite, ComponentStatus } from '../../types'
@@ -14,7 +14,7 @@ interface SiteOverviewProps {
 
 export function SiteOverview({ site }: SiteOverviewProps) {
   const navigate = useNavigate()
-  const { getLatestByAsset } = useTelemetryStore()
+  const { getLatestByAsset, latest } = useTelemetryStore()
   const { plantConfigurations, moduleTemplates } = useConfigurationStore()
 
   // Get full configuration for this site
@@ -24,6 +24,65 @@ export function SiteOverview({ site }: SiteOverviewProps) {
   const protocolClients = plantConfig?.protocol_clients || []
   const controlStrategies = plantConfig?.control_strategies || {}
   const alarmDefinitions = plantConfig?.alarm_definitions || {}
+
+  // Use ref to cache flow rates (prevents flickering to zero without causing re-renders)
+  const flowRateCacheRef = useRef<{ currentFlowRate: number, dailyTotalFlow: number }>({
+    currentFlowRate: 0,
+    dailyTotalFlow: 0
+  })
+
+  // Calculate current flow metrics with caching
+  const { currentFlowRate, dailyTotalFlow, hasRecentData } = useMemo(() => {
+    const siteObservations = Object.values(latest).filter(obs => obs.site_id === site.id)
+
+    // Get current flow rate from telemetry
+    const rawIntakeFlowObs = siteObservations.find(obs =>
+      obs.asset_id === 'raw_intake' && obs.measurement === 'flow_rate'
+    )
+
+    // Get daily total flow
+    const dailyTotalFlowObs = siteObservations.find(obs =>
+      obs.asset_id === 'raw_intake' && obs.measurement === 'daily_flow_total'
+    )
+
+    // Get cached values
+    const cachedValues = flowRateCacheRef.current
+
+    // Use cached values if observations are missing (prevents flickering to zero)
+    const newFlowRate = rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate
+    const newDailyTotal = dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+
+    // Update cache if we have new valid values
+    if (rawIntakeFlowObs || dailyTotalFlowObs) {
+      flowRateCacheRef.current = {
+        currentFlowRate: rawIntakeFlowObs ? rawIntakeFlowObs.value : cachedValues.currentFlowRate,
+        dailyTotalFlow: dailyTotalFlowObs ? dailyTotalFlowObs.value : cachedValues.dailyTotalFlow
+      }
+    }
+
+    // Check if data is recent (within last 60 seconds)
+    const recentDataTimestamps = siteObservations
+      .map((obs) => obs && obs.ts ? new Date(obs.ts).getTime() : 0)
+      .filter((timestamp) => timestamp > 0)
+
+    const latestTimestamp = recentDataTimestamps.length > 0 ?
+      Math.max(...recentDataTimestamps) : 0
+
+    const timeDiffSeconds = latestTimestamp > 0 ?
+      (Date.now() - latestTimestamp) / 1000 : Infinity
+
+    const isRecentData = timeDiffSeconds < 60 // Within last 60 seconds
+
+    return {
+      currentFlowRate: newFlowRate,
+      dailyTotalFlow: newDailyTotal,
+      hasRecentData: isRecentData
+    }
+  }, [latest, site.id])
+
+  // Calculate design flow rate from operational parameters
+  const designFlowRate = operationalParams.design_flow_rate ||
+    (site.design_capacity / 24) || 0
 
   // Get module information from configuration and templates
   const getModuleInfo = (moduleId: string) => {
@@ -181,45 +240,72 @@ export function SiteOverview({ site }: SiteOverviewProps) {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Design Capacity */}
+        {/* Design Flow Rate */}
         <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            Design Capacity
-          </h4>
+          <div className="flex items-center gap-2 mb-2">
+            <Droplets className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Design Flow Rate
+            </h4>
+          </div>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {site.design_capacity.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            m³/day
-          </p>
-        </div>
-
-        {/* Treatment Train */}
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            Treatment Type
-          </h4>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white capitalize">
-            {site.treatment_train}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {site.modules.length} modules
-          </p>
-        </div>
-
-        {/* Normal Flow Rate */}
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-            Normal Flow Rate
-          </h4>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {site.operational_parameters?.normal_flow_rate || 'N/A'}
+            {(designFlowRate / 1000).toFixed(1)}k
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             m³/h
           </p>
         </div>
+
+        {/* Current Flow Rate */}
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Current Flow Rate
+            </h4>
+          </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            {(currentFlowRate / 1000).toFixed(1)}k
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            m³/h {!hasRecentData && <span className="text-orange-500">⚠</span>}
+          </p>
+        </div>
+
+        {/* Daily Total Flow */}
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Gauge className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Daily Total Flow
+            </h4>
+          </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            {(dailyTotalFlow / 1000).toFixed(1)}k
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            m³
+          </p>
+        </div>
       </div>
+
+      {/* Utilization Bar */}
+      {designFlowRate > 0 && (
+        <div className="bg-white dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600 dark:text-gray-400">Flow Utilization</span>
+            <span className="font-medium text-gray-900 dark:text-white">
+              {((currentFlowRate / designFlowRate) * 100).toFixed(1)}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div
+              className="bg-primary h-3 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min((currentFlowRate / designFlowRate) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Site Information */}
       {siteInfo.location && (
