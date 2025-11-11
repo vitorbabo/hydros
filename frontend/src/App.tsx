@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from './components/layout/AppShell'
+import { RequireAuth, RequireRole } from './components/auth'
+import { Login } from './views/Login'
 import { Dashboard } from './views/Dashboard'
 import { Sites } from './views/Sites'
 import { SiteDetail } from './views/sites/SiteDetail'
@@ -12,13 +14,17 @@ import AlertConfiguration from './views/alerts/AlertConfiguration'
 import { Reports } from './views/Reports'
 import { Analytics } from './views/Analytics'
 import { Settings } from './views/Settings'
-import { Admin } from './views/Admin'
+import { UserManagement } from './views/admin/UserManagement'
+import { RoleManagement } from './views/admin/RoleManagement'
+import { SiteAccessControl } from './views/admin/SiteAccessControl'
+import { AuditLogs } from './views/admin/AuditLogs'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
 import { useConfigurationStore } from './store/configurationStore'
 import { useThemeStore } from './store/themeStore'
 import { useAlertStore } from './store/alertStore'
+import { useAuthStore } from './store/authStore'
 import { useMqtt, type ConfigurationMessage } from './hooks/useMqtt'
 import type { Observation } from './types'
 
@@ -39,6 +45,12 @@ function AppContent() {
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
   const { addAlert } = useAlertStore()
   const { theme } = useThemeStore()
+  const { initializeAuth } = useAuthStore()
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth()
+  }, [initializeAuth])
 
   // Apply theme to document root
   useEffect(() => {
@@ -243,8 +255,18 @@ function AppContent() {
   return (
     <Router>
       <Routes>
-        <Route element={<AppShell />}>
-          {/* New navigation structure */}
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected routes */}
+        <Route
+          element={
+            <RequireAuth>
+              <AppShell />
+            </RequireAuth>
+          }
+        >
+          {/* Main navigation */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/sites" element={<Sites />} />
           <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
@@ -256,8 +278,52 @@ function AppContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/admin" element={<Admin />} />
+
+          {/* Admin routes - Only accessible by admin */}
+          <Route
+            path="/admin"
+            element={
+              <RequireRole roles={['admin']}>
+                <Navigate to="/admin/users" replace />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <RequireRole roles={['admin']}>
+                <UserManagement />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/roles"
+            element={
+              <RequireRole roles={['admin']}>
+                <RoleManagement />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/access"
+            element={
+              <RequireRole roles={['admin']}>
+                <SiteAccessControl />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/audit"
+            element={
+              <RequireRole roles={['admin']}>
+                <AuditLogs />
+              </RequireRole>
+            }
+          />
         </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   )
