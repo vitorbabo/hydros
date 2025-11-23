@@ -12,13 +12,14 @@ interface TelemetryStore extends TelemetryData {
   availableAssets: string[]
   availableMeasurements: string[]
   assetGroups: Record<string, string[]>
-  
+
   // Actions
   addObservation: (observation: Observation) => void
   getLatestByAsset: (assetId: string) => Record<string, Observation>
   getTimeSeriesData: (sensorKey: string) => Array<{ ts: number; value: number; quality: string }>
   clearOldData: () => void
-  
+  cleanup: () => void
+
   // UI state
   selectedAssetGroup: string
   selectedSensor: string | null
@@ -27,6 +28,8 @@ interface TelemetryStore extends TelemetryData {
 }
 
 const MAX_TIME_SERIES_POINTS = 100
+const MAX_OBSERVATION_AGE_MS = 5 * 60 * 1000 // 5 minutes - observations older than this are removed
+const CLEANUP_INTERVAL_MS = 60 * 1000 // Run cleanup every minute
 
 export const useTelemetryStore = create<TelemetryStore>()(
   subscribeWithSelector((set, get) => ({
@@ -103,9 +106,9 @@ export const useTelemetryStore = create<TelemetryStore>()(
 
     clearOldData: () => set((state) => {
       const cutoffTime = Date.now() - (24 * 60 * 60 * 1000) // 24 hours ago
-      
+
       const filteredTimeSeries: Record<string, Array<{ ts: number; value: number; quality: string }>> = {}
-      
+
       Object.entries(state.timeSeries).forEach(([key, series]) => {
         filteredTimeSeries[key] = series.filter(point => point.ts > cutoffTime)
       })
@@ -113,6 +116,44 @@ export const useTelemetryStore = create<TelemetryStore>()(
       return {
         ...state,
         timeSeries: filteredTimeSeries
+      }
+    }),
+
+    cleanup: () => set((state) => {
+      const now = Date.now()
+      const cutoffTime = now - MAX_OBSERVATION_AGE_MS
+
+      // Remove stale observations from latest
+      const freshLatest: Record<string, Observation> = {}
+      Object.entries(state.latest).forEach(([key, observation]) => {
+        const observationTime = new Date(observation.ts).getTime()
+        if (observationTime > cutoffTime) {
+          freshLatest[key] = observation
+        }
+      })
+
+      // Remove stale time series data
+      const freshTimeSeries: Record<string, Array<{ ts: number; value: number; quality: string }>> = {}
+      Object.entries(state.timeSeries).forEach(([key, series]) => {
+        const freshSeries = series.filter(point => point.ts > cutoffTime)
+        // Only keep time series if there's recent data
+        if (freshSeries.length > 0) {
+          freshTimeSeries[key] = freshSeries
+        }
+      })
+
+      // Recalculate derived data with fresh observations
+      const allObservations = Object.values(freshLatest)
+      const assets = [...new Set(allObservations.map(obs => obs.asset_id))].sort()
+      const measurements = [...new Set(allObservations.map(obs => obs.measurement))].sort()
+      const groups = groupAssetsByType(allObservations)
+
+      return {
+        latest: freshLatest,
+        timeSeries: freshTimeSeries,
+        availableAssets: assets,
+        availableMeasurements: measurements,
+        assetGroups: groups,
       }
     }),
 
@@ -167,4 +208,13 @@ function groupAssetsByType(observations: Observation[]): Record<string, string[]
   })
 
   return result
+}
+
+// Setup automatic cleanup to run periodically
+// This prevents memory leaks by removing old observations
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    const store = useTelemetryStore.getState()
+    store.cleanup()
+  }, CLEANUP_INTERVAL_MS)
 }

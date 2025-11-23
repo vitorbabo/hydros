@@ -1,14 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react'
 import mqtt from 'mqtt'
 import type { MqttClient } from 'mqtt'
-import type { Observation, PlantConfig, ModuleTemplate } from '../types'
-
-export interface ConfigurationMessage {
-  type: 'plant' | 'modules' | 'templates' | 'parameters'
-  site_id: string
-  timestamp: string
-  data: PlantConfig | Record<string, any> | Record<string, ModuleTemplate>
-}
+import type { PlantConfig, ModuleTemplate } from '../types'
+import {
+  safeValidateObservation,
+  safeValidateConfigurationMessage,
+  type Observation,
+  type ConfigurationMessage
+} from '../types/schemas'
 
 interface UseMqttOptions {
   topics?: string[]
@@ -52,20 +51,44 @@ export function useMqtt({
       if (topic.includes('/configuration/')) {
         try {
           const topicParts = topic.split('/')
+          if (topicParts.length < 4) {
+            console.warn('Invalid configuration topic format:', topic)
+            return
+          }
+
           const siteId = topicParts[1]
-          const configType = topicParts[3] // plant, modules, or templates
-          
+          const configType = topicParts[3] // plant, modules, templates, or parameters
+
           const backendMessage = JSON.parse(message)
           console.log('MQTT parsing config message:', { topic, configType, backendMessage })
-          
-          const configMessage: ConfigurationMessage = {
-            type: configType as 'plant' | 'modules' | 'templates' | 'parameters',
+
+          // Prepare configuration message for validation
+          const configMessage = {
             site_id: siteId,
+            config_type: configType,
             timestamp: backendMessage.timestamp || new Date().toISOString(),
-            data: backendMessage.data || backendMessage // Use backend's data field, fallback to entire message
+            data: backendMessage.data || backendMessage,
+            source: backendMessage.source,
+            seq: backendMessage.seq,
+            version: backendMessage.version
           }
-          
-          onConfiguration?.(topic, configMessage)
+
+          // Validate configuration message
+          const validationResult = safeValidateConfigurationMessage(configMessage)
+
+          if (validationResult.success && validationResult.data) {
+            // Valid configuration - pass to handler
+            onConfiguration?.(topic, validationResult.data)
+          } else {
+            // Invalid configuration - log errors but still try to process
+            console.error('Invalid configuration message received:', {
+              topic,
+              errors: validationResult.error?.errors,
+              rawMessage: backendMessage
+            })
+            // Still try to call handler with unvalidated data (for backwards compatibility)
+            onConfiguration?.(topic, configMessage as ConfigurationMessage)
+          }
         } catch (parseError) {
           console.warn('Failed to parse configuration:', parseError)
         }
@@ -73,10 +96,24 @@ export function useMqtt({
       // Parse observation if it's a telemetry topic
       else if (topic.startsWith('wtp/') && topic.endsWith('/observation')) {
         try {
-          const observation: Observation = JSON.parse(message)
-          onMessage?.(topic, message, observation)
+          const rawData = JSON.parse(message)
+          const validationResult = safeValidateObservation(rawData)
+
+          if (validationResult.success && validationResult.data) {
+            // Valid observation - pass to handler
+            onMessage?.(topic, message, validationResult.data)
+          } else {
+            // Invalid observation - log error details
+            console.error('Invalid observation received:', {
+              topic,
+              errors: validationResult.error?.errors,
+              rawData
+            })
+            // Still call onMessage but without parsed observation
+            onMessage?.(topic, message)
+          }
         } catch (parseError) {
-          console.warn('Failed to parse observation:', parseError)
+          console.warn('Failed to parse observation JSON:', parseError)
           onMessage?.(topic, message)
         }
       } else {
