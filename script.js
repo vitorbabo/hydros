@@ -287,5 +287,79 @@ const lazyLoadPlaceholders = () => {
 
 lazyLoadPlaceholders();
 
-console.log('%c🌊 Hydros Landing Page Loaded! ', 'background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%); color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
+// Carousel functionality
+const initCarousel = () => {
+    const carousel = document.querySelector('.demo-carousel');
+    const items = document.querySelectorAll('.demo-item');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+    
+    if (!carousel || items.length === 0) return;
+    
+    let currentIndex = 0;
+    const totalItems = items.length;
+    
+    const updateCarousel = (index) => {
+        // Update transform
+        carousel.style.transform = `translateX(-${index * 100}%)`;
+        
+        // Update active classes
+        items.forEach((item, i) => {
+            item.classList.toggle('active', i === index);
+        });
+        
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        
+        currentIndex = index;
+    };
+    
+    const nextSlide = () => {
+        const nextIndex = (currentIndex + 1) % totalItems;
+        updateCarousel(nextIndex);
+    };
+    
+    const prevSlide = () => {
+        const prevIndex = (currentIndex - 1 + totalItems) % totalItems;
+        updateCarousel(prevIndex);
+    };
+    
+    // Event listeners
+    nextBtn?.addEventListener('click', nextSlide);
+    prevBtn?.addEventListener('click', prevSlide);
+    
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => updateCarousel(index));
+    });
+    
+    // Auto-advance carousel
+    let autoPlayInterval = setInterval(nextSlide, 5000);
+    
+    // Pause on hover
+    const carouselContainer = document.querySelector('.carousel-container');
+    carouselContainer?.addEventListener('mouseenter', () => {
+        clearInterval(autoPlayInterval);
+    });
+    
+    carouselContainer?.addEventListener('mouseleave', () => {
+        autoPlayInterval = setInterval(nextSlide, 5000);
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') prevSlide();
+        if (e.key === 'ArrowRight') nextSlide();
+    });
+};
+
+// Initialize carousel when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCarousel);
+} else {
+    initCarousel();
+}
+
+console.log('%c🌊 Hydros Landing Page Loaded! ', 'background: linear-gradient(135deg, #135bec 0%, #06B6D4 100%); color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold;');
 console.log('To replace placeholder images, add actual screenshots to the project and update the src attributes.');

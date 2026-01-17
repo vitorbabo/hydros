@@ -24,7 +24,7 @@
                         <defs>
                             <linearGradient id="gradient1" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
                                 <stop stop-color="#06B6D4"/>
-                                <stop offset="1" stop-color="#3B82F6"/>
+                                <stop offset="1" stop-color="#135bec"/>
                             </linearGradient>
                         </defs>
                     </svg>
@@ -80,8 +80,8 @@
                         <div class="stat-label">Parameter Types</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">~100</div>
-                        <div class="stat-label">Concurrent Connections</div>
+                        <div class="stat-number">>100</div>
+                        <div class="stat-label">Simulated signals</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">Multi-Site</div>
@@ -337,27 +337,46 @@ flowchart TB
                 <h2 class="section-title">See Hydros in Action</h2>
                 <p class="section-description">Real-time monitoring and control of water treatment plants</p>
             </div>
-            <div class="demo-grid">
-                <div class="demo-item">
-                    <div class="demo-screenshot">
-                        <img src="assets/analytics.png" alt="Real-time Dashboard" loading="lazy">
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="demo-carousel">
+                        <div class="demo-item active">
+                            <div class="demo-screenshot">
+                                <img src="assets/analytics.png" alt="Real-time Dashboard" loading="lazy">
+                            </div>
+                            <h4>Live Plant Monitoring</h4>
+                            <p>Monitor sensors, actuators, and system status in real-time with interactive dashboards</p>
+                        </div>
+                        <div class="demo-item">
+                            <div class="demo-screenshot">
+                                <img src="assets/reports.png" alt="Analytics & Reports" loading="lazy">
+                            </div>
+                            <h4>Advanced Analytics</h4>
+                            <p>Visualize trends, analyze performance, and generate insights with AI-powered reports</p>
+                        </div>
+                        <div class="demo-item">
+                            <div class="demo-screenshot">
+                                <img src="assets/config.png" alt="Configuration Management" loading="lazy">
+                            </div>
+                            <h4>Multi-Site Configuration</h4>
+                            <p>Manage multiple plants with centralized templates and site-specific customizations</p>
+                        </div>
                     </div>
-                    <h4>Live Plant Monitoring</h4>
-                    <p>Monitor sensors, actuators, and system status in real-time with interactive dashboards</p>
                 </div>
-                <div class="demo-item">
-                    <div class="demo-screenshot">
-                        <img src="assets/reports.png" alt="Analytics & Reports" loading="lazy">
-                    </div>
-                    <h4>Advanced Analytics</h4>
-                    <p>Visualize trends, analyze performance, and generate insights with AI-powered reports</p>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-screenshot">
-                        <img src="assets/config.png" alt="Configuration Management" loading="lazy">
-                    </div>
-                    <h4>Multi-Site Configuration</h4>
-                    <p>Manage multiple plants with centralized templates and site-specific customizations</p>
+                <button class="carousel-btn carousel-prev" aria-label="Previous slide">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button class="carousel-btn carousel-next" aria-label="Next slide">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div class="carousel-dots">
+                    <button class="carousel-dot active" aria-label="Go to slide 1"></button>
+                    <button class="carousel-dot" aria-label="Go to slide 2"></button>
+                    <button class="carousel-dot" aria-label="Go to slide 3"></button>
                 </div>
             </div>
         </div>
@@ -433,7 +452,7 @@ docker compose up -d --build</code></pre>
                             <defs>
                                 <linearGradient id="gradient2" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
                                     <stop stop-color="#06B6D4"/>
-                                    <stop offset="1" stop-color="#3B82F6"/>
+                                    <stop offset="1" stop-color="#135bec"/>
                                 </linearGradient>
                             </defs>
                         </svg>
