@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hydros - Digital Twin & IoT Hub for Water Treatment Plants. Scalable multi-site architecture for water treatment plant simulation and edge gateway functionality.">
+    <title>Hydros - Digital Twin & IoT Hub for Water Treatment Plants</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 4L4 10V18C4 24.6274 9.37258 28 16 28C22.6274 28 28 24.6274 28 18V10L16 4Z" fill="url(#gradient1)"/>
+                        <path d="M16 12C18.2091 12 20 13.7909 20 16C20 18.2091 18.2091 20 16 20C13.7909 20 12 18.2091 12 16C12 13.7909 13.7909 12 16 12Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient1" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#06B6D4"/>
+                                <stop offset="1" stop-color="#135bec"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="logo-text">Hydros</span>
+                </div>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#architecture">Architecture</a>
+                    <a href="#demo">Demo</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    Open Source Digital Twin Platform
+                </div>
+                <h1 class="hero-title">
+                    Digital Twin & IoT Hub for<br>
+                    <span class="gradient-text">Water Treatment Plants</span>
+                </h1>
+                <p class="hero-description">
+                    Scalable multi-site architecture for water treatment plant simulation and edge gateway functionality.
+                    Perfect for both development simulation and production data collection from real PLCs.
+                </p>
+                <div class="hero-buttons">
+                    <a href="https://github.com/vitorbabo/hydros" class="btn-large btn-primary" target="_blank">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        Get Started
+                    </a>
+                    <a href="#demo" class="btn-large btn-secondary">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Watch Demo
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">58+</div>
+                        <div class="stat-label">Module Types</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">49+</div>
+                        <div class="stat-label">Parameter Types</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">>100</div>
+                        <div class="stat-label">Simulated signals</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">Multi-Site</div>
+                        <div class="stat-label">Architecture</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-screenshot">
+                    <img src="assets/dashboard.png" alt="Hydros Dashboard" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Powerful Features for Industrial IoT</h2>
+                <p class="section-description">Everything you need to simulate, monitor, and manage water treatment plants at scale</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon blue">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Multi-Site Architecture</h3>
+                    <p class="feature-description">Individual site configurations with centralized templates. Scale to unlimited sites without code changes.</p>
+                    <ul class="feature-list">
+                        <li>Dynamic site selection</li>
+                        <li>Centralized templates (58+ module types)</li>
+                        <li>Site-specific protocol configurations</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Digital Twin Core</h3>
+                    <p class="feature-description">Real-time digital representation of physical plant components with comprehensive state management.</p>
+                    <ul class="feature-list">
+                        <li>Physics-based simulation</li>
+                        <li>Real-time parameter synchronization</li>
+                        <li>Component lifecycle management</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Unified Protocol Support</h3>
+                    <p class="feature-description">Seamless integration with industrial protocols for maximum compatibility.</p>
+                    <ul class="feature-list">
+                        <li>Modbus TCP (async client/server)</li>
+                        <li>MQTT (centralized handler)</li>
+                        <li>OPC UA & Siemens S7 ready</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon orange">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Edge Gateway</h3>
+                    <p class="feature-description">Production-ready gateway for collecting data from real PLCs and industrial equipment.</p>
+                    <ul class="feature-list">
+                        <li>Async PLC communication</li>
+                        <li>Data transformation utilities</li>
+                        <li>Industrial network optimized</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon cyan">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Real-time Analytics</h3>
+                    <p class="feature-description">Monitor plant performance with comprehensive dashboards and time-series data.</p>
+                    <ul class="feature-list">
+                        <li>InfluxDB integration</li>
+                        <li>React-based dashboard</li>
+                        <li>Custom visualization widgets</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon pink">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Enterprise Ready</h3>
+                    <p class="feature-description">Built for production with validation, logging, and comprehensive error handling.</p>
+                    <ul class="feature-list">
+                        <li>JSON schema validation</li>
+                        <li>Docker deployment ready</li>
+                        <li>Comprehensive logging</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Operation Modes Section -->
+    <!-- <section class="modes">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Flexible Operation Modes</h2>
+                <p class="section-description">Deploy in the mode that fits your needs</p>
+            </div>
+            <div class="modes-grid">
+                <div class="mode-card">
+                    <div class="mode-header">
+                        <div class="mode-icon simulation">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3 class="mode-title">Simulation Mode</h3>
+                    </div>
+                    <p class="mode-description">Physics-based simulation for development, testing, and demonstrations.</p>
+                    <div class="mode-screenshot">
+                        <div class="screenshot-placeholder">
+                            <svg width="60" height="60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p>simulation-mode.gif</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mode-card">
+                    <div class="mode-header">
+                        <div class="mode-icon gateway">
+                            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                            </svg>
+                        </div>
+                        <h3 class="mode-title">Gateway Mode</h3>
+                    </div>
+                    <p class="mode-description">Production data collection from real controllers/PL. Supports Modbus, OPC UA, and Siemens S7 protocols.</p>
+                    <div class="mode-screenshot">
+                        <div class="screenshot-placeholder">
+                            <svg width="60" height="60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p>gateway-mode.gif</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section> -->
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="architecture">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Modern Architecture</h2>
+                <p class="section-description">Built with best practices for scalability and maintainability</p>
+            </div>
+            <div class="architecture-content">
+                <div class="architecture-diagram mermaid-container">
+                    <pre class="mermaid">
+flowchart TB
+    subgraph External["External Systems"]
+        PLC["PLC / Controllers"]
+        SCADA["SCADA Systems"]
+    end
+
+    subgraph Gateway["Edge Gateway"]
+        MB["Modbus Client"]
+        OPCUA["OPC UA Client"]
+        S7["S7 Client"]
+    end
+
+    subgraph Core["Digital Twin Core"]
+        DT["Twin Engine"]
+        PR["Protocol Registry"]
+        SM["State Manager"]
+    end
+
+    subgraph Data["Data Layer"]
+        MQTT["MQTT Broker"]
+        INFLUX["InfluxDB"]
+    end
+
+    subgraph UI["Frontend"]
+        DASH["React Dashboard"]
+    end
+
+    PLC --> MB
+    SCADA --> OPCUA
+    PLC --> S7
+
+    MB --> PR
+    OPCUA --> PR
+    S7 --> PR
+
+    PR --> DT
+    DT <--> SM
+    DT --> MQTT
+    MQTT --> INFLUX
+    MQTT --> DASH
+    SM --> DASH
+                    </pre>
+                </div>
+                <div class="architecture-features">
+                    <div class="arch-feature">
+                        <div class="arch-icon"><span class="material-icons">precision_manufacturing</span></div>
+                        <div>
+                            <h4>Digital Twin Core</h4>
+                            <p>Central orchestrator managing all plant components and real-time data with comprehensive state management</p>
+                        </div>
+                    </div>
+                    <div class="arch-feature">
+                        <div class="arch-icon"><span class="material-icons">settings</span></div>
+                        <div>
+                            <h4>Protocol Registry</h4>
+                            <p>Pluggable protocol system with shared connection management and automatic address allocation</p>
+                        </div>
+                    </div>
+
+                    <div class="arch-feature">
+                        <div class="arch-icon"><span class="material-icons">analytics</span></div>
+                        <div>
+                            <h4>Time-Series Data</h4>
+                            <p>InfluxDB integration for efficient storage and retrieval of sensor observations and analytics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">See Hydros in Action</h2>
+                <p class="section-description">Real-time monitoring and control of water treatment plants</p>
+            </div>
+            <div class="carousel-container">
+                <div class="carousel-wrapper">
+                    <div class="demo-carousel">
+                        <div class="demo-item active">
+                            <div class="demo-screenshot">
+                                <img src="assets/analytics.png" alt="Real-time Dashboard" loading="lazy">
+                            </div>
+                            <h4>Live Plant Monitoring</h4>
+                            <p>Monitor sensors, actuators, and system status in real-time with interactive dashboards</p>
+                        </div>
+                        <div class="demo-item">
+                            <div class="demo-screenshot">
+                                <img src="assets/reports.png" alt="Analytics & Reports" loading="lazy">
+                            </div>
+                            <h4>Advanced Analytics</h4>
+                            <p>Visualize trends, analyze performance, and generate insights with AI-powered reports</p>
+                        </div>
+                        <div class="demo-item">
+                            <div class="demo-screenshot">
+                                <img src="assets/config.png" alt="Configuration Management" loading="lazy">
+                            </div>
+                            <h4>Multi-Site Configuration</h4>
+                            <p>Manage multiple plants with centralized templates and site-specific customizations</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-btn carousel-prev" aria-label="Previous slide">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button class="carousel-btn carousel-next" aria-label="Next slide">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <div class="carousel-dots">
+                    <button class="carousel-dot active" aria-label="Go to slide 1"></button>
+                    <button class="carousel-dot" aria-label="Go to slide 2"></button>
+                    <button class="carousel-dot" aria-label="Go to slide 3"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="tech-stack">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Technology Stack</h2>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-badge python">Python 3.13+</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-badge react">React 18</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-badge docker">Docker</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-badge mqtt">MQTT</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-badge influx">InfluxDB</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-badge modbus">Modbus TCP</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Get Started?</h2>
+                <p class="cta-description">Deploy Hydros in minutes with Docker Compose and start monitoring your water treatment plants</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/vitorbabo/hydros" class="btn-large btn-primary" target="_blank">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                    <a href="https://github.com/vitorbabo/hydros#-quick-start" class="btn-large btn-secondary" target="_blank">
+                        Read Documentation
+                    </a>
+                </div>
+                <div class="cta-code">
+                    <pre><code># Clone the repository
+git clone https://github.com/vitorbabo/hydros.git
+cd hydros
+
+# Docker compose (Recommended)
+docker compose up -d --build</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 4L4 10V18C4 24.6274 9.37258 28 16 28C22.6274 28 28 24.6274 28 18V10L16 4Z" fill="url(#gradient2)"/>
+                            <path d="M16 12C18.2091 12 20 13.7909 20 16C20 18.2091 18.2091 20 16 20C13.7909 20 12 18.2091 12 16C12 13.7909 13.7909 12 16 12Z" fill="white"/>
+                            <defs>
+                                <linearGradient id="gradient2" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#06B6D4"/>
+                                    <stop offset="1" stop-color="#135bec"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span class="logo-text">Hydros</span>
+                    </div>
+                    <p class="footer-tagline">Digital Twin & IoT Hub for Water Treatment Plants</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <a href="#features">Features</a>
+                        <a href="#architecture">Architecture</a>
+                        <a href="#demo">Demo</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/vitorbabo/hydros" target="_blank">GitHub</a>
+                        <a href="https://github.com/vitorbabo/hydros#-quick-start" target="_blank">Documentation</a>
+                        <a href="https://github.com/vitorbabo/hydros/issues" target="_blank">Issues</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Community</h4>
+                        <a href="https://github.com/vitorbabo/hydros/discussions" target="_blank">Discussions</a>
+                        <a href="https://github.com/vitorbabo/hydros/blob/main/CONTRIBUTING.md" target="_blank">Contributing</a>
+                        <a href="https://github.com/vitorbabo" target="_blank">Developer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Hydros. Open Source under MIT License.</p>
+                <div class="footer-social">
+                    <a href="https://github.com/vitorbabo/hydros" target="_blank" aria-label="GitHub">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#3B82F6',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2563EB',
+                lineColor: '#64748B',
+                secondaryColor: '#06B6D4',
+                tertiaryColor: '#F8FAFC',
+                fontFamily: 'Inter, sans-serif'
+            }
+        });
+    </script>
+</body>
+</html>
