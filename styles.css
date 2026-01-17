@@ -356,7 +356,16 @@ body {
 }
 
 .hero-screenshot {
-    min-height: 500px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-2xl);
+    border: 1px solid var(--gray-lighter);
+}
+
+.hero-screenshot img {
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 /* Features Section */
@@ -566,6 +575,27 @@ body {
     min-height: 500px;
 }
 
+.mermaid-container {
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container .mermaid {
+    width: 100%;
+}
+
+.mermaid-container pre {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+}
+
 .architecture-features {
     display: flex;
     flex-direction: column;
@@ -590,6 +620,18 @@ body {
 .arch-icon {
     font-size: 2rem;
     flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-lg);
+}
+
+.arch-icon .material-icons {
+    font-size: 1.5rem;
+    color: var(--white);
 }
 
 .arch-feature h4 {
@@ -758,12 +800,18 @@ body {
 }
 
 .footer-content {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: var(--spacing-2xl);
     margin-bottom: var(--spacing-2xl);
     padding-bottom: var(--spacing-2xl);
     border-bottom: 1px solid var(--dark-lighter);
+}
+
+.footer-links {
+    display: flex;
+    gap: var(--spacing-3xl);
 }
 
 .footer-brand .logo {
@@ -829,7 +877,11 @@ body {
     }
 
     .footer-content {
-        grid-template-columns: 1fr 1fr;
+        flex-wrap: wrap;
+    }
+
+    .footer-links {
+        gap: var(--spacing-2xl);
     }
 }
 
@@ -861,7 +913,12 @@ body {
     }
 
     .footer-content {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .footer-links {
+        flex-wrap: wrap;
+        gap: var(--spacing-xl);
     }
 
     .footer-bottom {

@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -32,7 +34,6 @@
                     <a href="#features">Features</a>
                     <a href="#architecture">Architecture</a>
                     <a href="#demo">Demo</a>
-                    <a href="https://github.com/vitorbabo/hydros" target="_blank" class="btn-primary">GitHub</a>
                 </div>
             </div>
         </div>
@@ -89,13 +90,8 @@
                 </div>
             </div>
             <div class="hero-visual">
-                <!-- Placeholder for hero screenshot/animation -->
-                <div class="screenshot-placeholder hero-screenshot">
-                    <svg width="100" height="100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <p>Dashboard Screenshot</p>
-                    <span class="placeholder-hint">Replace with dashboard.png or dashboard.gif</span>
+                <div class="hero-screenshot">
+                    <img src="assets/dashboard.png" alt="Hydros Dashboard" loading="lazy">
                 </div>
             </div>
         </div>
@@ -203,7 +199,7 @@
     </section>
 
     <!-- Operation Modes Section -->
-    <section class="modes">
+    <!-- <section class="modes">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Flexible Operation Modes</h2>
@@ -219,7 +215,7 @@
                         </div>
                         <h3 class="mode-title">Simulation Mode</h3>
                     </div>
-                    <p class="mode-description">Physics-based simulation for development, testing, and demonstrations. No real PLCs required.</p>
+                    <p class="mode-description">Physics-based simulation for development, testing, and demonstrations.</p>
                     <div class="mode-screenshot">
                         <div class="screenshot-placeholder">
                             <svg width="60" height="60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,7 +235,7 @@
                         </div>
                         <h3 class="mode-title">Gateway Mode</h3>
                     </div>
-                    <p class="mode-description">Production data collection from real PLCs. Supports Modbus, OPC UA, and Siemens S7 protocols.</p>
+                    <p class="mode-description">Production data collection from real controllers/PL. Supports Modbus, OPC UA, and Siemens S7 protocols.</p>
                     <div class="mode-screenshot">
                         <div class="screenshot-placeholder">
                             <svg width="60" height="60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +247,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
 
     <!-- Architecture Section -->
     <section id="architecture" class="architecture">
@@ -261,38 +257,69 @@
                 <p class="section-description">Built with best practices for scalability and maintainability</p>
             </div>
             <div class="architecture-content">
-                <!-- Placeholder for architecture diagram -->
-                <div class="screenshot-placeholder architecture-diagram">
-                    <svg width="100" height="100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-                    </svg>
-                    <p>Architecture Diagram</p>
-                    <span class="placeholder-hint">Replace with architecture-diagram.png or architecture-diagram.svg</span>
+                <div class="architecture-diagram mermaid-container">
+                    <pre class="mermaid">
+flowchart TB
+    subgraph External["External Systems"]
+        PLC["PLC / Controllers"]
+        SCADA["SCADA Systems"]
+    end
+
+    subgraph Gateway["Edge Gateway"]
+        MB["Modbus Client"]
+        OPCUA["OPC UA Client"]
+        S7["S7 Client"]
+    end
+
+    subgraph Core["Digital Twin Core"]
+        DT["Twin Engine"]
+        PR["Protocol Registry"]
+        SM["State Manager"]
+    end
+
+    subgraph Data["Data Layer"]
+        MQTT["MQTT Broker"]
+        INFLUX["InfluxDB"]
+    end
+
+    subgraph UI["Frontend"]
+        DASH["React Dashboard"]
+    end
+
+    PLC --> MB
+    SCADA --> OPCUA
+    PLC --> S7
+
+    MB --> PR
+    OPCUA --> PR
+    S7 --> PR
+
+    PR --> DT
+    DT <--> SM
+    DT --> MQTT
+    MQTT --> INFLUX
+    MQTT --> DASH
+    SM --> DASH
+                    </pre>
                 </div>
                 <div class="architecture-features">
                     <div class="arch-feature">
-                        <div class="arch-icon">🏗️</div>
+                        <div class="arch-icon"><span class="material-icons">precision_manufacturing</span></div>
                         <div>
                             <h4>Digital Twin Core</h4>
                             <p>Central orchestrator managing all plant components and real-time data with comprehensive state management</p>
                         </div>
                     </div>
                     <div class="arch-feature">
-                        <div class="arch-icon">⚙️</div>
+                        <div class="arch-icon"><span class="material-icons">settings</span></div>
                         <div>
                             <h4>Protocol Registry</h4>
                             <p>Pluggable protocol system with shared connection management and automatic address allocation</p>
                         </div>
                     </div>
+
                     <div class="arch-feature">
-                        <div class="arch-icon">🔄</div>
-                        <div>
-                            <h4>Async Processing</h4>
-                            <p>Fully asynchronous architecture for maximum performance and concurrent connection handling</p>
-                        </div>
-                    </div>
-                    <div class="arch-feature">
-                        <div class="arch-icon">📊</div>
+                        <div class="arch-icon"><span class="material-icons">analytics</span></div>
                         <div>
                             <h4>Time-Series Data</h4>
                             <p>InfluxDB integration for efficient storage and retrieval of sensor observations and analytics</p>
@@ -312,34 +339,22 @@
             </div>
             <div class="demo-grid">
                 <div class="demo-item">
-                    <div class="screenshot-placeholder demo-screenshot">
-                        <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                        </svg>
-                        <p>Real-time Dashboard</p>
-                        <span class="placeholder-hint">dashboard-demo.gif</span>
+                    <div class="demo-screenshot">
+                        <img src="assets/analytics.png" alt="Real-time Dashboard" loading="lazy">
                     </div>
                     <h4>Live Plant Monitoring</h4>
                     <p>Monitor sensors, actuators, and system status in real-time with interactive dashboards</p>
                 </div>
                 <div class="demo-item">
-                    <div class="screenshot-placeholder demo-screenshot">
-                        <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-                        </svg>
-                        <p>Analytics & Reports</p>
-                        <span class="placeholder-hint">analytics-demo.gif</span>
+                    <div class="demo-screenshot">
+                        <img src="assets/reports.png" alt="Analytics & Reports" loading="lazy">
                     </div>
                     <h4>Advanced Analytics</h4>
                     <p>Visualize trends, analyze performance, and generate insights with AI-powered reports</p>
                 </div>
                 <div class="demo-item">
-                    <div class="screenshot-placeholder demo-screenshot">
-                        <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p>Configuration Management</p>
-                        <span class="placeholder-hint">config-demo.gif</span>
+                    <div class="demo-screenshot">
+                        <img src="assets/config.png" alt="Configuration Management" loading="lazy">
                     </div>
                     <h4>Multi-Site Configuration</h4>
                     <p>Manage multiple plants with centralized templates and site-specific customizations</p>
@@ -352,7 +367,7 @@
     <section class="tech-stack">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Built with Modern Technologies</h2>
+                <h2 class="section-title">Technology Stack</h2>
             </div>
             <div class="tech-grid">
                 <div class="tech-item">
@@ -461,5 +476,20 @@ docker compose up -d --build</code></pre>
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#3B82F6',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2563EB',
+                lineColor: '#64748B',
+                secondaryColor: '#06B6D4',
+                tertiaryColor: '#F8FAFC',
+                fontFamily: 'Inter, sans-serif'
+            }
+        });
+    </script>
 </body>
 </html>
