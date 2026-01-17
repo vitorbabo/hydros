@@ -165,8 +165,8 @@ describe('WaterQualityMetrics', () => {
       />
     )
 
-    // Should replace underscores with spaces and capitalize
-    expect(screen.getByText(/Chlorine residual/)).toBeInTheDocument()
+    // Should replace underscores with spaces (lowercase in DOM, capitalized via CSS)
+    expect(screen.getByText(/chlorine residual/)).toBeInTheDocument()
   })
 
   it('handles non-object values', () => {

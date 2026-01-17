@@ -1,29 +1,34 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from './components/layout/AppShell'
 import { RequireAuth, RequireRole } from './components/auth'
-import { Login } from './views/Login'
-import { Dashboard } from './views/Dashboard'
-import { Sites } from './views/Sites'
-import { SiteDetail } from './views/sites/SiteDetail'
-import { SiteLayout } from './views/sites/SiteLayout'
-import AlertsDashboard from './views/alerts/AlertsDashboard'
-import AlertHistory from './views/alerts/AlertHistory'
-import AlertConfiguration from './views/alerts/AlertConfiguration'
-import ReportsDashboard from './views/reports/ReportsDashboard'
-import ReportBuilder from './views/reports/ReportBuilder'
-import ReportTemplates from './views/reports/ReportTemplates'
-import AnalyticsDashboard from './views/analytics/AnalyticsDashboard'
-import CrossSiteComparison from './views/analytics/CrossSiteComparison'
-import EfficiencyMetrics from './views/analytics/EfficiencyMetrics'
-import TrendAnalysis from './views/analytics/TrendAnalysis'
-import { Settings } from './views/Settings'
-import { UserManagement } from './views/admin/UserManagement'
-import { RoleManagement } from './views/admin/RoleManagement'
-import { SiteAccessControl } from './views/admin/SiteAccessControl'
-import { AuditLogs } from './views/admin/AuditLogs'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
+import { LoadingFallback } from './components/shared/LoadingFallback'
+import {
+  // Core views (loaded immediately)
+  Login,
+  Dashboard,
+  // Lazy-loaded views
+  Sites,
+  SiteDetail,
+  SiteLayout,
+  AlertsDashboard,
+  AlertHistory,
+  AlertConfiguration,
+  ReportsDashboard,
+  ReportBuilder,
+  ReportTemplates,
+  AnalyticsDashboard,
+  CrossSiteComparison,
+  EfficiencyMetrics,
+  TrendAnalysis,
+  Settings,
+  UserManagement,
+  RoleManagement,
+  SiteAccessControl,
+  AuditLogs,
+} from './routes/LazyRoutes'
 import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
 import { useConfigurationStore } from './store/configurationStore'
@@ -259,82 +264,84 @@ function AppContent() {
 
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route
-          element={
-            <RequireAuth>
-              <AppShell />
-            </RequireAuth>
-          }
-        >
-          {/* Main navigation */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/sites" element={<Sites />} />
-          <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
-          <Route path="/sites/:siteId" element={<SiteDetail />} />
-          <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
-          <Route path="/alerts" element={<AlertsDashboard />} />
-          <Route path="/alerts/history" element={<AlertHistory />} />
-          <Route path="/alerts/configuration" element={<AlertConfiguration />} />
-          <Route path="/reports" element={<ReportsDashboard />} />
-          <Route path="/reports/builder" element={<ReportBuilder />} />
-          <Route path="/reports/templates" element={<ReportTemplates />} />
-          <Route path="/analytics" element={<AnalyticsDashboard />} />
-          <Route path="/analytics/comparison" element={<CrossSiteComparison />} />
-          <Route path="/analytics/efficiency" element={<EfficiencyMetrics />} />
-          <Route path="/analytics/trends" element={<TrendAnalysis />} />
-          <Route path="/settings" element={<Settings />} />
+          {/* Protected routes */}
+          <Route
+            element={
+              <RequireAuth>
+                <AppShell />
+              </RequireAuth>
+            }
+          >
+            {/* Main navigation */}
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/sites" element={<Sites />} />
+            <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
+            <Route path="/sites/:siteId" element={<SiteDetail />} />
+            <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
+            <Route path="/alerts" element={<AlertsDashboard />} />
+            <Route path="/alerts/history" element={<AlertHistory />} />
+            <Route path="/alerts/configuration" element={<AlertConfiguration />} />
+            <Route path="/reports" element={<ReportsDashboard />} />
+            <Route path="/reports/builder" element={<ReportBuilder />} />
+            <Route path="/reports/templates" element={<ReportTemplates />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/analytics/comparison" element={<CrossSiteComparison />} />
+            <Route path="/analytics/efficiency" element={<EfficiencyMetrics />} />
+            <Route path="/analytics/trends" element={<TrendAnalysis />} />
+            <Route path="/settings" element={<Settings />} />
 
-          {/* Admin routes - Only accessible by admin */}
-          <Route
-            path="/admin"
-            element={
-              <RequireRole roles={['admin']}>
-                <Navigate to="/admin/users" replace />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <RequireRole roles={['admin']}>
-                <UserManagement />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/roles"
-            element={
-              <RequireRole roles={['admin']}>
-                <RoleManagement />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/access"
-            element={
-              <RequireRole roles={['admin']}>
-                <SiteAccessControl />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/audit"
-            element={
-              <RequireRole roles={['admin']}>
-                <AuditLogs />
-              </RequireRole>
-            }
-          />
-        </Route>
+            {/* Admin routes - Only accessible by admin */}
+            <Route
+              path="/admin"
+              element={
+                <RequireRole roles={['admin']}>
+                  <Navigate to="/admin/users" replace />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireRole roles={['admin']}>
+                  <UserManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/roles"
+              element={
+                <RequireRole roles={['admin']}>
+                  <RoleManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/access"
+              element={
+                <RequireRole roles={['admin']}>
+                  <SiteAccessControl />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/audit"
+              element={
+                <RequireRole roles={['admin']}>
+                  <AuditLogs />
+                </RequireRole>
+              }
+            />
+          </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   )
 }
