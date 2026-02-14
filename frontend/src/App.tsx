@@ -35,8 +35,7 @@ import { useConfigurationStore } from './store/configurationStore'
 import { useThemeStore } from './store/themeStore'
 import { useAlertStore } from './store/alertStore'
 import { useAuthStore } from './store/authStore'
-import { useMqtt, type ConfigurationMessage } from './hooks/useMqtt'
-import type { Observation } from './types'
+import { useMqtt, type ConfigurationMessage, type Observation } from './hooks/useMqtt'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -80,7 +79,7 @@ function AppContent() {
     setConnectionStatus('connected')
     setConnectionError(null)
     
-    if (config.type === 'plant') {
+    if (config.config_type === 'plant') {
       // Transform MQTT plant data to configuration store format
       const plantData = config.data as any
       
@@ -137,7 +136,7 @@ function AppContent() {
       if (!useDashboardStore.getState().currentSite) {
         setCurrentSite(config.site_id)
       }
-    } else if (config.type === 'templates' || config.type === 'modules') {
+    } else if (config.config_type === 'templates' || config.config_type === 'modules') {
       // Update module templates
       const templates = config.data as Record<string, any>
       setModuleTemplates(templates)

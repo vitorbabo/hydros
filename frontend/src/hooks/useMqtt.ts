@@ -1,13 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react'
 import mqtt from 'mqtt'
 import type { MqttClient } from 'mqtt'
-import type { PlantConfig, ModuleTemplate } from '../types'
 import {
   safeValidateObservation,
   safeValidateConfigurationMessage,
   type Observation,
   type ConfigurationMessage
 } from '../types/schemas'
+
+// Re-export types for consumers
+export type { ConfigurationMessage, Observation }
 
 interface UseMqttOptions {
   topics?: string[]

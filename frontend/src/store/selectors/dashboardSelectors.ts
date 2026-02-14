@@ -12,7 +12,6 @@
  *   const { sites, alarms } = useDashboardStore() // Re-renders on ANY change
  */
 import { useDashboardStore } from '../dashboardStore'
-import type { Site, Alarm, ProtocolClient } from '../../types'
 
 // ============================================================================
 // Site Selectors
@@ -22,13 +21,13 @@ import type { Site, Alarm, ProtocolClient } from '../../types'
  * Get all sites
  */
 export const useSites = () =>
-  useDashboardStore((state) => state.sites)
+  useDashboardStore((state) => Object.values(state.sites))
 
 /**
  * Get a specific site by ID
  */
 export const useSite = (siteId: string) =>
-  useDashboardStore((state) => state.sites.find(s => s.id === siteId))
+  useDashboardStore((state) => state.sites[siteId])
 
 /**
  * Get current site
@@ -40,7 +39,7 @@ export const useCurrentSite = () =>
  * Get site count
  */
 export const useSiteCount = () =>
-  useDashboardStore((state) => state.sites.length)
+  useDashboardStore((state) => Object.keys(state.sites).length)
 
 // ============================================================================
 // Alarm Selectors
@@ -62,7 +61,7 @@ export const useActiveAlarms = () =>
  * Get alarms for a specific site
  */
 export const useSiteAlarms = (siteId: string) =>
-  useDashboardStore((state) => state.alarms.filter(a => a.siteId === siteId))
+  useDashboardStore((state) => state.alarms.filter(a => a.site_id === siteId))
 
 /**
  * Get critical alarms
@@ -119,7 +118,7 @@ export const useLastUpdate = () =>
  */
 export const useDashboardSummary = () =>
   useDashboardStore((state) => ({
-    siteCount: state.sites.length,
+    siteCount: Object.keys(state.sites).length,
     alarmCount: state.alarms.length,
     activeAlarmCount: state.alarms.filter(a => a.status === 'active').length,
     criticalAlarmCount: state.alarms.filter(a => a.severity === 'critical' && a.status === 'active').length,
@@ -131,6 +130,6 @@ export const useDashboardSummary = () =>
  */
 export const useSiteWithAlarms = (siteId: string) =>
   useDashboardStore((state) => ({
-    site: state.sites.find(s => s.id === siteId),
-    alarms: state.alarms.filter(a => a.siteId === siteId),
+    site: state.sites[siteId],
+    alarms: state.alarms.filter(a => a.site_id === siteId),
   }))

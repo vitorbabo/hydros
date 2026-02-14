@@ -3,6 +3,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import '@testing-library/jest-dom/vitest'
 import { SiteHeader } from '../SiteHeader'
 import type { PlantSite } from '../../../types'
 
@@ -10,8 +11,13 @@ describe('SiteHeader', () => {
   const mockSite: PlantSite = {
     id: 'test-site-01',
     name: 'Test Water Treatment Plant',
-    location: 'Test City',
-    status: 'normal',
+    treatment_train: 'coagulation-flocculation-sedimentation-filtration-disinfection',
+    location: {
+      region: 'Test Region',
+      country: 'Test Country',
+      coordinates: [40.7128, -74.0060]
+    },
+    status: 'connected',
     design_capacity: 50000,
     modules: []
   }

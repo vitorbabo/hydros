@@ -9,11 +9,11 @@ export interface Observation {
   value: number
   unit: string
   quality: 'good' | 'bad' | 'uncertain'
-  raw_tag: string
-  source: string
-  seq: number
-  parameter_type: 'sensor' | 'actuator' | 'status' | 'setpoint' | 'alarm'
-  component_type: 'sensor' | 'actuator' | 'status' | 'setpoint' | 'alarm'
+  raw_tag?: string
+  source?: string
+  seq?: number
+  parameter_type?: 'sensor' | 'actuator' | 'status' | 'setpoint' | 'alarm'
+  component_type?: 'sensor' | 'actuator' | 'status' | 'setpoint' | 'alarm'
 }
 
 // Protocol Client Configuration
@@ -279,6 +279,13 @@ export interface ModuleTemplate {
   log_reduction?: number // Added from backend
   retention_time?: number // Added from backend
   mixing_system?: boolean // Added from backend
+  parameters?: any[]
+  inputs?: any[]
+  outputs?: any[]
+  visual_config?: {
+    icon?: string
+    color?: string
+  }
 }
 
 export interface EdgeGatewayConfig {

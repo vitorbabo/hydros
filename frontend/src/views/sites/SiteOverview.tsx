@@ -32,7 +32,7 @@ export function SiteOverview({ site }: SiteOverviewProps) {
   // Get full configuration for this site
   const plantConfig = plantConfigurations[site.id]
   const siteInfo = plantConfig?.site_info || {}
-  const operationalParams = plantConfig?.operational_parameters || {}
+  const operationalParams = plantConfig?.operational_parameters ?? ({} as Record<string, any>)
   const protocolClients = plantConfig?.protocol_clients || []
 
   // Flow rate cache to prevent flickering
@@ -137,11 +137,18 @@ export function SiteOverview({ site }: SiteOverviewProps) {
 
   // Get module status
   const getModuleStatus = (moduleId: string): { status: ComponentStatus; metrics: Array<{ label: string; value: string }> } => {
-    const flowObs = getLatestByAsset(site.id, moduleId, 'flow_rate')
-    const pressureObs = getLatestByAsset(site.id, moduleId, 'pressure')
-    const levelObs = getLatestByAsset(site.id, moduleId, 'level')
-    const turbidityObs = getLatestByAsset(site.id, moduleId, 'turbidity')
-    const chlorineObs = getLatestByAsset(site.id, moduleId, 'chlorine_residual')
+    const findObservation = (measurement: string) => {
+      const observations = getLatestByAsset(moduleId)
+      return Object.values(observations).find(obs =>
+        obs.site_id === site.id && obs.measurement === measurement
+      )
+    }
+
+    const flowObs = findObservation('flow_rate')
+    const pressureObs = findObservation('pressure')
+    const levelObs = findObservation('level')
+    const turbidityObs = findObservation('turbidity')
+    const chlorineObs = findObservation('chlorine_residual')
 
     const metrics: Array<{ label: string; value: string }> = []
 

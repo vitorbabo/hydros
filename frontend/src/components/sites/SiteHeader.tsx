@@ -37,7 +37,11 @@ export function SiteHeader({
           </h2>
           <div className="flex items-center gap-2 mt-1 text-gray-600 dark:text-gray-400">
             <MapPin className="w-4 h-4" />
-            <span className="text-sm">{site.location || 'Location not set'}</span>
+            <span className="text-sm">
+              {site.location 
+                ? `${site.location.region}, ${site.location.country}` 
+                : 'Location not set'}
+            </span>
           </div>
         </div>
       </div>

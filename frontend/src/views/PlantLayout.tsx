@@ -65,7 +65,7 @@ export default function PlantLayout() {
     handleConfigurationMessage(config)
     
     // If we received plant configuration for current site, regenerate layout
-    if (config.type === 'plant' && config.site_id === currentSiteId) {
+    if (config.config_type === 'plant' && config.site_id === currentSiteId) {
       console.log('Regenerating plant layout from updated configuration')
       generatePlantFromConfig(config.site_id)
     }

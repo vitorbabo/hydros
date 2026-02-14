@@ -17,9 +17,9 @@ export { Login } from '../views/Login'
 export { Dashboard } from '../views/Dashboard'
 
 // Site views (lazy loaded)
-export const Sites = lazy(() => import('../views/Sites'))
-export const SiteDetail = lazy(() => import('../views/sites/SiteDetail'))
-export const SiteLayout = lazy(() => import('../views/sites/SiteLayout'))
+export const Sites = lazy(() => import('../views/Sites').then(m => ({ default: m.Sites })))
+export const SiteDetail = lazy(() => import('../views/sites/SiteDetail').then(m => ({ default: m.SiteDetail })))
+export const SiteLayout = lazy(() => import('../views/sites/SiteLayout').then(m => ({ default: m.SiteLayout })))
 
 // Alert views (lazy loaded)
 export const AlertsDashboard = lazy(() => import('../views/alerts/AlertsDashboard'))
@@ -38,8 +38,8 @@ export const EfficiencyMetrics = lazy(() => import('../views/analytics/Efficienc
 export const TrendAnalysis = lazy(() => import('../views/analytics/TrendAnalysis'))
 
 // Settings and Admin views (lazy loaded)
-export const Settings = lazy(() => import('../views/Settings'))
-export const UserManagement = lazy(() => import('../views/admin/UserManagement'))
-export const RoleManagement = lazy(() => import('../views/admin/RoleManagement'))
-export const SiteAccessControl = lazy(() => import('../views/admin/SiteAccessControl'))
-export const AuditLogs = lazy(() => import('../views/admin/AuditLogs'))
+export const Settings = lazy(() => import('../views/Settings').then(m => ({ default: m.Settings })))
+export const UserManagement = lazy(() => import('../views/admin/UserManagement').then(m => ({ default: m.UserManagement })))
+export const RoleManagement = lazy(() => import('../views/admin/RoleManagement').then(m => ({ default: m.RoleManagement })))
+export const SiteAccessControl = lazy(() => import('../views/admin/SiteAccessControl').then(m => ({ default: m.SiteAccessControl })))
+export const AuditLogs = lazy(() => import('../views/admin/AuditLogs').then(m => ({ default: m.AuditLogs })))

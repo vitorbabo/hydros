@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { ModuleTemplate, PlantConfig, PlantSite, ProtocolClient, ControlStrategy, AlarmDefinitions } from '../types'
+import type { ModuleTemplate, ProtocolClient, ControlStrategy, AlarmDefinitions } from '../types'
 import type { ConfigurationMessage } from '../hooks/useMqtt'
 
 interface ModulePosition {
@@ -328,29 +328,22 @@ export const useConfigurationStore = create<ConfigurationStore>()(
 
     // MQTT message handling
     handleConfigurationMessage: (message) => {
-      const { type, site_id, data } = message
-      console.log('Processing configuration message:', type, site_id, data)
+      const { config_type, site_id, data, timestamp } = message
+      const messageType = (config_type || (message as any).type) as string
+      console.log('Processing configuration message:', messageType, site_id, data)
       
-      switch (type) {
+      switch (messageType) {
         case 'templates':
           // Handle module templates update from wtp/global/configuration/templates
           if (typeof data === 'object' && data) {
-            console.log('Processing templates message:', data)
-            console.log('Data keys:', Object.keys(data))
-            console.log('Has module_templates?', 'module_templates' in data)
-            console.log('module_templates type:', typeof data.module_templates)
-            
-            // The backend sends templates in data.module_templates
-            if (data.module_templates) {
-              const templates = data.module_templates as Record<string, ModuleTemplate>
-              console.log('Received module templates from backend:', Object.keys(templates))
-              console.log('Sample template:', Object.values(templates)[0])
-              
-              get().setModuleTemplates(templates)
+            const payload = data as any
+            const templates = payload.module_templates || payload
+
+            if (templates && typeof templates === 'object') {
+              get().setModuleTemplates(templates as Record<string, ModuleTemplate>)
               set({ isLoading: false, error: null })
             } else {
               console.warn('Templates message missing module_templates field:', data)
-              console.warn('Available fields:', Object.keys(data))
             }
           }
           break
@@ -408,7 +401,7 @@ export const useConfigurationStore = create<ConfigurationStore>()(
                 height: 1200,
                 background: 'dots'
               },
-              last_updated: message.timestamp
+              last_updated: timestamp || new Date().toISOString()
             }
             
             console.log('Created plant config:', plantConfig)
@@ -420,8 +413,7 @@ export const useConfigurationStore = create<ConfigurationStore>()(
           // Handle global module templates (from backend messages like wtp/global/configuration/templates)
           console.log('Received modules/templates configuration:', data)
           if (typeof data === 'object' && data) {
-            // Check for module_templates in the data
-            const moduleTemplates = (data as any).module_templates
+            const moduleTemplates = (data as any).module_templates || data
             if (moduleTemplates && typeof moduleTemplates === 'object') {
               console.log('Loading', Object.keys(moduleTemplates).length, 'module templates from backend')
               console.log('Sample template:', Object.values(moduleTemplates)[0])
@@ -442,7 +434,7 @@ export const useConfigurationStore = create<ConfigurationStore>()(
           break
           
         default:
-          console.warn('Unknown configuration message type:', type)
+          console.warn('Unknown configuration message type:', messageType)
       }
     },
 

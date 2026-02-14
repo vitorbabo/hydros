@@ -1,0 +1,191 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "logLevel",
+      "type": "pickString",
+      "description": "Select log level",
+      "options": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ],
+      "default": "INFO"
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Backend (Python - Simulation)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "--mode",
+        "simulation",
+        "--log-level",
+        "${input:logLevel}"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      },
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "hidden": false,
+        "group": "Backend",
+        "order": 1
+      }
+    },
+    {
+      "name": "Backend (Python - Normal/Gateway)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "--log-level",
+        "${input:logLevel}"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      },
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "hidden": false,
+        "group": "Backend",
+        "order": 2
+      }
+    },
+    {
+      "name": "Backend (Python - Specific Site)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "--mode",
+        "simulation",
+        "--site-id",
+        "wtp-porto-01",
+        "--log-level",
+        "${input:logLevel}"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "${workspaceFolder}/backend"
+      },
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "hidden": false,
+        "group": "Backend",
+        "order": 3
+      }
+    },
+    {
+      "name": "Frontend (React - Dev Server)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "VITE_API_URL": "http://localhost:5020"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "Frontend",
+        "order": 1
+      }
+    },
+    {
+      "name": "Frontend (React - Preview)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "presentation": {
+        "hidden": false,
+        "group": "Frontend",
+        "order": 2
+      }
+    },
+    {
+      "name": "Frontend Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "test"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "presentation": {
+        "hidden": false,
+        "group": "Frontend",
+        "order": 3
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Backend Simulation + Frontend)",
+      "configurations": [
+        "Backend (Python - Simulation)",
+        "Frontend (React - Dev Server)"
+      ],
+      "stopOnEntry": false,
+      "preLaunchTask": "",
+      "presentation": {
+        "hidden": false,
+        "group": "Full Stack",
+        "order": 1
+      }
+    },
+    {
+      "name": "Full Stack (Backend Gateway + Frontend)",
+      "configurations": [
+        "Backend (Python - Normal/Gateway)",
+        "Frontend (React - Dev Server)"
+      ],
+      "stopOnEntry": false,
+      "presentation": {
+        "hidden": false,
+        "group": "Full Stack",
+        "order": 2
+      }
+    },
+    {
+      "name": "Full Stack (Specific Site + Frontend)",
+      "configurations": [
+        "Backend (Python - Specific Site)",
+        "Frontend (React - Dev Server)"
+      ],
+      "stopOnEntry": false,
+      "presentation": {
+        "hidden": false,
+        "group": "Full Stack",
+        "order": 3
+      }
+    }
+  ]
+}

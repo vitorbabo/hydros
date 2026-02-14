@@ -4,7 +4,7 @@
  * Optimized selectors for plant configuration management.
  */
 import { useConfigurationStore } from '../configurationStore'
-import type { PlantConfig, ModuleTemplate } from '../../types'
+import type { ModuleTemplate } from '../../types'
 
 // ============================================================================
 // Plant Configuration Selectors
@@ -26,7 +26,7 @@ export const usePlantConfiguration = (siteId: string) =>
  * Get current plant configuration
  */
 export const useCurrentPlantConfiguration = () =>
-  useConfigurationStore((state) => state.currentPlantConfig)
+  useConfigurationStore((state) => state.getCurrentPlantConfig())
 
 /**
  * Get configured sites
@@ -74,7 +74,7 @@ export const useModuleTemplatesByType = (type: string) =>
  * Get all module instances for a site
  */
 export const useSiteModules = (siteId: string) =>
-  useConfigurationStore((state) => state.plantConfigurations[siteId]?.modules || [])
+  useConfigurationStore((state) => state.plantConfigurations[siteId]?.modules || {})
 
 /**
  * Get module instances by type for a site
@@ -84,10 +84,12 @@ export const useSiteModulesByType = (siteId: string, type: string) =>
     const config = state.plantConfigurations[siteId]
     if (!config) return []
 
-    return config.modules?.filter(moduleId => {
-      const template = state.moduleTemplates[moduleId]
-      return template?.type === type
-    }) || []
+    return Object.entries(config.modules || {})
+      .filter(([, module]) => {
+        const template = state.moduleTemplates[module.template_id]
+        return template?.type === type
+      })
+      .map(([moduleId]) => moduleId)
   })
 
 // ============================================================================
@@ -98,43 +100,13 @@ export const useSiteModulesByType = (siteId: string, type: string) =>
  * Get configuration mode
  */
 export const useConfigurationMode = () =>
-  useConfigurationStore((state) => state.configurationMode)
+  useConfigurationStore((state) => state.isConfigurationMode)
 
 /**
  * Check if in edit mode
  */
 export const useIsEditMode = () =>
-  useConfigurationStore((state) => state.configurationMode === 'edit')
-
-/**
- * Get configuration version history
- */
-export const useConfigurationVersions = () =>
-  useConfigurationStore((state) => state.configurationVersions)
-
-// ============================================================================
-// Validation Selectors
-// ============================================================================
-
-/**
- * Get configuration errors
- */
-export const useConfigurationErrors = () =>
-  useConfigurationStore((state) => state.configurationErrors)
-
-/**
- * Check if configuration is valid
- */
-export const useIsConfigurationValid = () =>
-  useConfigurationStore((state) => state.configurationErrors.length === 0)
-
-/**
- * Get errors for a specific site
- */
-export const useSiteConfigurationErrors = (siteId: string) =>
-  useConfigurationStore((state) =>
-    state.configurationErrors.filter(e => e.siteId === siteId)
-  )
+  useConfigurationStore((state) => state.isConfigurationMode)
 
 // ============================================================================
 // Statistics Selectors
@@ -150,15 +122,13 @@ export const useConfigurationStatistics = () =>
 
     let totalModules = 0
     Object.values(state.plantConfigurations).forEach(config => {
-      totalModules += config.modules?.length || 0
+      totalModules += Object.keys(config.modules || {}).length
     })
 
     return {
       siteCount,
       templateCount,
       totalModules,
-      versionCount: state.configurationVersions.length,
-      errorCount: state.configurationErrors.length,
     }
   })
 
@@ -167,7 +137,7 @@ export const useConfigurationStatistics = () =>
  */
 export const useSiteModuleCount = (siteId: string) =>
   useConfigurationStore((state) =>
-    state.plantConfigurations[siteId]?.modules?.length || 0
+    Object.keys(state.plantConfigurations[siteId]?.modules || {}).length
   )
 
 // ============================================================================
@@ -182,10 +152,10 @@ export const useSiteWithTemplates = (siteId: string) =>
     const config = state.plantConfigurations[siteId]
     if (!config) return null
 
-    const modulesWithTemplates = config.modules?.map(moduleId => ({
+    const modulesWithTemplates = Object.entries(config.modules || {}).map(([moduleId, module]) => ({
       id: moduleId,
-      template: state.moduleTemplates[moduleId],
-    })) || []
+      template: state.moduleTemplates[module.template_id],
+    }))
 
     return {
       config,

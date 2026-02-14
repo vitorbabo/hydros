@@ -9,7 +9,7 @@
  *   const assetObservations = useAssetObservations('raw_intake')
  */
 import { useTelemetryStore } from '../telemetryStore'
-import type { Observation } from '../../types'
+import type { Observation } from '../../types/schemas'
 
 // ============================================================================
 // Observation Selectors

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { Observation } from '../types'
+import type { Observation } from '../types/schemas'
 
 interface TelemetryData {
   latest: Record<string, Observation>

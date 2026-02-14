@@ -1,0 +1,258 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend: Install Dependencies",
+      "type": "shell",
+      "command": "pip",
+      "args": [
+        "install",
+        "-r",
+        "requirements.txt"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "group": "Backend Setup",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: Run Tests",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/",
+        "-v",
+        "--tb=short"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "group": "Backend Testing",
+        "reveal": "always"
+      },
+      "problemMatcher": [
+        "$pytest"
+      ]
+    },
+    {
+      "label": "Backend: Run Tests with Coverage",
+      "type": "shell",
+      "command": "pytest",
+      "args": [
+        "tests/",
+        "--cov=core",
+        "--cov=gateway",
+        "--cov=protocols",
+        "--cov=services",
+        "--cov-report=html",
+        "-v"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "group": "Backend Testing",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: Validate Configuration",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "validate_config.py"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "group": "Backend Utilities",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: Generate Protocol Mappings",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "core.protocol_mapper",
+        "wtp-porto-01"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "presentation": {
+        "group": "Backend Utilities",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Install Dependencies",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "install"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "presentation": {
+        "group": "Frontend Setup",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Run Tests",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "test"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "presentation": {
+        "group": "Frontend Testing",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Run Tests with UI",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "test:ui"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "presentation": {
+        "group": "Frontend Testing",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Build",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "cwd": "${workspaceFolder}/frontend",
+      "presentation": {
+        "group": "Frontend Building",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Build All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "build"
+      ],
+      "cwd": "${workspaceFolder}",
+      "presentation": {
+        "group": "Docker",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Start All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "up",
+        "-d"
+      ],
+      "cwd": "${workspaceFolder}",
+      "presentation": {
+        "group": "Docker",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Stop All Services",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "down"
+      ],
+      "cwd": "${workspaceFolder}",
+      "presentation": {
+        "group": "Docker",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: View Logs",
+      "type": "shell",
+      "command": "docker-compose",
+      "args": [
+        "logs",
+        "-f",
+        "hydros-system"
+      ],
+      "cwd": "${workspaceFolder}",
+      "presentation": {
+        "group": "Docker",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "MQTT: Subscribe to All Topics",
+      "type": "shell",
+      "command": "mosquitto_sub",
+      "args": [
+        "-h",
+        "localhost",
+        "-t",
+        "wtp/#",
+        "-v"
+      ],
+      "presentation": {
+        "group": "Development Utilities",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "MQTT: Subscribe to Observations",
+      "type": "shell",
+      "command": "mosquitto_sub",
+      "args": [
+        "-h",
+        "localhost",
+        "-t",
+        "wtp/+/+/+/observation",
+        "-v"
+      ],
+      "presentation": {
+        "group": "Development Utilities",
+        "reveal": "always"
+      },
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Development: Install All Dependencies",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "cd ${workspaceFolder}/backend && pip install -r requirements.txt && cd ${workspaceFolder}/frontend && npm install"
+      ],
+      "presentation": {
+        "group": "Setup",
+        "reveal": "always"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
