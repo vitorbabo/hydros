@@ -45,6 +45,17 @@ export const useTelemetryStore = create<TelemetryStore>()(
     // Actions
     addObservation: (observation) => set((state) => {
       const sensorKey = `${observation.asset_id}.${observation.sensor_id}`
+      const existingLatest = state.latest[sensorKey]
+
+      // Skip duplicate points to reduce unnecessary re-renders
+      if (
+        existingLatest &&
+        existingLatest.ts === observation.ts &&
+        existingLatest.value === observation.value &&
+        existingLatest.quality === observation.quality
+      ) {
+        return state
+      }
       
       // Update latest values
       const newLatest = {

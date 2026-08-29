@@ -64,6 +64,7 @@ interface AlertStore {
 
   // Alert management
   addAlert: (alert: Alert) => void
+  syncActiveAlerts: (alerts: Alert[]) => void
   acknowledgeAlert: (alertId: string, userId: string, userName?: string) => void
   acknowledgeMultipleAlerts: (alertIds: string[], userId: string, userName?: string) => void
   dismissAlert: (alertId: string) => void
@@ -120,6 +121,10 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
       // Add new alert
       return { activeAlerts: [alert, ...state.activeAlerts] }
     }
+  }),
+
+  syncActiveAlerts: (alerts) => set({
+    activeAlerts: alerts
   }),
 
   acknowledgeAlert: (alertId, userId, userName) => set((state) => ({

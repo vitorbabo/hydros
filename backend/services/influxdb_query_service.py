@@ -6,8 +6,9 @@ Supports querying daily total flow volumes and latest flow rates.
 """
 
 import logging
-from typing import Optional, Dict
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 
@@ -235,3 +236,170 @@ class InfluxDBQueryService:
         except Exception as e:
             logger.error(f"Error querying flow statistics for {site_id}: {e}")
             return {"min": 0.0, "max": 0.0, "mean": 0.0, "total": 0.0}
+
+    async def query_latest_observations(
+        self,
+        site_id: Optional[str] = None,
+        lookback_seconds: int = 120,
+        limit: int = 500,
+    ) -> List[Dict[str, Any]]:
+        """
+        Query latest telemetry observations grouped by sensor identity.
+
+        Returns objects compatible with frontend Observation schema.
+        """
+        if not self.query_api:
+            logger.error("Query API not initialized. Call connect() first.")
+            return []
+
+        site_filter = (
+            f'|> filter(fn: (r) => r["site_id"] == "{site_id}")' if site_id else ""
+        )
+
+        flux_query = f'''
+        from(bucket: "{self.bucket}")
+          |> range(start: -{lookback_seconds}s)
+          {site_filter}
+          |> filter(fn: (r) => exists r["asset_id"])
+          |> group(columns: ["site_id", "asset_id", "sensor_id", "_measurement"])
+          |> last()
+          |> limit(n: {max(1, limit * 3)})
+        '''
+
+        try:
+            result = self.query_api.query(flux_query, org=self.org)
+
+            grouped: Dict[str, Dict[str, Any]] = {}
+
+            for table in result:
+                for record in table.records:
+                    values = record.values or {}
+
+                    rec_site_id = str(values.get("site_id") or site_id or "unknown")
+                    asset_id = str(values.get("asset_id") or "unknown_asset")
+                    measurement = str(values.get("_measurement") or "unknown_measurement")
+                    sensor_id = str(values.get("sensor_id") or f"{measurement}-{asset_id}")
+
+                    key = f"{rec_site_id}|{asset_id}|{sensor_id}|{measurement}"
+                    existing = grouped.get(key)
+
+                    field_name = str(values.get("_field") or "")
+                    field_value = values.get("_value")
+
+                    point = existing or {
+                        "site_id": rec_site_id,
+                        "asset_id": asset_id,
+                        "sensor_id": sensor_id,
+                        "measurement": measurement,
+                        "ts": record.get_time().isoformat().replace("+00:00", "Z")
+                        if record.get_time()
+                        else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                        "unit": str(values.get("unit") or ""),
+                        "quality": str(values.get("quality") or "good"),
+                        "source": str(values.get("source") or "influxdb"),
+                        "raw_tag": str(values.get("raw_tag") or ""),
+                        "parameter_type": str(values.get("parameter_type") or ""),
+                        "component_type": str(values.get("component_type") or ""),
+                        "value": None,
+                    }
+
+                    if field_name == "value":
+                        point["value"] = field_value
+
+                    if point.get("value") is None:
+                        tag_value = values.get("value")
+                        if tag_value is not None:
+                            try:
+                                point["value"] = float(tag_value)
+                            except (ValueError, TypeError):
+                                pass
+
+                    if point.get("value") is None and isinstance(field_value, (int, float)):
+                        point["value"] = float(field_value)
+
+                    grouped[key] = point
+
+            observations: List[Dict[str, Any]] = []
+            for point in grouped.values():
+                value = point.get("value")
+                if value is None:
+                    continue
+
+                quality = point.get("quality")
+                if quality not in {"good", "uncertain", "bad"}:
+                    quality = "good"
+
+                observations.append(
+                    {
+                        "site_id": point["site_id"],
+                        "asset_id": point["asset_id"],
+                        "sensor_id": point["sensor_id"],
+                        "measurement": point["measurement"],
+                        "ts": point["ts"],
+                        "value": float(value),
+                        "unit": point.get("unit") or "",
+                        "quality": quality,
+                        "raw_tag": point.get("raw_tag") or "",
+                        "source": point.get("source") or "influxdb",
+                        "parameter_type": point.get("parameter_type") or "",
+                        "component_type": point.get("component_type") or "",
+                    }
+                )
+
+            observations.sort(key=lambda item: item["ts"], reverse=True)
+            return observations[: max(1, limit)]
+
+        except Exception as e:
+            logger.error("Error querying latest observations: %s", e)
+            return []
+
+    async def query_quality_alerts(
+        self,
+        site_id: Optional[str] = None,
+        lookback_seconds: int = 300,
+        limit: int = 300,
+    ) -> List[Dict[str, Any]]:
+        """
+        Derive active alerts from latest observations with non-good quality.
+
+        This provides an Influx-backed alert stream for PoC reliability without
+        requiring a dedicated alerts measurement.
+        """
+        observations = await self.query_latest_observations(
+            site_id=site_id,
+            lookback_seconds=lookback_seconds,
+            limit=max(limit, 500),
+        )
+
+        alerts: List[Dict[str, Any]] = []
+        for observation in observations:
+            quality = observation.get("quality", "good")
+            if quality == "good":
+                continue
+
+            severity = "warning" if quality == "uncertain" else "critical"
+            alert_id = (
+                f"influx-{observation['site_id']}-{observation['asset_id']}-"
+                f"{observation['measurement']}-{quality}"
+            )
+
+            alerts.append(
+                {
+                    "id": alert_id,
+                    "siteId": observation["site_id"],
+                    "assetId": observation["asset_id"],
+                    "severity": severity,
+                    "title": f"{observation['measurement']} quality {quality}",
+                    "description": (
+                        f"Quality '{quality}' reported for {observation['asset_id']} "
+                        f"{observation['measurement']}"
+                    ),
+                    "timestamp": observation["ts"],
+                    "resolved": False,
+                    "measurement": observation["measurement"],
+                    "value": observation["value"],
+                }
+            )
+
+        alerts.sort(key=lambda item: item["timestamp"], reverse=True)
+        return alerts[: max(1, limit)]

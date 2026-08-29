@@ -49,10 +49,19 @@ const queryClient = new QueryClient({
 })
 
 function AppContent() {
+  const runtimeEnv = (import.meta as any).env || {}
+  const apiBaseUrl = runtimeEnv.VITE_BACKEND_API_URL || 'http://127.0.0.1:8000'
+  const telemetrySource = runtimeEnv.VITE_TELEMETRY_SOURCE || 'influx'
+  const alertsSource = runtimeEnv.VITE_ALERTS_SOURCE || 'influx'
+  const pollingIntervalMs = Number(runtimeEnv.VITE_INFLUX_POLL_INTERVAL_MS || 2000)
+
+  const useInfluxTelemetry = telemetrySource === 'influx'
+  const useInfluxAlerts = alertsSource === 'influx'
+
   const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites } = useDashboardStore()
   const { addObservation, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
-  const { addAlert } = useAlertStore()
+  const { addAlert, syncActiveAlerts } = useAlertStore()
   const { theme } = useThemeStore()
   const { initializeAuth } = useAuthStore()
 
@@ -145,6 +154,10 @@ function AppContent() {
 
   // Handle MQTT alert messages
   const handleMqttAlert = useCallback((topic: string, message: string) => {
+    if (useInfluxAlerts) {
+      return
+    }
+
     try {
       const alertData = JSON.parse(message)
 
@@ -200,7 +213,7 @@ function AppContent() {
     } catch (error) {
       console.error('Error parsing alert message:', error, message)
     }
-  }, [addAlert, updateLastUpdate, setConnectionStatus, setConnectionError])
+  }, [useInfluxAlerts, addAlert, updateLastUpdate, setConnectionStatus, setConnectionError])
 
   // Handle MQTT messages
   const handleMqttMessage = useCallback((topic: string, message: string, observation?: Observation) => {
@@ -214,7 +227,7 @@ function AppContent() {
       return
     }
 
-    if (observation) {
+    if (observation && !useInfluxTelemetry) {
       //console.log('Received observation:', observation)
 
       // Add observation to telemetry store
@@ -227,7 +240,7 @@ function AppContent() {
     } else {
       console.log('Received message on topic:', topic, message)
     }
-  }, [setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation, handleMqttAlert])
+  }, [useInfluxTelemetry, setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation, handleMqttAlert])
 
   // Clean up old telemetry data periodically
   useEffect(() => {
@@ -238,16 +251,109 @@ function AppContent() {
     return () => clearInterval(cleanupInterval)
   }, [clearOldData])
 
-  // Initialize MQTT connection with telemetry, configuration, and alert topics
+  // Poll Influx telemetry and alerts every 2 seconds (PoC migration path)
+  useEffect(() => {
+    if (!useInfluxTelemetry && !useInfluxAlerts) {
+      return
+    }
+
+    let isCancelled = false
+
+    const pollInflux = async () => {
+      try {
+        const currentSite = useDashboardStore.getState().currentSite
+        const siteQuery = currentSite ? `?site_id=${encodeURIComponent(currentSite)}` : ''
+
+        if (useInfluxTelemetry) {
+          const telemetryResponse = await fetch(
+            `${apiBaseUrl}/api/influx/telemetry/latest${siteQuery ? `${siteQuery}&lookback_seconds=180&limit=600` : '?lookback_seconds=180&limit=600'}`
+          )
+
+          if (!telemetryResponse.ok) {
+            throw new Error(`Telemetry request failed (${telemetryResponse.status})`)
+          }
+
+          const telemetryPayload = await telemetryResponse.json()
+          const observations = Array.isArray(telemetryPayload?.observations)
+            ? telemetryPayload.observations
+            : []
+
+          observations.forEach((observation: Observation) => {
+            addObservation(observation)
+
+            if (observation.site_id && !useDashboardStore.getState().currentSite) {
+              setCurrentSite(observation.site_id)
+            }
+          })
+        }
+
+        if (useInfluxAlerts) {
+          const alertsResponse = await fetch(
+            `${apiBaseUrl}/api/influx/alerts/active${siteQuery ? `${siteQuery}&lookback_seconds=300&limit=300` : '?lookback_seconds=300&limit=300'}`
+          )
+
+          if (!alertsResponse.ok) {
+            throw new Error(`Alerts request failed (${alertsResponse.status})`)
+          }
+
+          const alertsPayload = await alertsResponse.json()
+          const polledAlerts = Array.isArray(alertsPayload?.alerts)
+            ? alertsPayload.alerts
+            : []
+
+          syncActiveAlerts(polledAlerts)
+        }
+
+        if (!isCancelled) {
+          updateLastUpdate()
+          setConnectionStatus('connected')
+          setConnectionError(null)
+        }
+      } catch (error) {
+        console.error('Influx polling failed:', error)
+        if (!isCancelled) {
+          setConnectionStatus('error')
+          setConnectionError(error instanceof Error ? error.message : 'Influx polling failed')
+        }
+      }
+    }
+
+    pollInflux()
+    const interval = setInterval(pollInflux, pollingIntervalMs)
+
+    return () => {
+      isCancelled = true
+      clearInterval(interval)
+    }
+  }, [
+    useInfluxTelemetry,
+    useInfluxAlerts,
+    apiBaseUrl,
+    pollingIntervalMs,
+    addObservation,
+    syncActiveAlerts,
+    setCurrentSite,
+    updateLastUpdate,
+    setConnectionStatus,
+    setConnectionError,
+  ])
+
+  // Initialize MQTT connection (config topics always; telemetry/alerts only when source is mqtt)
+  const mqttTopics = [
+    'wtp/+/configuration/+',
+    'wtp/global/configuration/+'
+  ]
+
+  if (!useInfluxTelemetry) {
+    mqttTopics.push('wtp/+/+/+/observation')
+  }
+
+  if (!useInfluxAlerts) {
+    mqttTopics.push('wtp/+/alerts/+', 'wtp/+/+/alerts/+', 'wtp/global/alerts/+')
+  }
+
   const { connected } = useMqtt({
-    topics: [
-      'wtp/+/+/+/observation',        // Telemetry data
-      'wtp/+/configuration/+',        // Plant configurations
-      'wtp/global/configuration/+',   // Global configurations like templates
-      'wtp/+/alerts/+',               // Site-level alerts
-      'wtp/+/+/alerts/+',             // Module-level alerts
-      'wtp/global/alerts/+'           // System-wide alerts
-    ],
+    topics: mqttTopics,
     onMessage: handleMqttMessage,
     onConfiguration: handleMqttConfiguration,
   })
