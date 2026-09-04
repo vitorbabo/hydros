@@ -276,6 +276,20 @@ class TestServerMode:
 
         assert client_handler.update_server_parameter("raw_intake.level", 1.0) is False
 
+    def test_initialize_server_builds_real_datastore(self):
+        """Regression test: pymodbus>=3.13 rewrote ModbusServerContext into a
+        deprecated shim that no longer supports live mutation, and its
+        ModbusSequentialDataBlock raises on a 0 starting address. requirements.txt
+        pins pymodbus<3.13 to keep this working; this exercises the real library
+        (not a mock) so an unpinned upgrade breaks this test, not just the sim."""
+        handler = ModbusHandler(mode="server")
+        handler.load_mappings([holding(address=0)])
+
+        assert handler.initialize_server() is True
+        assert handler.server_context is not None
+
+        assert handler.update_server_parameter("raw_intake.level", 5.0) is True
+
 
 class TestDisconnectAndStatistics:
     def test_disconnect_closes_client(self, client_handler):
