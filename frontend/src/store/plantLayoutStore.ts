@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { Node, Edge } from '@xyflow/react'
-import type { Observation, ModuleTemplate } from '../types'
+import type { ModuleTemplate } from '../types'
+import type { Observation } from '../types/schemas'
 import { useConfigurationStore } from './configurationStore'
 
 // Helper functions
@@ -135,6 +136,7 @@ const createPlantNodesFromConfig = (siteId: string): Node[] => {
           type: inferModuleType(moduleId),
           description: moduleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
           category: 'water_treatment',
+          required_sensors: [],
           parameters: [],
           inputs: [],
           outputs: [],

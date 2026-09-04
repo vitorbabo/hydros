@@ -4,6 +4,7 @@ import { StatusIndicator } from '../shared/StatusIndicator'
 import type { ComponentStatus } from '../../types'
 
 interface ModuleStatusCardProps {
+  id?: string
   name: string
   icon: React.ReactNode
   status: ComponentStatus

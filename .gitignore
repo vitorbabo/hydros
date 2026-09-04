@@ -5,4 +5,12 @@ __pycache__
 node_modules
 dist
 
-.env
+# Python
+.venv
+venv
+
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/

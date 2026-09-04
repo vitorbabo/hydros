@@ -11,7 +11,7 @@ interface UserFormModalProps {
 
 export function UserFormModal({ userId, onClose }: UserFormModalProps) {
   const { users, addUser, updateUser, getUserById } = useUserManagementStore()
-  const { user: currentUser, logAction } = useAuthStore()
+  const { user: currentUser } = useAuthStore()
   const { sites } = useDashboardStore()
 
   const isEditing = !!userId

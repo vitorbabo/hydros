@@ -54,6 +54,16 @@ class ComponentRole(Enum):
     STATUS = "status"
 
 
+class OperationalState(Enum):
+    """Operational state of a component"""
+
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    FAULT = "fault"
+    MAINTENANCE = "maintenance"
+    OFFLINE = "offline"
+
+
 class SensorType(Enum):
     """Types of sensors and measurements available in water treatment plants"""
 

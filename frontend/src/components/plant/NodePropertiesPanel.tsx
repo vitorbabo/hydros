@@ -119,7 +119,7 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
   }, [observationsList])
 
   // Get icon component based on the icon type string
-  const ModuleIconComponent = getIconByType(data.icon || data.type)
+  const ModuleIconComponent = getIconByType(String(data.icon || data.type || ''))
 
   return (
     <div className="w-80 h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-lg overflow-y-auto">
@@ -128,11 +128,11 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <ModuleIconComponent className="w-5 h-5 text-primary" />
-            {data.label}
+            {String(data.label || '')}
           </h3>
           <div className="flex items-center gap-2 mt-1">
-            <StatusIndicator status={data.status} showLabel />
-            <span className="text-sm text-gray-500 dark:text-gray-400">{data.type}</span>
+            <StatusIndicator status={data.status as any} showLabel />
+            <span className="text-sm text-gray-500 dark:text-gray-400">{String(data.type || '')}</span>
           </div>
         </div>
         <button
@@ -151,26 +151,26 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Asset ID</span>
-              <span className="font-medium text-gray-900 dark:text-white">{data.assetId}</span>
+              <span className="font-medium text-gray-900 dark:text-white">{String(data.assetId || '')}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Category</span>
-              <span className="font-medium text-gray-900 dark:text-white capitalize">{data.category}</span>
+              <span className="font-medium text-gray-900 dark:text-white capitalize">{String(data.category || '')}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Position</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                ({Math.round(node.position.x)}, {Math.round(node.position.y)})
+                ({Math.round(Number(node.position.x) || 0)}, {Math.round(Number(node.position.y) || 0)})
               </span>
             </div>
-            {data.lastUpdate && (
+            {(data.lastUpdate && typeof data.lastUpdate === 'string') ? (
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Last Update</span>
                 <span className="font-medium text-gray-900 dark:text-white">
                   {new Date(data.lastUpdate).toLocaleTimeString()}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -178,6 +178,8 @@ export function NodePropertiesPanel({ node, onClose, onConfigChange }: NodePrope
         {Object.keys(groupedObservations).map(group => {
           const groupObs = groupedObservations[group]
           if (groupObs.length === 0) return null
+
+          const groupName = String(group)
 
           return (
             <div key={group}>

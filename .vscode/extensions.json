@@ -1,0 +1,49 @@
+{
+  "recommendations": [
+    // Python development
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "charliermarsh.ruff",
+
+    // TypeScript/JavaScript/React
+    "prisma.prisma",
+    "dsznajder.es7-react-js-snippets",
+    "xabikos.ReactSnippets",
+    "esbenp.prettier-vscode",
+
+    // Web development
+    "bradlc.vscode-tailwindcss",
+    "PostCSS.postcss",
+
+    // Docker & DevOps
+    "ms-vscode-remote.remote-containers",
+    "ms-vscode-remote.remote-ssh",
+    "ms-azure-tools.vscode-docker",
+
+    // Database & Data
+    "mtxr.sqltools",
+    "rangav.vscode-thunder-client",
+
+    // Git & SCM
+    "eamodio.gitlens",
+    "GitHub.copilot",
+
+    // YAML/JSON
+    "redhat.vscode-yaml",
+    "asvetliakov.vscode-nedb",
+
+    // Testing
+    "hbenl.vscode-test-explorer",
+
+    // Code Quality
+    "sonarsource.sonarlint-vscode",
+
+    // General utilities
+    "ms-vscode.makefile-tools",
+    "usernamehw.errorlens",
+    "wakatime.vscode-wakatime",
+    "ms-vscode.live-server",
+    "thunder-client.thunder-client"
+  ]
+}

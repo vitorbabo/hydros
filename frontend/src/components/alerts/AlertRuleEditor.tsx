@@ -63,9 +63,15 @@ const AlertRuleEditor: React.FC<AlertRuleEditorProps> = ({ rule, onSave, onCance
     }
 
     if (formData.condition === 'between') {
-      if (formData.thresholdMin >= formData.thresholdMax) {
+      if (!Number.isFinite(formData.thresholdMin) || !Number.isFinite(formData.thresholdMax)) {
+        newErrors.threshold = 'Both thresholds are required'
+      } else if (formData.thresholdMin >= formData.thresholdMax) {
         newErrors.threshold = 'Minimum threshold must be less than maximum'
       }
+    } else if (typeof formData.threshold !== 'number' || !Number.isFinite(formData.threshold)) {
+      // Previously unvalidated: an empty field saved a rule with a NaN
+      // threshold, which no comparison can ever satisfy.
+      newErrors.threshold = 'Threshold is required'
     }
 
     if (formData.notificationChannels.length === 0) {
@@ -293,7 +299,9 @@ const AlertRuleEditor: React.FC<AlertRuleEditorProps> = ({ rule, onSave, onCance
                 <input
                   type="number"
                   step="any"
-                  value={formData.threshold}
+                  // A cleared number input parses to NaN, which React would
+                  // otherwise render literally as "NaN" in the field.
+                  value={typeof formData.threshold === 'number' && Number.isFinite(formData.threshold) ? formData.threshold : ''}
                   onChange={(e) => setFormData({ ...formData, threshold: parseFloat(e.target.value) })}
                   className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                 />

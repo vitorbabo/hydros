@@ -1,37 +1,46 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from './components/layout/AppShell'
 import { RequireAuth, RequireRole } from './components/auth'
-import { Login } from './views/Login'
-import { Dashboard } from './views/Dashboard'
-import { Sites } from './views/Sites'
-import { SiteDetail } from './views/sites/SiteDetail'
-import { SiteLayout } from './views/sites/SiteLayout'
-import AlertsDashboard from './views/alerts/AlertsDashboard'
-import AlertHistory from './views/alerts/AlertHistory'
-import AlertConfiguration from './views/alerts/AlertConfiguration'
-import ReportsDashboard from './views/reports/ReportsDashboard'
-import ReportBuilder from './views/reports/ReportBuilder'
-import ReportTemplates from './views/reports/ReportTemplates'
-import AnalyticsDashboard from './views/analytics/AnalyticsDashboard'
-import CrossSiteComparison from './views/analytics/CrossSiteComparison'
-import EfficiencyMetrics from './views/analytics/EfficiencyMetrics'
-import TrendAnalysis from './views/analytics/TrendAnalysis'
-import { Settings } from './views/Settings'
-import { UserManagement } from './views/admin/UserManagement'
-import { RoleManagement } from './views/admin/RoleManagement'
-import { SiteAccessControl } from './views/admin/SiteAccessControl'
-import { AuditLogs } from './views/admin/AuditLogs'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
+import { LoadingFallback } from './components/shared/LoadingFallback'
+import {
+  // Core views (loaded immediately)
+  Login,
+  Dashboard,
+  // Lazy-loaded views
+  Sites,
+  SiteDetail,
+  SiteLayout,
+  AlertsDashboard,
+  AlertHistory,
+  AlertConfiguration,
+  ReportsDashboard,
+  ReportBuilder,
+  ReportTemplates,
+  AnalyticsDashboard,
+  CrossSiteComparison,
+  EfficiencyMetrics,
+  TrendAnalysis,
+  Settings,
+  UserManagement,
+  RoleManagement,
+  SiteAccessControl,
+  AuditLogs,
+} from './routes/LazyRoutes'
 import { useDashboardStore } from './store/dashboardStore'
 import { useTelemetryStore } from './store/telemetryStore'
 import { useConfigurationStore } from './store/configurationStore'
 import { useThemeStore } from './store/themeStore'
 import { useAlertStore } from './store/alertStore'
 import { useAuthStore } from './store/authStore'
-import { useMqtt, type ConfigurationMessage } from './hooks/useMqtt'
-import type { Observation } from './types'
+import { useMqtt, type ConfigurationMessage, type Observation } from './hooks/useMqtt'
+
+const DEFAULT_POLL_INTERVAL_MS = 2000
+const MIN_POLL_INTERVAL_MS = 250
+const POLL_LOOKBACK_SECONDS = 180
+const POLL_OBSERVATION_LIMIT = 600
 
 // Create a client
 const queryClient = new QueryClient({
@@ -45,10 +54,25 @@ const queryClient = new QueryClient({
 })
 
 function AppContent() {
+  const runtimeEnv = (import.meta as any).env || {}
+  const apiBaseUrl = runtimeEnv.VITE_BACKEND_API_URL || 'http://127.0.0.1:8000'
+  const telemetrySource = runtimeEnv.VITE_TELEMETRY_SOURCE || 'influx'
+  const alertsSource = runtimeEnv.VITE_ALERTS_SOURCE || 'influx'
+  // Guard against a non-numeric env value: NaN would turn setInterval into a
+  // tight loop that hammers the API as fast as the browser will schedule it.
+  const configuredPollInterval = Number(runtimeEnv.VITE_INFLUX_POLL_INTERVAL_MS)
+  const pollingIntervalMs =
+    Number.isFinite(configuredPollInterval) && configuredPollInterval >= MIN_POLL_INTERVAL_MS
+      ? configuredPollInterval
+      : DEFAULT_POLL_INTERVAL_MS
+
+  const useInfluxTelemetry = telemetrySource === 'influx'
+  const useInfluxAlerts = alertsSource === 'influx'
+
   const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites } = useDashboardStore()
-  const { addObservation, clearOldData } = useTelemetryStore()
+  const { addObservation, addObservations, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
-  const { addAlert } = useAlertStore()
+  const { addAlert, syncActiveAlerts } = useAlertStore()
   const { theme } = useThemeStore()
   const { initializeAuth } = useAuthStore()
 
@@ -75,7 +99,7 @@ function AppContent() {
     setConnectionStatus('connected')
     setConnectionError(null)
     
-    if (config.type === 'plant') {
+    if (config.config_type === 'plant') {
       // Transform MQTT plant data to configuration store format
       const plantData = config.data as any
       
@@ -132,7 +156,7 @@ function AppContent() {
       if (!useDashboardStore.getState().currentSite) {
         setCurrentSite(config.site_id)
       }
-    } else if (config.type === 'templates' || config.type === 'modules') {
+    } else if (config.config_type === 'templates' || config.config_type === 'modules') {
       // Update module templates
       const templates = config.data as Record<string, any>
       setModuleTemplates(templates)
@@ -141,6 +165,10 @@ function AppContent() {
 
   // Handle MQTT alert messages
   const handleMqttAlert = useCallback((topic: string, message: string) => {
+    if (useInfluxAlerts) {
+      return
+    }
+
     try {
       const alertData = JSON.parse(message)
 
@@ -196,7 +224,7 @@ function AppContent() {
     } catch (error) {
       console.error('Error parsing alert message:', error, message)
     }
-  }, [addAlert, updateLastUpdate, setConnectionStatus, setConnectionError])
+  }, [useInfluxAlerts, addAlert, updateLastUpdate, setConnectionStatus, setConnectionError])
 
   // Handle MQTT messages
   const handleMqttMessage = useCallback((topic: string, message: string, observation?: Observation) => {
@@ -210,7 +238,7 @@ function AppContent() {
       return
     }
 
-    if (observation) {
+    if (observation && !useInfluxTelemetry) {
       //console.log('Received observation:', observation)
 
       // Add observation to telemetry store
@@ -223,7 +251,7 @@ function AppContent() {
     } else {
       console.log('Received message on topic:', topic, message)
     }
-  }, [setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation, handleMqttAlert])
+  }, [useInfluxTelemetry, setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, addObservation, handleMqttAlert])
 
   // Clean up old telemetry data periodically
   useEffect(() => {
@@ -234,16 +262,118 @@ function AppContent() {
     return () => clearInterval(cleanupInterval)
   }, [clearOldData])
 
-  // Initialize MQTT connection with telemetry, configuration, and alert topics
+  // Poll Influx for telemetry and alerts (PoC migration path away from MQTT).
+  useEffect(() => {
+    if (!useInfluxTelemetry && !useInfluxAlerts) {
+      return
+    }
+
+    let isCancelled = false
+    // A poll slower than the interval must not stack another on top of it;
+    // without this, a degraded backend gets an ever-growing pile of requests.
+    let inFlight = false
+    const controller = new AbortController()
+
+    const pollInflux = async () => {
+      if (inFlight) return
+      inFlight = true
+
+      try {
+        const currentSite = useDashboardStore.getState().currentSite
+        const params = new URLSearchParams({
+          lookback_seconds: String(POLL_LOOKBACK_SECONDS),
+          limit: String(POLL_OBSERVATION_LIMIT),
+        })
+        if (currentSite) {
+          params.set('site_id', currentSite)
+        }
+
+        // One /snapshot call serves both streams off a single Influx query.
+        // Hitting /telemetry/latest and /alerts/active separately cost three.
+        const response = await fetch(`${apiBaseUrl}/api/influx/snapshot?${params}`, {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Snapshot request failed (${response.status})`)
+        }
+
+        const payload = await response.json()
+
+        if (isCancelled) return
+
+        if (useInfluxTelemetry) {
+          const observations: Observation[] = Array.isArray(payload?.observations)
+            ? payload.observations
+            : []
+
+          // Batched: one store write and one index rebuild for the whole poll.
+          addObservations(observations)
+
+          if (!useDashboardStore.getState().currentSite) {
+            const firstSiteId = observations.find(o => o.site_id)?.site_id
+            if (firstSiteId) {
+              setCurrentSite(firstSiteId)
+            }
+          }
+        }
+
+        if (useInfluxAlerts) {
+          syncActiveAlerts(Array.isArray(payload?.alerts) ? payload.alerts : [])
+        }
+
+        updateLastUpdate()
+        setConnectionStatus('connected')
+        setConnectionError(null)
+      } catch (error) {
+        if (isCancelled || (error instanceof DOMException && error.name === 'AbortError')) {
+          return
+        }
+        console.error('Influx polling failed:', error)
+        setConnectionStatus('error')
+        setConnectionError(error instanceof Error ? error.message : 'Influx polling failed')
+      } finally {
+        inFlight = false
+      }
+    }
+
+    pollInflux()
+    const interval = setInterval(pollInflux, pollingIntervalMs)
+
+    return () => {
+      isCancelled = true
+      controller.abort()
+      clearInterval(interval)
+    }
+  }, [
+    useInfluxTelemetry,
+    useInfluxAlerts,
+    apiBaseUrl,
+    pollingIntervalMs,
+    addObservations,
+    syncActiveAlerts,
+    setCurrentSite,
+    updateLastUpdate,
+    setConnectionStatus,
+    setConnectionError,
+  ])
+
+  // Initialize MQTT connection (config topics always; telemetry/alerts only when source is mqtt)
+  const mqttTopics = [
+    'wtp/+/configuration/+',
+    'wtp/global/configuration/+'
+  ]
+
+  if (!useInfluxTelemetry) {
+    mqttTopics.push('wtp/+/+/+/observation')
+  }
+
+  if (!useInfluxAlerts) {
+    mqttTopics.push('wtp/+/alerts/+', 'wtp/+/+/alerts/+', 'wtp/global/alerts/+')
+  }
+
   const { connected } = useMqtt({
-    topics: [
-      'wtp/+/+/+/observation',        // Telemetry data
-      'wtp/+/configuration/+',        // Plant configurations
-      'wtp/global/configuration/+',   // Global configurations like templates
-      'wtp/+/alerts/+',               // Site-level alerts
-      'wtp/+/+/alerts/+',             // Module-level alerts
-      'wtp/global/alerts/+'           // System-wide alerts
-    ],
+    topics: mqttTopics,
     onMessage: handleMqttMessage,
     onConfiguration: handleMqttConfiguration,
   })
@@ -259,82 +389,84 @@ function AppContent() {
 
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route
-          element={
-            <RequireAuth>
-              <AppShell />
-            </RequireAuth>
-          }
-        >
-          {/* Main navigation */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/sites" element={<Sites />} />
-          <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
-          <Route path="/sites/:siteId" element={<SiteDetail />} />
-          <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
-          <Route path="/alerts" element={<AlertsDashboard />} />
-          <Route path="/alerts/history" element={<AlertHistory />} />
-          <Route path="/alerts/configuration" element={<AlertConfiguration />} />
-          <Route path="/reports" element={<ReportsDashboard />} />
-          <Route path="/reports/builder" element={<ReportBuilder />} />
-          <Route path="/reports/templates" element={<ReportTemplates />} />
-          <Route path="/analytics" element={<AnalyticsDashboard />} />
-          <Route path="/analytics/comparison" element={<CrossSiteComparison />} />
-          <Route path="/analytics/efficiency" element={<EfficiencyMetrics />} />
-          <Route path="/analytics/trends" element={<TrendAnalysis />} />
-          <Route path="/settings" element={<Settings />} />
+          {/* Protected routes */}
+          <Route
+            element={
+              <RequireAuth>
+                <AppShell />
+              </RequireAuth>
+            }
+          >
+            {/* Main navigation */}
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/sites" element={<Sites />} />
+            <Route path="/sites/:siteId/layout" element={<SiteLayout />} />
+            <Route path="/sites/:siteId" element={<SiteDetail />} />
+            <Route path="/sites/:siteId/:tab" element={<SiteDetail />} />
+            <Route path="/alerts" element={<AlertsDashboard />} />
+            <Route path="/alerts/history" element={<AlertHistory />} />
+            <Route path="/alerts/configuration" element={<AlertConfiguration />} />
+            <Route path="/reports" element={<ReportsDashboard />} />
+            <Route path="/reports/builder" element={<ReportBuilder />} />
+            <Route path="/reports/templates" element={<ReportTemplates />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/analytics/comparison" element={<CrossSiteComparison />} />
+            <Route path="/analytics/efficiency" element={<EfficiencyMetrics />} />
+            <Route path="/analytics/trends" element={<TrendAnalysis />} />
+            <Route path="/settings" element={<Settings />} />
 
-          {/* Admin routes - Only accessible by admin */}
-          <Route
-            path="/admin"
-            element={
-              <RequireRole roles={['admin']}>
-                <Navigate to="/admin/users" replace />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <RequireRole roles={['admin']}>
-                <UserManagement />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/roles"
-            element={
-              <RequireRole roles={['admin']}>
-                <RoleManagement />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/access"
-            element={
-              <RequireRole roles={['admin']}>
-                <SiteAccessControl />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/audit"
-            element={
-              <RequireRole roles={['admin']}>
-                <AuditLogs />
-              </RequireRole>
-            }
-          />
-        </Route>
+            {/* Admin routes - Only accessible by admin */}
+            <Route
+              path="/admin"
+              element={
+                <RequireRole roles={['admin']}>
+                  <Navigate to="/admin/users" replace />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireRole roles={['admin']}>
+                  <UserManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/roles"
+              element={
+                <RequireRole roles={['admin']}>
+                  <RoleManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/access"
+              element={
+                <RequireRole roles={['admin']}>
+                  <SiteAccessControl />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/audit"
+              element={
+                <RequireRole roles={['admin']}>
+                  <AuditLogs />
+                </RequireRole>
+              }
+            />
+          </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   )
 }

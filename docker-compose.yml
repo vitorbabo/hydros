@@ -60,6 +60,7 @@ services:
       - AGGREGATION_PUBLISH_INTERVAL=300
     ports:
       - "5020:5020"  # Modbus TCP server port
+      - "8000:8000"  # Influx API server for frontend polling
     depends_on:
       - mosquitto
       - influxdb

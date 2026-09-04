@@ -22,16 +22,16 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from dotenv import load_dotenv
-
 from core.config_publisher import ConfigurationPublisher
 from core.config_validator import ConfigurationValidationError, ConfigValidator
 from core.digital_twin import DigitalTwin
+from dotenv import load_dotenv
 from gateway.edge_gateway import EdgeGateway, GatewayMode
 from protocols.mqtt_handler import MQTTHandler
 from protocols.protocol_registry import ProtocolRegistry
-from services.influxdb_query_service import InfluxDBQueryService
 from services.aggregation_publisher import AggregationPublisher
+from services.influx_api_server import InfluxAPIServer
+from services.influxdb_query_service import InfluxDBQueryService
 from simulation.simulator import SimulationEngine, SimulationMode
 
 
@@ -56,6 +56,7 @@ class HydrosSystem:
         # InfluxDB and aggregation services
         self.influxdb_service: Optional[InfluxDBQueryService] = None
         self.aggregation_publisher: Optional[AggregationPublisher] = None
+        self.influx_api_server: Optional[InfluxAPIServer] = None
 
         # Mode-specific components
         self.simulation_engine: Optional[SimulationEngine] = None
@@ -218,6 +219,33 @@ class HydrosSystem:
             self.influxdb_service = None
             return False
 
+    async def initialize_influx_api_server(self):
+        """Initialize and start HTTP API server for Influx-backed frontend polling."""
+        if not self.influxdb_service:
+            self.logger.warning("Cannot initialize Influx API server - InfluxDB service unavailable")
+            return False
+
+        api_host = os.getenv("API_HOST", "0.0.0.0")
+        api_port = int(os.getenv("API_PORT", "8000"))
+        # Wide open by default for the PoC; set API_ALLOWED_ORIGIN to the
+        # dashboard origin before exposing this beyond a trusted network.
+        api_allowed_origin = os.getenv("API_ALLOWED_ORIGIN", "*")
+
+        try:
+            self.influx_api_server = InfluxAPIServer(
+                influx_service=self.influxdb_service,
+                host=api_host,
+                port=api_port,
+                allowed_origin=api_allowed_origin,
+            )
+            await self.influx_api_server.start()
+            self.logger.info(f"Influx API server started on {api_host}:{api_port}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Influx API server: {e}")
+            self.influx_api_server = None
+            return False
+
     def initialize_aggregation_publisher(self, site_ids: list):
         """Initialize aggregation publisher service"""
         if not self.influxdb_service or not self.mqtt_handler:
@@ -343,6 +371,8 @@ class HydrosSystem:
         # Initialize InfluxDB service
         influxdb_initialized = await self.initialize_influxdb_service()
         if influxdb_initialized:
+            await self.initialize_influx_api_server()
+
             # Initialize and start aggregation publisher
             if self.initialize_aggregation_publisher([self.site_id]):
                 await self.aggregation_publisher.start()
@@ -368,6 +398,8 @@ class HydrosSystem:
         # Initialize InfluxDB service
         influxdb_initialized = await self.initialize_influxdb_service()
         if influxdb_initialized:
+            await self.initialize_influx_api_server()
+
             # Initialize and start aggregation publisher
             if self.initialize_aggregation_publisher([self.site_id]):
                 await self.aggregation_publisher.start()
@@ -476,6 +508,10 @@ class HydrosSystem:
         if self.aggregation_publisher:
             await self.aggregation_publisher.stop()
 
+        # Stop Influx API server
+        if self.influx_api_server:
+            await self.influx_api_server.stop()
+
         # Stop InfluxDB service
         if self.influxdb_service:
             await self.influxdb_service.disconnect()
@@ -526,6 +562,13 @@ class HydrosSystem:
                 "url": self.influxdb_service.url,
                 "org": self.influxdb_service.org,
                 "bucket": self.influxdb_service.bucket
+            }
+
+        if self.influx_api_server:
+            status["influx_api_server"] = {
+                "host": self.influx_api_server.host,
+                "port": self.influx_api_server.port,
+                "running": self.influx_api_server.runner is not None,
             }
 
         if self.aggregation_publisher:

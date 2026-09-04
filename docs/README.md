@@ -13,6 +13,7 @@ Welcome to the Hydros unified water treatment plant system documentation.
 - **[System Architecture](architecture/system-overview.md)** - High-level system design
 - **[Core Components](architecture/core-components.md)** - Detailed component documentation
 - **[Unified Architecture](architecture/unified-architecture.md)** - New unified architecture details
+- **[Telemetry Data Path](architecture/telemetry-data-path.md)** - Sensor reading to dashboard tile, and where the cost is
 - **[Legacy Architecture](architecture/legacy-poc.md)** - Original PoC architecture
 - **[Production Architecture](architecture/production-architecture.md)** - Production deployment design
 
@@ -37,6 +38,8 @@ Welcome to the Hydros unified water treatment plant system documentation.
 ### Development
 - **[Contributing](development/contributing.md)** - How to contribute to the project
 - **[Testing](development/testing.md)** - Testing guidelines and procedures
+- **[Exception Handling](development/exception-handling.md)** - Narrowing broad `except Exception` handlers
+- **[Frontend Performance](development/frontend-performance.md)** - Store hot path, subscriptions and bundle splitting
 - **[Extending](development/extending.md)** - Adding new components and protocols
 - **[Troubleshooting](development/troubleshooting.md)** - Common issues and solutions
 
@@ -65,6 +68,7 @@ docs/
 │   ├── system-overview.md      # High-level system design
 │   ├── core-components.md      # Core component details
 │   ├── unified-architecture.md # New unified architecture
+│   ├── telemetry-data-path.md # Telemetry flow end to end
 │   ├── legacy-poc.md          # Original PoC architecture
 │   └── production-architecture.md # Production design
 ├── api/                        # API documentation
@@ -87,6 +91,8 @@ docs/
 ├── development/               # Development documentation
 │   ├── contributing.md       # Contribution guidelines
 │   ├── testing.md           # Testing procedures
+│   ├── exception-handling.md # Exception handling patterns
+│   ├── frontend-performance.md # Frontend performance guide
 │   ├── extending.md         # Extension guides
 │   └── troubleshooting.md   # Troubleshooting
 └── examples/                  # Examples and tutorials

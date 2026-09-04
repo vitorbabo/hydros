@@ -47,7 +47,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                     Technical Details
                   </summary>
                   <pre className="text-xs text-red-500 mt-2 overflow-auto">
-                    {this.state.error.toString()}
+                    {String(this.state.error.message || this.state.error)}
                   </pre>
                 </details>
               )}
