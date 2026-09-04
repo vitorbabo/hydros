@@ -12,6 +12,7 @@
  *   const { sites, alarms } = useDashboardStore() // Re-renders on ANY change
  */
 import { useDashboardStore } from '../dashboardStore'
+import { useShallow } from 'zustand/react/shallow'
 
 // ============================================================================
 // Site Selectors
@@ -55,19 +56,19 @@ export const useAlarms = () =>
  * Get active alarms only
  */
 export const useActiveAlarms = () =>
-  useDashboardStore((state) => state.alarms.filter(a => a.status === 'active'))
+  useDashboardStore(useShallow((state) => state.alarms.filter(a => a.status === 'active')))
 
 /**
  * Get alarms for a specific site
  */
 export const useSiteAlarms = (siteId: string) =>
-  useDashboardStore((state) => state.alarms.filter(a => a.site_id === siteId))
+  useDashboardStore(useShallow((state) => state.alarms.filter(a => a.site_id === siteId)))
 
 /**
  * Get critical alarms
  */
 export const useCriticalAlarms = () =>
-  useDashboardStore((state) => state.alarms.filter(a => a.severity === 'critical'))
+  useDashboardStore(useShallow((state) => state.alarms.filter(a => a.severity === 'critical')))
 
 /**
  * Get alarm count
@@ -117,19 +118,19 @@ export const useLastUpdate = () =>
  * Get dashboard summary data
  */
 export const useDashboardSummary = () =>
-  useDashboardStore((state) => ({
+  useDashboardStore(useShallow((state) => ({
     siteCount: Object.keys(state.sites).length,
     alarmCount: state.alarms.length,
     activeAlarmCount: state.alarms.filter(a => a.status === 'active').length,
     criticalAlarmCount: state.alarms.filter(a => a.severity === 'critical' && a.status === 'active').length,
     connectionStatus: state.connectionStatus,
-  }))
+  })))
 
 /**
  * Get site with its alarms
  */
 export const useSiteWithAlarms = (siteId: string) =>
-  useDashboardStore((state) => ({
+  useDashboardStore(useShallow((state) => ({
     site: state.sites[siteId],
     alarms: state.alarms.filter(a => a.site_id === siteId),
-  }))
+  })))

@@ -3,6 +3,7 @@
  *
  * Optimized selectors for alert management and filtering.
  */
+import { useShallow } from 'zustand/react/shallow'
 import { useAlertStore, type Alert, type AlertRule, type AlertSeverity } from '../alertStore'
 
 // ============================================================================
@@ -34,19 +35,19 @@ export const useAlert = (alertId: string) =>
  * Get alerts for a specific site
  */
 export const useSiteAlerts = (siteId: string) =>
-  useAlertStore((state) => state.activeAlerts.filter(a => a.siteId === siteId))
+  useAlertStore(useShallow((state) => state.activeAlerts.filter(a => a.siteId === siteId)))
 
 /**
  * Get alerts by severity
  */
 export const useAlertsBySeverity = (severity: AlertSeverity) =>
-  useAlertStore((state) => state.activeAlerts.filter(a => a.severity === severity))
+  useAlertStore(useShallow((state) => state.activeAlerts.filter(a => a.severity === severity)))
 
 /**
  * Get unacknowledged alerts
  */
 export const useUnacknowledgedAlerts = () =>
-  useAlertStore((state) => state.activeAlerts.filter(a => !a.acknowledgedAt && !a.resolved))
+  useAlertStore(useShallow((state) => state.activeAlerts.filter(a => !a.acknowledgedAt && !a.resolved)))
 
 // ============================================================================
 // Alert Rules Selectors
@@ -62,13 +63,13 @@ export const useAlertRules = () =>
  * Get enabled alert rules
  */
 export const useEnabledAlertRules = () =>
-  useAlertStore((state) => state.alertRules.filter(r => r.enabled))
+  useAlertStore(useShallow((state) => state.alertRules.filter(r => r.enabled)))
 
 /**
  * Get alert rules for a site
  */
 export const useSiteAlertRules = (siteId: string) =>
-  useAlertStore((state) => state.alertRules.filter(r => r.siteId === siteId))
+  useAlertStore(useShallow((state) => state.alertRules.filter(r => r.siteId === siteId)))
 
 /**
  * Get a specific alert rule by ID
@@ -96,7 +97,7 @@ export const useSelectedAlertSite = () =>
  * Get filtered alerts (applying current filters)
  */
 export const useFilteredAlerts = () =>
-  useAlertStore((state) => {
+  useAlertStore(useShallow((state) => {
     let alerts = state.activeAlerts
 
     if (state.selectedSeverity !== 'all') {
@@ -108,7 +109,7 @@ export const useFilteredAlerts = () =>
     }
 
     return alerts
-  })
+  }))
 
 // ============================================================================
 // Statistics Selectors
@@ -118,14 +119,14 @@ export const useFilteredAlerts = () =>
  * Get alert counts by severity
  */
 export const useAlertCountsBySeverity = () =>
-  useAlertStore((state) => {
+  useAlertStore(useShallow((state) => {
     const alerts = state.activeAlerts
     return {
       critical: alerts.filter(a => a.severity === 'critical').length,
       warning: alerts.filter(a => a.severity === 'warning').length,
       info: alerts.filter(a => a.severity === 'info').length,
     }
-  })
+  }))
 
 /**
  * Get total active alert count
@@ -143,7 +144,7 @@ export const useUnacknowledgedAlertCount = () =>
  * Get alert statistics
  */
 export const useAlertStatistics = () =>
-  useAlertStore((state) => {
+  useAlertStore(useShallow((state) => {
     const active = state.activeAlerts
     const history = state.alertHistory
 
@@ -155,4 +156,4 @@ export const useAlertStatistics = () =>
       resolved: history.filter(a => a.resolved).length,
       criticalCount: active.filter(a => a.severity === 'critical').length,
     }
-  })
+  }))

@@ -50,6 +50,8 @@ def sample_site_config() -> Dict[str, Any]:
             {
                 "client_id": "test_plc",
                 "protocol": "modbus_tcp",
+                "description": "Test Modbus TCP PLC",
+                "enabled": True,
                 "connection": {
                     "host": "localhost",
                     "port": 5020,
@@ -68,18 +70,21 @@ def sample_module_templates() -> Dict[str, Any]:
         "module_templates": {
             "raw_intake": {
                 "type": "intake",
+                "category": "source_water",
                 "description": "Raw water intake with quality monitoring",
                 "required_sensors": ["level", "flow_rate", "turbidity", "ph"],
                 "optional_sensors": ["temperature", "dissolved_oxygen"]
             },
             "intake_pump_1": {
-                "type": "pumping",
-                "description": "Primary intake pump",
+                "type": "pump",
+                "category": "fluid_handling",
+                "description": "Primary raw water intake pump",
                 "required_sensors": ["flow_rate", "pressure", "motor_current"],
                 "actuators": ["pump_speed"]
             },
             "coagulation_tank": {
                 "type": "chemical_treatment",
+                "category": "primary_treatment",
                 "description": "Coagulation and flocculation tank",
                 "required_sensors": ["level", "turbidity", "ph"],
                 "optional_sensors": ["temperature", "dose_rate"]
@@ -185,36 +190,50 @@ def mock_modbus_client(mocker):
 @pytest.fixture
 def sample_plant_parameter():
     """Sample PlantParameter for testing."""
-    from core.plant_elements import PlantParameter, ComponentRole, ProtocolDataType
+    from core.plant_elements import (
+        ComponentRole,
+        PlantParameter,
+        ProtocolDataType,
+        SensorType,
+    )
 
     return PlantParameter(
-        tag="test-site-01.raw_intake.level",
+        tag="level",
         component_role=ComponentRole.SENSOR,
-        sensor_type="level",
+        sensor_type=SensorType.LEVEL,
         unit="m",
+        min_value=0.0,
+        max_value=10.0,
         protocol_data_type=ProtocolDataType.REAL,
+        component_id="raw_intake",
         modbus_address=30001,
         scale_factor=1.0,
-        offset=0.0
+        offset=0.0,
     )
 
 
 @pytest.fixture
-def sample_plant_component():
+def sample_plant_component(sample_plant_parameter):
     """Sample PlantComponent for testing."""
-    from core.plant_elements import PlantComponent, PlantParameter, ComponentRole, ProtocolDataType
-
-    param = PlantParameter(
-        tag="test-site-01.raw_intake.level",
-        component_role=ComponentRole.SENSOR,
-        sensor_type="level",
-        unit="m",
-        protocol_data_type=ProtocolDataType.REAL,
-        modbus_address=30001
-    )
+    from core.plant_elements import PlantComponent
 
     return PlantComponent(
         component_id="raw_intake",
+        component_name="Raw Water Intake",
         component_type="intake",
-        parameters=[param]
+        parameters=[sample_plant_parameter],
+    )
+
+
+@pytest.fixture
+def sample_component_info():
+    """Sample ComponentInfo metadata for DigitalTwin registration."""
+    from core.digital_twin import ComponentInfo, OperationalState
+
+    return ComponentInfo(
+        component_id="raw_intake",
+        component_type="intake",
+        module_id="raw_intake",
+        description="Raw water intake",
+        state=OperationalState.ACTIVE,
     )

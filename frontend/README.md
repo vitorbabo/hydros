@@ -1,6 +1,6 @@
 # Hydros IoT Hub - User Interface
 
-A modern, industrial-grade dashboard for monitoring and controlling water treatment plants in real-time.
+An industrial-grade dashboard for monitoring and controlling water treatment plants in real-time.
 
 ## 🎯 Features
 

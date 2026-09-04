@@ -65,6 +65,7 @@ interface AlertStore {
   // Alert management
   addAlert: (alert: Alert) => void
   syncActiveAlerts: (alerts: Alert[]) => void
+  dismissedAlertIds: string[]
   acknowledgeAlert: (alertId: string, userId: string, userName?: string) => void
   acknowledgeMultipleAlerts: (alertIds: string[], userId: string, userName?: string) => void
   dismissAlert: (alertId: string) => void
@@ -97,12 +98,34 @@ interface AlertStore {
 // Generate unique ID
 const generateId = () => `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
+// Bounded so a long-running dashboard can't grow the dismissed set forever.
+const MAX_DISMISSED_IDS = 500
+
+// Fields a polled refresh can legitimately change. Compared explicitly so an
+// unchanged alert keeps its object identity across polls.
+const SYNCED_ALERT_FIELDS: Array<keyof Alert> = [
+  'severity',
+  'title',
+  'description',
+  'timestamp',
+  'measurement',
+  'value',
+  'threshold',
+  'siteId',
+  'assetId',
+]
+
+function alertsEqual(a: Alert, b: Alert): boolean {
+  return SYNCED_ALERT_FIELDS.every(field => a[field] === b[field])
+}
+
 // Create the alert store
 export const useAlertStore = create<AlertStore>((set, get) => ({
   // Initial state
   activeAlerts: [],
   alertHistory: [],
   alertRules: [],
+  dismissedAlertIds: [],
   selectedSeverity: 'all',
   selectedSite: 'all',
   selectedModule: 'all',
@@ -123,8 +146,48 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
     }
   }),
 
-  syncActiveAlerts: (alerts) => set({
-    activeAlerts: alerts
+  // Merge a polled snapshot into local state rather than replacing it.
+  // A wholesale replace every 2s reverted acknowledgements within one poll and
+  // resurrected alerts the operator had already dismissed.
+  syncActiveAlerts: (alerts) => set((state) => {
+    const dismissed = new Set(state.dismissedAlertIds)
+    const existingById = new Map(state.activeAlerts.map(alert => [alert.id, alert]))
+
+    const merged: Alert[] = []
+    for (const incoming of alerts) {
+      if (dismissed.has(incoming.id)) continue
+
+      const existing = existingById.get(incoming.id)
+      if (!existing) {
+        merged.push(incoming)
+        continue
+      }
+
+      // Operator-owned fields survive the refresh; everything else follows
+      // the source. Reusing `existing` when nothing changed keeps referential
+      // equality so memoized alert rows don't re-render on every poll.
+      const next: Alert = {
+        ...incoming,
+        acknowledgedBy: existing.acknowledgedBy,
+        acknowledgedByName: existing.acknowledgedByName,
+        acknowledgedAt: existing.acknowledgedAt,
+        resolved: existing.resolved,
+        resolvedAt: existing.resolvedAt,
+        resolvedBy: existing.resolvedBy,
+      }
+
+      merged.push(alertsEqual(existing, next) ? existing : next)
+    }
+
+    // Nothing changed: return the same array so subscribers stay quiet.
+    if (
+      merged.length === state.activeAlerts.length &&
+      merged.every((alert, index) => alert === state.activeAlerts[index])
+    ) {
+      return state
+    }
+
+    return { activeAlerts: merged }
   }),
 
   acknowledgeAlert: (alertId, userId, userName) => set((state) => ({
@@ -159,15 +222,23 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
 
     return {
       activeAlerts: state.activeAlerts.filter(a => a.id !== alertId),
+      // Remembered so the next poll doesn't resurrect it, and appended once
+      // rather than on every poll that still reports the alert.
+      dismissedAlertIds: [alertId, ...state.dismissedAlertIds].slice(0, MAX_DISMISSED_IDS),
       alertHistory: [alert, ...state.alertHistory]
     }
   }),
 
   dismissMultipleAlerts: (alertIds) => set((state) => {
     const dismissedAlerts = state.activeAlerts.filter(a => alertIds.includes(a.id))
+    if (dismissedAlerts.length === 0) return state
 
     return {
       activeAlerts: state.activeAlerts.filter(a => !alertIds.includes(a.id)),
+      dismissedAlertIds: [
+        ...dismissedAlerts.map(a => a.id),
+        ...state.dismissedAlertIds,
+      ].slice(0, MAX_DISMISSED_IDS),
       alertHistory: [...dismissedAlerts, ...state.alertHistory]
     }
   }),
@@ -185,6 +256,9 @@ export const useAlertStore = create<AlertStore>((set, get) => ({
 
     return {
       activeAlerts: state.activeAlerts.filter(a => a.id !== alertId),
+      // Same reason as dismiss: the source still reports the underlying bad
+      // quality, so without this the next poll re-adds the resolved alert.
+      dismissedAlertIds: [alertId, ...state.dismissedAlertIds].slice(0, MAX_DISMISSED_IDS),
       alertHistory: [resolvedAlert, ...state.alertHistory]
     }
   }),

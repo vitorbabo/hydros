@@ -1,317 +1,298 @@
 """
-Unit tests for Modbus Handler.
+Unit tests for ModbusHandler.
+
+ModbusHandler(mode, host, port) works in "client" or "server" mode and
+addresses registers indirectly: callers name a parameter_id, and the loaded
+ModbusMapping supplies address, register type, scaling and offset. Tests drive
+a mock pymodbus client so scaling and register-type dispatch are exercised
+without a live server.
 """
+import json
+
 import pytest
-from unittest.mock import MagicMock, patch
+
+from protocols.modbus_handler import (
+    ModbusHandler,
+    ModbusMapping,
+    ModbusRegisterType,
+)
+
+
+def holding(param_id="raw_intake.level", address=40001, **kwargs):
+    return ModbusMapping(
+        parameter_id=param_id,
+        address=address,
+        register_type=ModbusRegisterType.HOLDING_REGISTER,
+        data_type=kwargs.pop("data_type", "uint16"),
+        **kwargs,
+    )
+
+
+@pytest.fixture
+def client_handler(mocker):
+    """Client-mode handler with a connected mock pymodbus client."""
+    handler = ModbusHandler(mode="client", host="localhost", port=5020)
+    handler.client = mocker.MagicMock()
+    handler.connected = True
+    return handler
+
+
+def ok_read(mocker, registers=None, bits=None):
+    result = mocker.MagicMock()
+    result.isError.return_value = False
+    if registers is not None:
+        result.registers = registers
+    else:
+        del result.registers
+        result.bits = bits
+    return result
+
+
+def error_result(mocker):
+    result = mocker.MagicMock()
+    result.isError.return_value = True
+    return result
 
 
 class TestModbusHandlerInitialization:
-    """Test Modbus Handler initialization."""
+    def test_client_mode_defaults(self):
+        handler = ModbusHandler(mode="client", host="plc.local", port=502)
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_modbus_handler_creation(self, mock_client_class):
-        """Test creating a Modbus handler instance."""
-        from protocols.modbus_handler import ModbusHandler
+        assert handler.mode == "client"
+        assert handler.host == "plc.local"
+        assert handler.port == 502
+        assert handler.device_id == 1
+        assert handler.connected is False
 
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
+    def test_mode_is_normalized_to_lowercase(self):
+        assert ModbusHandler(mode="SERVER").mode == "server"
 
-        handler = ModbusHandler(
-            host="192.168.1.100",
-            port=502,
-            unit_id=1
+    def test_connect_is_client_only(self):
+        assert ModbusHandler(mode="server").connect() is False
+
+
+class TestMappingLoading:
+    def test_load_mappings_from_objects(self):
+        handler = ModbusHandler(mode="client")
+
+        handler.load_mappings([holding()])
+
+        assert handler.mappings["raw_intake.level"].address == 40001
+        assert handler.address_to_param[40001] == "raw_intake.level"
+
+    def test_load_mappings_from_dict(self):
+        handler = ModbusHandler(mode="client")
+
+        handler.load_mappings(
+            {
+                "raw_intake.level": {
+                    "address": 30001,
+                    "type": "input_register",
+                    "data_type": "uint16",
+                    "scale_factor": 10.0,
+                    "unit": "m",
+                }
+            }
         )
 
-        assert handler is not None
-        assert handler.host == "192.168.1.100"
-        assert handler.port == 502
-        assert handler.unit_id == 1
+        mapping = handler.mappings["raw_intake.level"]
+        assert mapping.register_type is ModbusRegisterType.INPUT_REGISTER
+        assert mapping.scale_factor == 10.0
+        assert mapping.unit == "m"
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_modbus_handler_default_port(self, mock_client_class):
-        """Test Modbus handler uses default port 502."""
-        from protocols.modbus_handler import ModbusHandler
+    def test_load_mappings_from_file(self, tmp_path):
+        path = tmp_path / "mappings.json"
+        path.write_text(
+            json.dumps(
+                {"mappings": {"raw_intake.level": {"address": 40001, "type": "holding_register"}}}
+            )
+        )
+        handler = ModbusHandler(mode="client")
 
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
+        handler.load_mappings_from_file(str(path))
 
-        handler = ModbusHandler(host="192.168.1.100")
+        assert "raw_intake.level" in handler.mappings
 
-        assert handler.port == 502  # Default Modbus port
-
-
-class TestModbusConnection:
-    """Test Modbus connection management."""
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_connect_success(self, mock_client_class):
-        """Test successful Modbus connection."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_client.connect.return_value = True
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        result = handler.connect()
-
-        assert result is True
-        mock_client.connect.assert_called_once()
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_connect_failure(self, mock_client_class):
-        """Test Modbus connection failure handling."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_client.connect.return_value = False
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-
-        with pytest.raises(ConnectionError):
-            handler.connect()
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_disconnect(self, mock_client_class):
-        """Test Modbus disconnection."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.disconnect()
-
-        mock_client.close.assert_called_once()
-
-
-class TestModbusReading:
-    """Test Modbus register reading."""
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_read_holding_register(self, mock_client_class):
-        """Test reading holding registers."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_response.registers = [1234]
-        mock_client.read_holding_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
-
-        value = handler.read_holding_register(address=100, count=1)
-
-        assert value == [1234]
-        mock_client.read_holding_registers.assert_called_once_with(100, 1, unit=1)
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_read_input_register(self, mock_client_class):
-        """Test reading input registers."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_response.registers = [5678]
-        mock_client.read_input_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
-
-        value = handler.read_input_register(address=200, count=1)
-
-        assert value == [5678]
-        mock_client.read_input_registers.assert_called_once_with(200, 1, unit=1)
-
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_read_register_error(self, mock_client_class):
-        """Test error handling when reading registers."""
-        from protocols.modbus_handler import ModbusHandler
-
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = True
-        mock_client.read_holding_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
-
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+    def test_load_mappings_from_missing_file_raises(self, tmp_path):
+        handler = ModbusHandler(mode="client")
 
         with pytest.raises(Exception):
-            handler.read_holding_register(address=100, count=1)
+            handler.load_mappings_from_file(str(tmp_path / "nope.json"))
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_read_multiple_registers(self, mock_client_class):
-        """Test reading multiple registers at once."""
-        from protocols.modbus_handler import ModbusHandler
+    def test_get_parameter_mappings_round_trips(self):
+        handler = ModbusHandler(mode="client")
+        handler.load_mappings([holding(scale_factor=10.0, unit="m")])
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_response.registers = [100, 200, 300, 400]
-        mock_client.read_holding_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        exported = handler.get_parameter_mappings()["raw_intake.level"]
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
-
-        values = handler.read_holding_register(address=1000, count=4)
-
-        assert len(values) == 4
-        assert values == [100, 200, 300, 400]
+        assert exported["address"] == 40001
+        assert exported["type"] == "holding_register"
+        assert exported["scale_factor"] == 10.0
 
 
-class TestModbusWriting:
-    """Test Modbus register writing."""
+class TestReadParameter:
+    def test_read_holding_register_applies_scaling(self, client_handler, mocker):
+        client_handler.load_mappings([holding(scale_factor=10.0)])
+        client_handler.client.read_holding_registers.return_value = ok_read(
+            mocker, registers=[55]
+        )
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_write_holding_register(self, mock_client_class):
-        """Test writing to holding register."""
-        from protocols.modbus_handler import ModbusHandler
+        assert client_handler.read_parameter("raw_intake.level") == 5.5
+        client_handler.client.read_holding_registers.assert_called_once_with(
+            40001, 1, device_id=1
+        )
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_client.write_register.return_value = mock_response
-        mock_client_class.return_value = mock_client
+    def test_read_input_register_dispatches_correctly(self, client_handler, mocker):
+        client_handler.load_mappings(
+            [
+                ModbusMapping(
+                    parameter_id="raw_intake.flow",
+                    address=30001,
+                    register_type=ModbusRegisterType.INPUT_REGISTER,
+                )
+            ]
+        )
+        client_handler.client.read_input_registers.return_value = ok_read(
+            mocker, registers=[42]
+        )
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+        assert client_handler.read_parameter("raw_intake.flow") == 42.0
+        client_handler.client.read_input_registers.assert_called_once()
 
-        handler.write_holding_register(address=100, value=999)
+    def test_read_coil_returns_bool(self, client_handler, mocker):
+        client_handler.load_mappings(
+            [
+                ModbusMapping(
+                    parameter_id="pump.run",
+                    address=1,
+                    register_type=ModbusRegisterType.COIL,
+                    data_type="bool",
+                )
+            ]
+        )
+        client_handler.client.read_coils.return_value = ok_read(mocker, bits=[True])
 
-        mock_client.write_register.assert_called_once_with(100, 999, unit=1)
+        assert client_handler.read_parameter("pump.run") is True
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_write_multiple_registers(self, mock_client_class):
-        """Test writing to multiple registers."""
-        from protocols.modbus_handler import ModbusHandler
+    def test_read_unmapped_parameter_returns_none(self, client_handler):
+        assert client_handler.read_parameter("not.mapped") is None
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_client.write_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
+    def test_read_while_disconnected_returns_none(self, client_handler):
+        client_handler.load_mappings([holding()])
+        client_handler.connected = False
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+        assert client_handler.read_parameter("raw_intake.level") is None
 
-        values = [100, 200, 300]
-        handler.write_multiple_registers(address=1000, values=values)
+    def test_read_error_response_returns_none(self, client_handler, mocker):
+        client_handler.load_mappings([holding()])
+        client_handler.client.read_holding_registers.return_value = error_result(mocker)
 
-        mock_client.write_registers.assert_called_once_with(1000, values, unit=1)
+        assert client_handler.read_parameter("raw_intake.level") is None
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_write_register_error(self, mock_client_class):
-        """Test error handling when writing registers."""
-        from protocols.modbus_handler import ModbusHandler
+    def test_read_exception_is_contained(self, client_handler):
+        client_handler.load_mappings([holding()])
+        client_handler.client.read_holding_registers.side_effect = OSError("boom")
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = True
-        mock_client.write_register.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        assert client_handler.read_parameter("raw_intake.level") is None
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+    def test_read_parameters_skips_failures(self, client_handler, mocker):
+        client_handler.load_mappings([holding()])
+        client_handler.client.read_holding_registers.return_value = ok_read(
+            mocker, registers=[10]
+        )
 
-        with pytest.raises(Exception):
-            handler.write_holding_register(address=100, value=999)
+        results = client_handler.read_parameters(["raw_intake.level", "not.mapped"])
 
-
-class TestModbusAddressConversion:
-    """Test Modbus address conversion (tag to register)."""
-
-    def test_convert_holding_register_address(self):
-        """Test converting Modbus 4xxxx addresses."""
-        from protocols.modbus_handler import ModbusHandler
-
-        # Tag 40001 should map to register 0
-        register_address = ModbusHandler.convert_tag_to_register(40001)
-        assert register_address == 0
-
-        # Tag 40100 should map to register 99
-        register_address = ModbusHandler.convert_tag_to_register(40100)
-        assert register_address == 99
-
-    def test_convert_input_register_address(self):
-        """Test converting Modbus 3xxxx addresses."""
-        from protocols.modbus_handler import ModbusHandler
-
-        # Tag 30001 should map to register 0
-        register_address = ModbusHandler.convert_tag_to_register(30001)
-        assert register_address == 0
-
-    def test_invalid_address_conversion(self):
-        """Test that invalid addresses raise errors."""
-        from protocols.modbus_handler import ModbusHandler
-
-        with pytest.raises(ValueError):
-            ModbusHandler.convert_tag_to_register(99999)  # Invalid range
+        assert results == {"raw_intake.level": 10.0}
 
 
-class TestModbusParameterMapping:
-    """Test parameter ID to Modbus address mapping."""
+class TestWriteParameter:
+    def test_write_holding_register_applies_scaling(self, client_handler, mocker):
+        client_handler.load_mappings([holding(scale_factor=10.0)])
+        client_handler.client.write_register.return_value = ok_read(mocker, registers=[])
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_read_parameter_with_mapping(self, mock_client_class):
-        """Test reading a parameter using mapping."""
-        from protocols.modbus_handler import ModbusHandler
+        assert client_handler.write_parameter("raw_intake.level", 5.5) is True
+        client_handler.client.write_register.assert_called_once_with(
+            40001, 55, device_id=1
+        )
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_response.registers = [550]  # 5.5 * 100 (scaled)
-        mock_client.read_holding_registers.return_value = mock_response
-        mock_client_class.return_value = mock_client
+    def test_write_clamps_to_register_range(self, client_handler, mocker):
+        client_handler.load_mappings([holding()])
+        client_handler.client.write_register.return_value = ok_read(mocker, registers=[])
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+        client_handler.write_parameter("raw_intake.level", 999_999)
 
-        # Setup mapping
-        handler.mappings = {
-            "site-01.tank.level": {
-                "modbus_address": 40001,
-                "data_type": "REAL",
-                "scale_factor": 0.01  # Divide by 100
-            }
-        }
+        _, value = client_handler.client.write_register.call_args[0]
+        assert value == 65535
 
-        value = handler.read_parameter("site-01.tank.level")
+    def test_write_to_read_only_register_type_is_refused(self, client_handler):
+        client_handler.load_mappings(
+            [
+                ModbusMapping(
+                    parameter_id="raw_intake.flow",
+                    address=30001,
+                    register_type=ModbusRegisterType.INPUT_REGISTER,
+                )
+            ]
+        )
 
-        # Should apply scale factor: 550 * 0.01 = 5.5
-        assert value == 5.5
+        assert client_handler.write_parameter("raw_intake.flow", 1.0) is False
 
-    @patch('pymodbus.client.ModbusTcpClient')
-    def test_write_parameter_with_mapping(self, mock_client_class):
-        """Test writing a parameter using mapping."""
-        from protocols.modbus_handler import ModbusHandler
+    def test_write_unmapped_parameter_is_refused(self, client_handler):
+        assert client_handler.write_parameter("not.mapped", 1.0) is False
 
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.isError.return_value = False
-        mock_client.write_register.return_value = mock_response
-        mock_client_class.return_value = mock_client
+    def test_write_while_disconnected_is_refused(self, client_handler):
+        client_handler.load_mappings([holding()])
+        client_handler.connected = False
 
-        handler = ModbusHandler(host="192.168.1.100", port=502)
-        handler.client = mock_client
+        assert client_handler.write_parameter("raw_intake.level", 1.0) is False
 
-        # Setup mapping
-        handler.mappings = {
-            "site-01.tank.setpoint": {
-                "modbus_address": 40100,
-                "data_type": "REAL",
-                "scale_factor": 100.0  # Multiply by 100
-            }
-        }
+    def test_write_error_response_returns_false(self, client_handler, mocker):
+        client_handler.load_mappings([holding()])
+        client_handler.client.write_register.return_value = error_result(mocker)
 
-        handler.write_parameter("site-01.tank.setpoint", 7.5)
+        assert client_handler.write_parameter("raw_intake.level", 1.0) is False
 
-        # Should apply scale factor: 7.5 * 100 = 750
-        mock_client.write_register.assert_called_once_with(99, 750, unit=1)
+    def test_write_parameters_counts_successes(self, client_handler, mocker):
+        client_handler.load_mappings([holding()])
+        client_handler.client.write_register.return_value = ok_read(mocker, registers=[])
+
+        count = client_handler.write_parameters(
+            {"raw_intake.level": 1.0, "not.mapped": 2.0}
+        )
+
+        assert count == 1
+
+
+class TestServerMode:
+    def test_update_server_parameter_requires_context(self):
+        handler = ModbusHandler(mode="server")
+        handler.load_mappings([holding()])
+
+        assert handler.update_server_parameter("raw_intake.level", 1.0) is False
+
+    def test_client_mode_rejects_server_updates(self, client_handler):
+        client_handler.load_mappings([holding()])
+
+        assert client_handler.update_server_parameter("raw_intake.level", 1.0) is False
+
+
+class TestDisconnectAndStatistics:
+    def test_disconnect_closes_client(self, client_handler):
+        client_handler.disconnect()
+
+        client_handler.client.close.assert_called_once()
+        assert client_handler.connected is False
+
+    def test_disconnect_when_never_connected_is_safe(self):
+        ModbusHandler(mode="client").disconnect()
+
+    def test_statistics_report_mode_and_mapping_count(self, client_handler):
+        client_handler.load_mappings([holding()])
+
+        stats = client_handler.get_statistics()
+
+        assert stats["mode"] == "client"
+        assert stats["connected"] is True
+        assert stats["mappings_count"] == 1
+        assert stats["port"] == 5020

@@ -5,14 +5,63 @@ Provides query capabilities for time-series data stored in InfluxDB.
 Supports querying daily total flow volumes and latest flow rates.
 """
 
+import asyncio
 import logging
+import re
+import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.query_api import QueryApi
 
 logger = logging.getLogger(__name__)
+
+# Flux has no client-side parameter binding for tag filters, so every value that
+# reaches a query string goes through escape_flux_string() first. Without it a
+# site_id such as `x" or true or r["_measurement"] == "` rewrites the predicate.
+_FLUX_ESCAPES = {
+    "\\": "\\\\",
+    '"': '\\"',
+    "\n": "\\n",
+    "\r": "\\r",
+    "\t": "\\t",
+}
+
+# Observations are the hot path: the frontend polls every 2s and the alert
+# endpoint derives from the same rows. A short TTL collapses every concurrent
+# poller onto a single Flux round-trip without making the UI feel stale.
+OBSERVATION_CACHE_TTL_SECONDS = 1.0
+
+MAX_LOOKBACK_SECONDS = 86_400
+MAX_LIMIT = 5_000
+
+
+def escape_flux_string(value: str) -> str:
+    """Escape a value for safe interpolation into a Flux string literal."""
+    escaped = str(value)
+    for char, replacement in _FLUX_ESCAPES.items():
+        escaped = escaped.replace(char, replacement)
+    return escaped
+
+
+def _coerce_float(value: Any) -> Optional[float]:
+    """Return value as a float, or None if it is not numeric."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def clamp_int(value: Any, default: int, minimum: int, maximum: int) -> int:
+    """Coerce an untrusted value into a bounded int, falling back to default."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(minimum, min(maximum, parsed))
 
 
 class InfluxDBQueryService:
@@ -35,7 +84,21 @@ class InfluxDBQueryService:
         self.client: Optional[InfluxDBClient] = None
         self.query_api: Optional[QueryApi] = None
 
+        # Single-flight cache for the observation hot path. The lock means N
+        # concurrent pollers share one Flux round-trip instead of racing.
+        self._observation_cache: Dict[Tuple[Any, ...], Tuple[float, List[Dict[str, Any]]]] = {}
+        self._observation_lock = asyncio.Lock()
+
         logger.info(f"Initializing InfluxDB query service: {url}, org={org}, bucket={bucket}")
+
+    async def _execute_query(self, flux_query: str):
+        """Run a Flux query off the event loop.
+
+        influxdb-client is synchronous; calling it directly from a coroutine
+        stalls the loop that also runs the simulation, Modbus server and MQTT
+        publisher for the duration of the round-trip.
+        """
+        return await asyncio.to_thread(self.query_api.query, flux_query, org=self.org)
 
     async def connect(self):
         """Establish connection to InfluxDB."""
@@ -89,8 +152,12 @@ class InfluxDBQueryService:
             logger.error("Query API not initialized. Call connect() first.")
             return 0.0
 
-        # Determine time range
+        # Determine time range. `date` is interpolated as a Flux time literal
+        # rather than a string, so it is validated by shape instead of escaped.
         if date:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+                logger.error("Rejecting malformed date for daily total flow: %r", date)
+                return 0.0
             start_time = date
         else:
             # Use 'today' which starts at midnight in the local timezone
@@ -107,8 +174,8 @@ class InfluxDBQueryService:
         from(bucket: "{self.bucket}")
           |> range(start: {start_time if date else "today()"})
           |> filter(fn: (r) => r["_measurement"] == "flow_rate")
-          |> filter(fn: (r) => r["site_id"] == "{site_id}")
-          |> filter(fn: (r) => r["asset_id"] == "{asset_id}")
+          |> filter(fn: (r) => r["site_id"] == "{escape_flux_string(site_id)}")
+          |> filter(fn: (r) => r["asset_id"] == "{escape_flux_string(asset_id)}")
           |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)
           |> integral(unit: 1h)
           |> sum()
@@ -117,7 +184,7 @@ class InfluxDBQueryService:
         try:
             logger.debug(f"Querying daily total flow for site={site_id}, asset={asset_id}, date={date or 'today'}")
 
-            result = self.query_api.query(flux_query, org=self.org)
+            result = await self._execute_query(flux_query)
 
             # Parse result
             total_volume = 0.0
@@ -157,15 +224,15 @@ class InfluxDBQueryService:
         from(bucket: "{self.bucket}")
           |> range(start: -1h)
           |> filter(fn: (r) => r["_measurement"] == "flow_rate")
-          |> filter(fn: (r) => r["site_id"] == "{site_id}")
-          |> filter(fn: (r) => r["asset_id"] == "{asset_id}")
+          |> filter(fn: (r) => r["site_id"] == "{escape_flux_string(site_id)}")
+          |> filter(fn: (r) => r["asset_id"] == "{escape_flux_string(asset_id)}")
           |> last()
         '''
 
         try:
             logger.debug(f"Querying current flow rate for site={site_id}, asset={asset_id}")
 
-            result = self.query_api.query(flux_query, org=self.org)
+            result = await self._execute_query(flux_query)
 
             # Parse result
             flow_rate = 0.0
@@ -205,10 +272,10 @@ class InfluxDBQueryService:
         # Flux query for statistics
         flux_query = f'''
         data = from(bucket: "{self.bucket}")
-          |> range(start: -{hours}h)
+          |> range(start: -{clamp_int(hours, 24, 1, 8760)}h)
           |> filter(fn: (r) => r["_measurement"] == "flow_rate")
-          |> filter(fn: (r) => r["site_id"] == "{site_id}")
-          |> filter(fn: (r) => r["asset_id"] == "{asset_id}")
+          |> filter(fn: (r) => r["site_id"] == "{escape_flux_string(site_id)}")
+          |> filter(fn: (r) => r["asset_id"] == "{escape_flux_string(asset_id)}")
 
         min = data |> min() |> findRecord(fn: (key) => true, idx: 0)
         max = data |> max() |> findRecord(fn: (key) => true, idx: 0)
@@ -223,7 +290,7 @@ class InfluxDBQueryService:
         try:
             logger.debug(f"Querying flow statistics for site={site_id}, hours={hours}")
 
-            result = self.query_api.query(flux_query, org=self.org)
+            result = await self._execute_query(flux_query)
 
             # This query returns multiple tables, parse all
             stats = {"min": 0.0, "max": 0.0, "mean": 0.0, "total": 0.0}
@@ -246,14 +313,39 @@ class InfluxDBQueryService:
         """
         Query latest telemetry observations grouped by sensor identity.
 
-        Returns objects compatible with frontend Observation schema.
+        Returns objects compatible with frontend Observation schema. Results are
+        cached for OBSERVATION_CACHE_TTL_SECONDS so that concurrent pollers (and
+        query_quality_alerts, which derives from the same rows) share one query.
         """
         if not self.query_api:
             logger.error("Query API not initialized. Call connect() first.")
             return []
 
+        lookback_seconds = clamp_int(lookback_seconds, 120, 1, MAX_LOOKBACK_SECONDS)
+        limit = clamp_int(limit, 500, 1, MAX_LIMIT)
+
+        cache_key = (site_id, lookback_seconds, limit)
+        async with self._observation_lock:
+            cached = self._observation_cache.get(cache_key)
+            if cached and (time.monotonic() - cached[0]) < OBSERVATION_CACHE_TTL_SECONDS:
+                return cached[1]
+
+            observations = await self._query_latest_observations_uncached(
+                site_id, lookback_seconds, limit
+            )
+            self._observation_cache[cache_key] = (time.monotonic(), observations)
+            return observations
+
+    async def _query_latest_observations_uncached(
+        self,
+        site_id: Optional[str],
+        lookback_seconds: int,
+        limit: int,
+    ) -> List[Dict[str, Any]]:
         site_filter = (
-            f'|> filter(fn: (r) => r["site_id"] == "{site_id}")' if site_id else ""
+            f'|> filter(fn: (r) => r["site_id"] == "{escape_flux_string(site_id)}")'
+            if site_id
+            else ""
         )
 
         flux_query = f'''
@@ -267,12 +359,17 @@ class InfluxDBQueryService:
         '''
 
         try:
-            result = self.query_api.query(flux_query, org=self.org)
+            result = await self._execute_query(flux_query)
+        except Exception as e:
+            logger.error("Error querying latest observations: %s", e)
+            return []
 
-            grouped: Dict[str, Dict[str, Any]] = {}
+        grouped: Dict[str, Dict[str, Any]] = {}
 
-            for table in result:
-                for record in table.records:
+        for table in result:
+            for record in table.records:
+                # A single malformed record must not empty the whole response.
+                try:
                     values = record.values or {}
 
                     rec_site_id = str(values.get("site_id") or site_id or "unknown")
@@ -304,54 +401,47 @@ class InfluxDBQueryService:
                     }
 
                     if field_name == "value":
-                        point["value"] = field_value
+                        point["value"] = _coerce_float(field_value)
 
                     if point.get("value") is None:
-                        tag_value = values.get("value")
-                        if tag_value is not None:
-                            try:
-                                point["value"] = float(tag_value)
-                            except (ValueError, TypeError):
-                                pass
+                        point["value"] = _coerce_float(values.get("value"))
 
-                    if point.get("value") is None and isinstance(field_value, (int, float)):
-                        point["value"] = float(field_value)
+                    if point.get("value") is None:
+                        point["value"] = _coerce_float(field_value)
 
                     grouped[key] = point
+                except Exception as e:
+                    logger.warning("Skipping malformed observation record: %s", e)
 
-            observations: List[Dict[str, Any]] = []
-            for point in grouped.values():
-                value = point.get("value")
-                if value is None:
-                    continue
+        observations: List[Dict[str, Any]] = []
+        for point in grouped.values():
+            value = point.get("value")
+            if value is None:
+                continue
 
-                quality = point.get("quality")
-                if quality not in {"good", "uncertain", "bad"}:
-                    quality = "good"
+            quality = point.get("quality")
+            if quality not in {"good", "uncertain", "bad"}:
+                quality = "good"
 
-                observations.append(
-                    {
-                        "site_id": point["site_id"],
-                        "asset_id": point["asset_id"],
-                        "sensor_id": point["sensor_id"],
-                        "measurement": point["measurement"],
-                        "ts": point["ts"],
-                        "value": float(value),
-                        "unit": point.get("unit") or "",
-                        "quality": quality,
-                        "raw_tag": point.get("raw_tag") or "",
-                        "source": point.get("source") or "influxdb",
-                        "parameter_type": point.get("parameter_type") or "",
-                        "component_type": point.get("component_type") or "",
-                    }
-                )
+            observations.append(
+                {
+                    "site_id": point["site_id"],
+                    "asset_id": point["asset_id"],
+                    "sensor_id": point["sensor_id"],
+                    "measurement": point["measurement"],
+                    "ts": point["ts"],
+                    "value": value,
+                    "unit": point.get("unit") or "",
+                    "quality": quality,
+                    "raw_tag": point.get("raw_tag") or "",
+                    "source": point.get("source") or "influxdb",
+                    "parameter_type": point.get("parameter_type") or "",
+                    "component_type": point.get("component_type") or "",
+                }
+            )
 
-            observations.sort(key=lambda item: item["ts"], reverse=True)
-            return observations[: max(1, limit)]
-
-        except Exception as e:
-            logger.error("Error querying latest observations: %s", e)
-            return []
+        observations.sort(key=lambda item: item["ts"], reverse=True)
+        return observations[:limit]
 
     async def query_quality_alerts(
         self,
@@ -365,12 +455,26 @@ class InfluxDBQueryService:
         This provides an Influx-backed alert stream for PoC reliability without
         requiring a dedicated alerts measurement.
         """
+        lookback_seconds = clamp_int(lookback_seconds, 300, 1, MAX_LOOKBACK_SECONDS)
+        limit = clamp_int(limit, 300, 1, MAX_LIMIT)
+
         observations = await self.query_latest_observations(
             site_id=site_id,
             lookback_seconds=lookback_seconds,
             limit=max(limit, 500),
         )
+        return self.derive_quality_alerts(observations, limit=limit)
 
+    @staticmethod
+    def derive_quality_alerts(
+        observations: List[Dict[str, Any]],
+        limit: int = 300,
+    ) -> List[Dict[str, Any]]:
+        """Map non-good-quality observations onto frontend Alert objects.
+
+        Kept separate from the query so the snapshot endpoint can derive alerts
+        from the observations it already fetched instead of querying again.
+        """
         alerts: List[Dict[str, Any]] = []
         for observation in observations:
             quality = observation.get("quality", "good")
@@ -378,9 +482,12 @@ class InfluxDBQueryService:
                 continue
 
             severity = "warning" if quality == "uncertain" else "critical"
+            # sensor_id is part of the id because one asset can carry redundant
+            # sensors for the same measurement; without it they collide into a
+            # single alert and acknowledging one acknowledges the wrong sensor.
             alert_id = (
                 f"influx-{observation['site_id']}-{observation['asset_id']}-"
-                f"{observation['measurement']}-{quality}"
+                f"{observation['sensor_id']}-{observation['measurement']}-{quality}"
             )
 
             alerts.append(
@@ -402,4 +509,4 @@ class InfluxDBQueryService:
             )
 
         alerts.sort(key=lambda item: item["timestamp"], reverse=True)
-        return alerts[: max(1, limit)]
+        return alerts[:limit]

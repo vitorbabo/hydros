@@ -5,6 +5,7 @@
  */
 import { useConfigurationStore } from '../configurationStore'
 import type { ModuleTemplate } from '../../types'
+import { useShallow } from 'zustand/react/shallow'
 
 // ============================================================================
 // Plant Configuration Selectors
@@ -74,13 +75,13 @@ export const useModuleTemplatesByType = (type: string) =>
  * Get all module instances for a site
  */
 export const useSiteModules = (siteId: string) =>
-  useConfigurationStore((state) => state.plantConfigurations[siteId]?.modules || {})
+  useConfigurationStore(useShallow((state) => state.plantConfigurations[siteId]?.modules || {}))
 
 /**
  * Get module instances by type for a site
  */
 export const useSiteModulesByType = (siteId: string, type: string) =>
-  useConfigurationStore((state) => {
+  useConfigurationStore(useShallow((state) => {
     const config = state.plantConfigurations[siteId]
     if (!config) return []
 
@@ -90,7 +91,7 @@ export const useSiteModulesByType = (siteId: string, type: string) =>
         return template?.type === type
       })
       .map(([moduleId]) => moduleId)
-  })
+  }))
 
 // ============================================================================
 // Configuration Mode Selectors
@@ -116,7 +117,7 @@ export const useIsEditMode = () =>
  * Get configuration statistics
  */
 export const useConfigurationStatistics = () =>
-  useConfigurationStore((state) => {
+  useConfigurationStore(useShallow((state) => {
     const siteCount = Object.keys(state.plantConfigurations).length
     const templateCount = Object.keys(state.moduleTemplates).length
 
@@ -130,7 +131,7 @@ export const useConfigurationStatistics = () =>
       templateCount,
       totalModules,
     }
-  })
+  }))
 
 /**
  * Get site module count
@@ -148,7 +149,7 @@ export const useSiteModuleCount = (siteId: string) =>
  * Get site configuration with templates
  */
 export const useSiteWithTemplates = (siteId: string) =>
-  useConfigurationStore((state) => {
+  useConfigurationStore(useShallow((state) => {
     const config = state.plantConfigurations[siteId]
     if (!config) return null
 
@@ -161,7 +162,7 @@ export const useSiteWithTemplates = (siteId: string) =>
       config,
       modules: modulesWithTemplates,
     }
-  })
+  }))
 
 /**
  * Get available module types with counts

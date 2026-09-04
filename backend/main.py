@@ -227,12 +227,16 @@ class HydrosSystem:
 
         api_host = os.getenv("API_HOST", "0.0.0.0")
         api_port = int(os.getenv("API_PORT", "8000"))
+        # Wide open by default for the PoC; set API_ALLOWED_ORIGIN to the
+        # dashboard origin before exposing this beyond a trusted network.
+        api_allowed_origin = os.getenv("API_ALLOWED_ORIGIN", "*")
 
         try:
             self.influx_api_server = InfluxAPIServer(
                 influx_service=self.influxdb_service,
                 host=api_host,
                 port=api_port,
+                allowed_origin=api_allowed_origin,
             )
             await self.influx_api_server.start()
             self.logger.info(f"Influx API server started on {api_host}:{api_port}")

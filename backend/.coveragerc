@@ -1,0 +1,11 @@
+# Coverage settings. These previously lived in a [coverage:run] section of
+# pytest.ini, where coverage.py never read them -- and where they silently
+# swallowed the [pytest] markers declared after them.
+[run]
+branch = True
+omit =
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */site-packages/*
+    */.venv/*

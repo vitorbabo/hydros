@@ -1,175 +1,217 @@
 """
-Unit tests for DigitalTwin core functionality.
+Unit tests for DigitalTwin.
+
+DigitalTwin holds arbitrary component objects keyed by id, alongside
+ComponentInfo metadata and a flat "<component_id>.<param>" parameter map.
+Components are duck-typed: anything exposing get_parameters()/update()/
+set_parameter() participates in the update cycle.
 """
 import pytest
-from core.digital_twin import DigitalTwin
-from core.plant_elements import PlantComponent, PlantParameter, ComponentRole, ProtocolDataType, OperationalState
+
+from core.digital_twin import ComponentInfo, DigitalTwin, OperationalState
 
 
-class TestDigitalTwinInitialization:
-    """Test DigitalTwin initialization and setup."""
+class FakeComponent:
+    """Minimal stand-in for a simulation component."""
 
-    def test_digital_twin_creation(self):
-        """Test creating a DigitalTwin instance."""
-        dt = DigitalTwin(site_id="test-site")
-        assert dt.site_id == "test-site"
-        assert len(dt.components) == 0
-        assert len(dt.parameters) == 0
+    def __init__(self, parameters=None, raises=False):
+        self._parameters = dict(parameters or {})
+        self._raises = raises
+        self.update_count = 0
 
-    def test_digital_twin_with_invalid_site_id(self):
-        """Test DigitalTwin rejects invalid site IDs."""
-        with pytest.raises(ValueError):
-            DigitalTwin(site_id="")
+    def get_parameters(self):
+        return dict(self._parameters)
 
-        with pytest.raises(ValueError):
-            DigitalTwin(site_id=None)
+    def update(self):
+        if self._raises:
+            raise RuntimeError("component failure")
+        self.update_count += 1
+
+    def set_parameter(self, name, value):
+        if name not in self._parameters:
+            return False
+        self._parameters[name] = value
+        return True
+
+
+def make_info(
+    component_id="raw_intake",
+    module_id="intake",
+    state=OperationalState.ACTIVE,
+    component_type="intake",
+):
+    return ComponentInfo(
+        component_id=component_id,
+        component_type=component_type,
+        module_id=module_id,
+        state=state,
+    )
+
+
+@pytest.fixture
+def twin():
+    return DigitalTwin()
 
 
 class TestComponentRegistration:
-    """Test component registration and management."""
+    def test_register_component_records_metadata_and_stats(self, twin):
+        twin.register_component("raw_intake", FakeComponent(), make_info())
 
-    def test_register_component(self, sample_plant_component):
-        """Test registering a component."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        assert twin.components["raw_intake"] is not None
+        assert twin.metadata["raw_intake"].component_type == "intake"
+        assert twin.stats["total_components"] == 1
+        assert twin.stats["active_components"] == 1
 
-        assert "raw_intake" in dt.components
-        assert dt.components["raw_intake"] == sample_plant_component
+    def test_register_seeds_parameters_from_component(self, twin):
+        twin.register_component(
+            "raw_intake", FakeComponent({"level": 5.5, "flow_rate": 30.0}), make_info()
+        )
 
-    def test_register_component_with_parameters(self, sample_plant_component):
-        """Test that component parameters are registered."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        assert twin.get_parameter_value("raw_intake.level") == 5.5
+        assert twin.get_parameter_value("raw_intake.flow_rate") == 30.0
 
-        # Check parameter was registered
-        param_id = "test-site-01.raw_intake.level"
-        assert param_id in dt.parameters
+    def test_inactive_component_does_not_count_as_active(self, twin):
+        twin.register_component(
+            "raw_intake", FakeComponent(), make_info(state=OperationalState.INACTIVE)
+        )
 
-    def test_register_duplicate_component(self, sample_plant_component):
-        """Test that duplicate component IDs are rejected."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        assert twin.stats["total_components"] == 1
+        assert twin.stats["active_components"] == 0
 
-        with pytest.raises(ValueError, match="already registered"):
-            dt.register_component(sample_plant_component)
+    def test_unregister_removes_component_and_its_parameters(self, twin):
+        twin.register_component("raw_intake", FakeComponent({"level": 5.5}), make_info())
 
-    def test_get_component(self, sample_plant_component):
-        """Test retrieving a component."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        twin.unregister_component("raw_intake")
 
-        component = dt.get_component("raw_intake")
-        assert component == sample_plant_component
-
-    def test_get_nonexistent_component(self):
-        """Test retrieving a non-existent component returns None."""
-        dt = DigitalTwin(site_id="test-site")
-        component = dt.get_component("nonexistent")
-        assert component is None
+        assert "raw_intake" not in twin.components
+        assert twin.get_parameter_value("raw_intake.level") is None
 
 
 class TestParameterManagement:
-    """Test parameter value management."""
+    def test_set_parameter_value_delegates_to_component(self, twin):
+        component = FakeComponent({"level": 5.5})
+        twin.register_component("raw_intake", component, make_info())
 
-    def test_update_parameter(self, sample_plant_component):
-        """Test updating parameter values."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        assert twin.set_parameter_value("raw_intake.level", 7.5) is True
+        assert twin.get_parameter_value("raw_intake.level") == 7.5
+        assert component.get_parameters()["level"] == 7.5
 
-        param_id = "test-site-01.raw_intake.level"
-        dt.update_parameter(param_id, 5.5)
+    def test_set_parameter_value_rejects_unqualified_id(self, twin):
+        assert twin.set_parameter_value("level", 1.0) is False
 
-        assert dt.parameters[param_id] == 5.5
+    def test_set_parameter_value_rejects_unknown_component(self, twin):
+        assert twin.set_parameter_value("nope.level", 1.0) is False
 
-    def test_update_nonexistent_parameter(self):
-        """Test updating non-existent parameter raises error."""
-        dt = DigitalTwin(site_id="test-site")
+    def test_get_component_parameters_scopes_by_prefix(self, twin):
+        twin.register_component(
+            "raw_intake", FakeComponent({"level": 5.5, "ph": 7.2}), make_info()
+        )
+        twin.register_component(
+            "clearwell", FakeComponent({"level": 2.0}), make_info("clearwell", "storage", component_type="storage")
+        )
 
-        with pytest.raises(KeyError):
-            dt.update_parameter("nonexistent.param", 100)
+        params = twin.get_component_parameters("raw_intake")
 
-    def test_get_parameter_value(self, sample_plant_component):
-        """Test retrieving parameter value."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        assert params == {"raw_intake.level": 5.5, "raw_intake.ph": 7.2}
 
-        param_id = "test-site-01.raw_intake.level"
-        dt.update_parameter(param_id, 7.5)
+    def test_get_all_parameters_returns_a_copy(self, twin):
+        twin.register_component("raw_intake", FakeComponent({"level": 5.5}), make_info())
 
-        value = dt.get_parameter_value(param_id)
-        assert value == 7.5
+        twin.get_all_parameters()["raw_intake.level"] = 999
 
-    def test_get_component_parameters(self, sample_plant_component):
-        """Test retrieving all parameters for a component."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
-
-        param_id = "test-site-01.raw_intake.level"
-        dt.update_parameter(param_id, 8.0)
-
-        params = dt.get_component_parameters("raw_intake")
-        assert len(params) > 0
-        assert param_id in params
-        assert params[param_id] == 8.0
+        assert twin.get_parameter_value("raw_intake.level") == 5.5
 
 
 class TestComponentState:
-    """Test component operational state management."""
+    def test_update_component_state_adjusts_active_count(self, twin):
+        twin.register_component("raw_intake", FakeComponent(), make_info())
 
-    def test_set_component_state(self, sample_plant_component):
-        """Test setting component operational state."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        twin.update_component_state("raw_intake", OperationalState.FAULT)
 
-        dt.set_component_state("raw_intake", OperationalState.ACTIVE)
+        assert twin.metadata["raw_intake"].state == OperationalState.FAULT
+        assert twin.stats["active_components"] == 0
 
-        metadata = dt.metadata["raw_intake"]
-        assert metadata.state == OperationalState.ACTIVE
+    def test_reactivating_restores_active_count(self, twin):
+        twin.register_component(
+            "raw_intake", FakeComponent(), make_info(state=OperationalState.INACTIVE)
+        )
 
-    def test_set_invalid_state(self, sample_plant_component):
-        """Test setting invalid state raises error."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        twin.update_component_state("raw_intake", OperationalState.ACTIVE)
 
-        with pytest.raises((ValueError, AttributeError)):
-            dt.set_component_state("raw_intake", "invalid_state")
+        assert twin.stats["active_components"] == 1
 
-    def test_get_component_state(self, sample_plant_component):
-        """Test retrieving component state."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+    def test_update_state_of_unknown_component_is_a_noop(self, twin):
+        twin.update_component_state("ghost", OperationalState.FAULT)
 
-        dt.set_component_state("raw_intake", OperationalState.FAULT)
+        assert "ghost" not in twin.metadata
 
-        state = dt.get_component_state("raw_intake")
-        assert state == OperationalState.FAULT
+
+class TestUpdateCycle:
+    def test_update_all_components_reports_changed_parameters(self, twin):
+        component = FakeComponent({"level": 5.5})
+        twin.register_component("raw_intake", component, make_info())
+
+        component._parameters["level"] = 6.0
+        changed = twin.update_all_components()
+
+        assert changed == {"raw_intake.level": 6.0}
+        assert twin.stats["update_count"] == 1
+
+    def test_update_all_components_skips_inactive(self, twin):
+        component = FakeComponent({"level": 5.5})
+        twin.register_component(
+            "raw_intake", component, make_info(state=OperationalState.INACTIVE)
+        )
+
+        twin.update_all_components()
+
+        assert component.update_count == 0
+
+    def test_failing_component_is_marked_faulted(self, twin):
+        twin.register_component("raw_intake", FakeComponent(raises=True), make_info())
+
+        twin.update_all_components()
+
+        assert twin.metadata["raw_intake"].state == OperationalState.FAULT
 
 
 class TestDigitalTwinStatistics:
-    """Test statistics gathering."""
+    def test_statistics_include_state_breakdown(self, twin):
+        twin.register_component("raw_intake", FakeComponent(), make_info())
+        twin.register_component(
+            "clearwell",
+            FakeComponent(),
+            make_info("clearwell", "storage", OperationalState.FAULT, "storage"),
+        )
 
-    def test_get_statistics(self, sample_plant_component):
-        """Test retrieving digital twin statistics."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        stats = twin.get_plant_statistics()
 
-        stats = dt.get_statistics()
+        assert stats["total_components"] == 2
+        assert stats["component_states"] == {"active": 1, "fault": 1}
 
-        assert "total_components" in stats
-        assert "total_parameters" in stats
-        assert stats["total_components"] >= 1
-        assert stats["total_parameters"] >= 1
+    def test_export_state_round_trips_through_import(self, twin):
+        twin.register_component("raw_intake", FakeComponent({"level": 5.5}), make_info())
+        exported = twin.export_current_state()
 
-    def test_statistics_update_count(self, sample_plant_component):
-        """Test that statistics track parameter updates."""
-        dt = DigitalTwin(site_id="test-site")
-        dt.register_component(sample_plant_component)
+        twin.set_parameter_value("raw_intake.level", 1.0)
+        twin.import_state(exported)
 
-        param_id = "test-site-01.raw_intake.level"
-        dt.update_parameter(param_id, 5.0)
-        dt.update_parameter(param_id, 6.0)
-        dt.update_parameter(param_id, 7.0)
+        assert twin.get_parameter_value("raw_intake.level") == 5.5
 
-        stats = dt.get_statistics()
-        # Verify updates are tracked (implementation dependent)
-        assert "total_parameters" in stats
+
+class TestComponentLookup:
+    def test_get_components_by_type(self, twin):
+        twin.register_component("raw_intake", FakeComponent(), make_info())
+        twin.register_component(
+            "clearwell", FakeComponent(), make_info("clearwell", "storage", component_type="storage")
+        )
+
+        assert list(twin.get_components_by_type("intake")) == ["raw_intake"]
+
+    def test_get_components_by_module(self, twin):
+        twin.register_component("raw_intake", FakeComponent(), make_info())
+        twin.register_component(
+            "clearwell", FakeComponent(), make_info("clearwell", "storage", component_type="storage")
+        )
+
+        assert list(twin.get_components_by_module("storage")) == ["clearwell"]

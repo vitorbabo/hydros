@@ -3,6 +3,18 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import type { ModuleTemplate, ProtocolClient, ControlStrategy, AlarmDefinitions } from '../types'
 import type { ConfigurationMessage } from '../hooks/useMqtt'
 
+// A usable template map is a non-empty object of objects. Anything else (an
+// empty object, an array, a scalar) would silently replace the real templates.
+function isTemplateMap(value: unknown): value is Record<string, ModuleTemplate> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+
+  const entries = Object.values(value as Record<string, unknown>)
+  return (
+    entries.length > 0 &&
+    entries.every(entry => !!entry && typeof entry === 'object' && !Array.isArray(entry))
+  )
+}
+
 interface ModulePosition {
   x: number
   y: number
@@ -336,14 +348,22 @@ export const useConfigurationStore = create<ConfigurationStore>()(
         case 'templates':
           // Handle module templates update from wtp/global/configuration/templates
           if (typeof data === 'object' && data) {
-            const payload = data as any
-            const templates = payload.module_templates || payload
+            // Backend sends { module_templates: {...} }; older publishers sent
+            // the map at the top level. Falling back unconditionally installed
+            // whatever arrived -- an empty object included -- and wiped the
+            // template map, so the fallback has to actually look like templates.
+            const payload = data as Record<string, any>
+            const templates = isTemplateMap(payload.module_templates)
+              ? payload.module_templates
+              : isTemplateMap(payload)
+                ? payload
+                : null
 
-            if (templates && typeof templates === 'object') {
+            if (templates) {
               get().setModuleTemplates(templates as Record<string, ModuleTemplate>)
               set({ isLoading: false, error: null })
             } else {
-              console.warn('Templates message missing module_templates field:', data)
+              console.warn('Templates message missing usable module_templates:', data)
             }
           }
           break
@@ -413,8 +433,13 @@ export const useConfigurationStore = create<ConfigurationStore>()(
           // Handle global module templates (from backend messages like wtp/global/configuration/templates)
           console.log('Received modules/templates configuration:', data)
           if (typeof data === 'object' && data) {
-            const moduleTemplates = (data as any).module_templates || data
-            if (moduleTemplates && typeof moduleTemplates === 'object') {
+            const payload = data as Record<string, any>
+            const moduleTemplates = isTemplateMap(payload.module_templates)
+              ? payload.module_templates
+              : isTemplateMap(payload)
+                ? payload
+                : null
+            if (moduleTemplates) {
               console.log('Loading', Object.keys(moduleTemplates).length, 'module templates from backend')
               console.log('Sample template:', Object.values(moduleTemplates)[0])
               get().setModuleTemplates(moduleTemplates as Record<string, ModuleTemplate>)

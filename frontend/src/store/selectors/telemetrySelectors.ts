@@ -10,6 +10,7 @@
  */
 import { useTelemetryStore } from '../telemetryStore'
 import type { Observation } from '../../types/schemas'
+import { useShallow } from 'zustand/react/shallow'
 
 // ============================================================================
 // Observation Selectors
@@ -25,7 +26,7 @@ export const useObservation = (sensorKey: string) =>
  * Get all observations for an asset
  */
 export const useAssetObservations = (assetId: string) =>
-  useTelemetryStore((state) => state.getLatestByAsset(assetId))
+  useTelemetryStore(useShallow((state) => state.getLatestByAsset(assetId)))
 
 /**
  * Get observation value only (not the full observation object)
@@ -50,16 +51,16 @@ export const useObservationWithTime = (sensorKey: string) =>
  * Get time series data for a sensor
  */
 export const useTimeSeries = (sensorKey: string) =>
-  useTelemetryStore((state) => state.getTimeSeriesData(sensorKey))
+  useTelemetryStore(useShallow((state) => state.getTimeSeriesData(sensorKey)))
 
 /**
  * Get last N time series points
  */
 export const useRecentTimeSeries = (sensorKey: string, count: number = 10) =>
-  useTelemetryStore((state) => {
+  useTelemetryStore(useShallow((state) => {
     const series = state.getTimeSeriesData(sensorKey)
     return series.slice(-count)
-  })
+  }))
 
 // ============================================================================
 // Asset Discovery Selectors
@@ -87,7 +88,7 @@ export const useAssetGroups = () =>
  * Get assets for a specific group
  */
 export const useAssetGroup = (groupName: string) =>
-  useTelemetryStore((state) => state.assetGroups[groupName] || [])
+  useTelemetryStore(useShallow((state) => state.assetGroups[groupName] || []))
 
 // ============================================================================
 // UI State Selectors
@@ -131,7 +132,7 @@ export const useAssetStatus = (assetId: string) =>
  * Get observations for a specific measurement type across all assets
  */
 export const useMeasurementObservations = (measurement: string) =>
-  useTelemetryStore((state) => {
+  useTelemetryStore(useShallow((state) => {
     const result: Record<string, Observation> = {}
 
     Object.entries(state.latest).forEach(([key, obs]) => {
@@ -141,13 +142,13 @@ export const useMeasurementObservations = (measurement: string) =>
     })
 
     return result
-  })
+  }))
 
 /**
  * Get asset metrics summary
  */
 export const useAssetMetrics = (assetId: string) =>
-  useTelemetryStore((state) => {
+  useTelemetryStore(useShallow((state) => {
     const observations = state.getLatestByAsset(assetId)
     const values = Object.values(observations)
 
@@ -158,7 +159,7 @@ export const useAssetMetrics = (assetId: string) =>
       badQuality: values.filter(o => o.quality === 'bad').length,
       measurements: [...new Set(values.map(o => o.measurement))],
     }
-  })
+  }))
 
 /**
  * Get all observations (use sparingly - subscribes to entire store)

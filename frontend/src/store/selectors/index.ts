@@ -11,6 +11,20 @@
  *   - Cleaner, more readable component code
  *   - Better performance with large state objects
  *   - Easier to test and maintain
+ *
+ * Writing a new selector:
+ *   Zustand compares the selector's result with Object.is. A selector that
+ *   builds a fresh array or object each call -- .filter(), .map(), .slice(),
+ *   an object literal, a `|| []` fallback -- therefore looks changed on every
+ *   store write and re-renders its consumers, which is the opposite of what
+ *   these are for. Wrap those in `useShallow`:
+ *
+ *     export const useSiteAlerts = (siteId: string) =>
+ *       useAlertStore(useShallow((state) =>
+ *         state.activeAlerts.filter(a => a.siteId === siteId)))
+ *
+ *   Selectors returning a primitive or an existing state reference (a field,
+ *   a .length, a .find()) need no wrapper.
  */
 
 // Dashboard selectors

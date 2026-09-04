@@ -5,6 +5,11 @@ __pycache__
 node_modules
 dist
 
+# Python
+.venv
+venv
+
+
 # Test coverage
 .coverage
 htmlcov/

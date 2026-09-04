@@ -37,6 +37,11 @@ import { useAlertStore } from './store/alertStore'
 import { useAuthStore } from './store/authStore'
 import { useMqtt, type ConfigurationMessage, type Observation } from './hooks/useMqtt'
 
+const DEFAULT_POLL_INTERVAL_MS = 2000
+const MIN_POLL_INTERVAL_MS = 250
+const POLL_LOOKBACK_SECONDS = 180
+const POLL_OBSERVATION_LIMIT = 600
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,13 +58,19 @@ function AppContent() {
   const apiBaseUrl = runtimeEnv.VITE_BACKEND_API_URL || 'http://127.0.0.1:8000'
   const telemetrySource = runtimeEnv.VITE_TELEMETRY_SOURCE || 'influx'
   const alertsSource = runtimeEnv.VITE_ALERTS_SOURCE || 'influx'
-  const pollingIntervalMs = Number(runtimeEnv.VITE_INFLUX_POLL_INTERVAL_MS || 2000)
+  // Guard against a non-numeric env value: NaN would turn setInterval into a
+  // tight loop that hammers the API as fast as the browser will schedule it.
+  const configuredPollInterval = Number(runtimeEnv.VITE_INFLUX_POLL_INTERVAL_MS)
+  const pollingIntervalMs =
+    Number.isFinite(configuredPollInterval) && configuredPollInterval >= MIN_POLL_INTERVAL_MS
+      ? configuredPollInterval
+      : DEFAULT_POLL_INTERVAL_MS
 
   const useInfluxTelemetry = telemetrySource === 'influx'
   const useInfluxAlerts = alertsSource === 'influx'
 
   const { setCurrentSite, updateLastUpdate, setConnectionStatus, setConnectionError, setSites } = useDashboardStore()
-  const { addObservation, clearOldData } = useTelemetryStore()
+  const { addObservation, addObservations, clearOldData } = useTelemetryStore()
   const { updatePlantConfiguration, setModuleTemplates } = useConfigurationStore()
   const { addAlert, syncActiveAlerts } = useAlertStore()
   const { theme } = useThemeStore()
@@ -251,70 +262,78 @@ function AppContent() {
     return () => clearInterval(cleanupInterval)
   }, [clearOldData])
 
-  // Poll Influx telemetry and alerts every 2 seconds (PoC migration path)
+  // Poll Influx for telemetry and alerts (PoC migration path away from MQTT).
   useEffect(() => {
     if (!useInfluxTelemetry && !useInfluxAlerts) {
       return
     }
 
     let isCancelled = false
+    // A poll slower than the interval must not stack another on top of it;
+    // without this, a degraded backend gets an ever-growing pile of requests.
+    let inFlight = false
+    const controller = new AbortController()
 
     const pollInflux = async () => {
+      if (inFlight) return
+      inFlight = true
+
       try {
         const currentSite = useDashboardStore.getState().currentSite
-        const siteQuery = currentSite ? `?site_id=${encodeURIComponent(currentSite)}` : ''
+        const params = new URLSearchParams({
+          lookback_seconds: String(POLL_LOOKBACK_SECONDS),
+          limit: String(POLL_OBSERVATION_LIMIT),
+        })
+        if (currentSite) {
+          params.set('site_id', currentSite)
+        }
+
+        // One /snapshot call serves both streams off a single Influx query.
+        // Hitting /telemetry/latest and /alerts/active separately cost three.
+        const response = await fetch(`${apiBaseUrl}/api/influx/snapshot?${params}`, {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Snapshot request failed (${response.status})`)
+        }
+
+        const payload = await response.json()
+
+        if (isCancelled) return
 
         if (useInfluxTelemetry) {
-          const telemetryResponse = await fetch(
-            `${apiBaseUrl}/api/influx/telemetry/latest${siteQuery ? `${siteQuery}&lookback_seconds=180&limit=600` : '?lookback_seconds=180&limit=600'}`
-          )
-
-          if (!telemetryResponse.ok) {
-            throw new Error(`Telemetry request failed (${telemetryResponse.status})`)
-          }
-
-          const telemetryPayload = await telemetryResponse.json()
-          const observations = Array.isArray(telemetryPayload?.observations)
-            ? telemetryPayload.observations
+          const observations: Observation[] = Array.isArray(payload?.observations)
+            ? payload.observations
             : []
 
-          observations.forEach((observation: Observation) => {
-            addObservation(observation)
+          // Batched: one store write and one index rebuild for the whole poll.
+          addObservations(observations)
 
-            if (observation.site_id && !useDashboardStore.getState().currentSite) {
-              setCurrentSite(observation.site_id)
+          if (!useDashboardStore.getState().currentSite) {
+            const firstSiteId = observations.find(o => o.site_id)?.site_id
+            if (firstSiteId) {
+              setCurrentSite(firstSiteId)
             }
-          })
+          }
         }
 
         if (useInfluxAlerts) {
-          const alertsResponse = await fetch(
-            `${apiBaseUrl}/api/influx/alerts/active${siteQuery ? `${siteQuery}&lookback_seconds=300&limit=300` : '?lookback_seconds=300&limit=300'}`
-          )
-
-          if (!alertsResponse.ok) {
-            throw new Error(`Alerts request failed (${alertsResponse.status})`)
-          }
-
-          const alertsPayload = await alertsResponse.json()
-          const polledAlerts = Array.isArray(alertsPayload?.alerts)
-            ? alertsPayload.alerts
-            : []
-
-          syncActiveAlerts(polledAlerts)
+          syncActiveAlerts(Array.isArray(payload?.alerts) ? payload.alerts : [])
         }
 
-        if (!isCancelled) {
-          updateLastUpdate()
-          setConnectionStatus('connected')
-          setConnectionError(null)
-        }
+        updateLastUpdate()
+        setConnectionStatus('connected')
+        setConnectionError(null)
       } catch (error) {
-        console.error('Influx polling failed:', error)
-        if (!isCancelled) {
-          setConnectionStatus('error')
-          setConnectionError(error instanceof Error ? error.message : 'Influx polling failed')
+        if (isCancelled || (error instanceof DOMException && error.name === 'AbortError')) {
+          return
         }
+        console.error('Influx polling failed:', error)
+        setConnectionStatus('error')
+        setConnectionError(error instanceof Error ? error.message : 'Influx polling failed')
+      } finally {
+        inFlight = false
       }
     }
 
@@ -323,6 +342,7 @@ function AppContent() {
 
     return () => {
       isCancelled = true
+      controller.abort()
       clearInterval(interval)
     }
   }, [
@@ -330,7 +350,7 @@ function AppContent() {
     useInfluxAlerts,
     apiBaseUrl,
     pollingIntervalMs,
-    addObservation,
+    addObservations,
     syncActiveAlerts,
     setCurrentSite,
     updateLastUpdate,

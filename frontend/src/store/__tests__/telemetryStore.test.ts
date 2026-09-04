@@ -6,6 +6,10 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useTelemetryStore } from "../telemetryStore";
 import type { Observation } from "../../types";
 
+// Mirrors telemetryStore's retention window; tests age data relative to it so
+// retuning the window does not silently invalidate them.
+const MAX_OBSERVATION_AGE_MS = 15 * 60 * 1000;
+
 describe("telemetryStore", () => {
   // Reset store before each test
   beforeEach(() => {
@@ -240,7 +244,7 @@ describe("telemetryStore", () => {
         asset_id: "tank-01",
         sensor_id: "level-sensor",
         measurement: "level",
-        ts: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
+        ts: new Date(Date.now() - 2 * MAX_OBSERVATION_AGE_MS).toISOString(), // well past the retention window
         value: 5.5,
         unit: "m",
         quality: "good",
@@ -279,7 +283,7 @@ describe("telemetryStore", () => {
         asset_id: "tank-01",
         sensor_id: "level-sensor",
         measurement: "level",
-        ts: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        ts: new Date(Date.now() - 2 * MAX_OBSERVATION_AGE_MS).toISOString(),
         value: 5.5,
         unit: "m",
         quality: "good",
@@ -355,6 +359,122 @@ describe("telemetryStore", () => {
       expect(useTelemetryStore.getState().selectedSensor).toBe(
         "tank-01.level-sensor",
       );
+    });
+  });
+
+  describe("addObservations (batch)", () => {
+    const makeObservation = (
+      overrides: Partial<Observation> = {},
+    ): Observation => ({
+      site_id: "test-site",
+      asset_id: "tank-01",
+      sensor_id: "level-sensor",
+      measurement: "level",
+      ts: new Date().toISOString(),
+      value: 5.5,
+      unit: "m",
+      quality: "good",
+      raw_tag: "TANK01.LEVEL",
+      source: "modbus",
+      seq: 1,
+      parameter_type: "sensor",
+      component_type: "sensor",
+      ...overrides,
+    });
+
+    it("ingests a batch in a single store write", () => {
+      let notifications = 0;
+      const unsubscribe = useTelemetryStore.subscribe(() => {
+        notifications += 1;
+      });
+
+      useTelemetryStore
+        .getState()
+        .addObservations([
+          makeObservation({ sensor_id: "s1" }),
+          makeObservation({ sensor_id: "s2", asset_id: "pump-01" }),
+          makeObservation({ sensor_id: "s3", measurement: "flow_rate" }),
+        ]);
+
+      unsubscribe();
+
+      expect(notifications).toBe(1);
+      expect(Object.keys(useTelemetryStore.getState().latest)).toHaveLength(3);
+    });
+
+    it("derives assets and measurements once for the whole batch", () => {
+      useTelemetryStore
+        .getState()
+        .addObservations([
+          makeObservation({ sensor_id: "s1", asset_id: "tank-01" }),
+          makeObservation({
+            sensor_id: "s2",
+            asset_id: "pump-01",
+            measurement: "flow_rate",
+          }),
+        ]);
+
+      const state = useTelemetryStore.getState();
+      expect(state.availableAssets).toEqual(["pump-01", "tank-01"]);
+      expect(state.availableMeasurements).toEqual(["flow_rate", "level"]);
+    });
+
+    it("does not notify when every observation is a duplicate", () => {
+      const observation = makeObservation();
+      useTelemetryStore.getState().addObservations([observation]);
+
+      let notifications = 0;
+      const unsubscribe = useTelemetryStore.subscribe(() => {
+        notifications += 1;
+      });
+
+      useTelemetryStore.getState().addObservations([observation]);
+      unsubscribe();
+
+      expect(notifications).toBe(0);
+    });
+
+    it("applies only the changed observations in a mixed batch", () => {
+      const unchanged = makeObservation({ sensor_id: "s1" });
+      useTelemetryStore.getState().addObservations([unchanged]);
+
+      useTelemetryStore
+        .getState()
+        .addObservations([
+          unchanged,
+          makeObservation({ sensor_id: "s2", value: 9.9 }),
+        ]);
+
+      const latest = useTelemetryStore.getState().latest;
+      expect(Object.keys(latest)).toHaveLength(2);
+      expect(latest["tank-01.s2"].value).toBe(9.9);
+    });
+
+    it("keeps time series sorted when points arrive out of order", () => {
+      const base = Date.now();
+      useTelemetryStore.getState().addObservations([
+        makeObservation({ ts: new Date(base + 2000).toISOString(), value: 2 }),
+        makeObservation({ ts: new Date(base + 1000).toISOString(), value: 1 }),
+        makeObservation({ ts: new Date(base + 3000).toISOString(), value: 3 }),
+      ]);
+
+      const series = useTelemetryStore
+        .getState()
+        .getTimeSeriesData("tank-01.level-sensor");
+
+      expect(series.map((p) => p.value)).toEqual([1, 2, 3]);
+    });
+
+    it("handles an empty batch without notifying", () => {
+      let notifications = 0;
+      const unsubscribe = useTelemetryStore.subscribe(() => {
+        notifications += 1;
+      });
+
+      useTelemetryStore.getState().addObservations([]);
+      unsubscribe();
+
+      expect(notifications).toBe(0);
     });
   });
 });

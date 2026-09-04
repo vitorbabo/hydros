@@ -1,179 +1,136 @@
 """
 Unit tests for ConfigValidator.
+
+ConfigValidator is path-based: it loads JSON schemas from <base>/schemas and
+validates YAML files it locates itself. Tests therefore build a temporary
+config tree (using the repo's real schemas) rather than passing dicts in.
 """
+import json
+import shutil
+from pathlib import Path
+
 import pytest
 import yaml
-from core.config_validator import ConfigValidator
+
+from core.config_validator import ConfigurationValidationError, ConfigValidator
+
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "config"
 
 
-class TestConfigValidatorInitialization:
-    """Test ConfigValidator initialization."""
+@pytest.fixture
+def config_tree(tmp_path):
+    """A temp config base seeded with the repo's real JSON schemas."""
+    base = tmp_path / "config"
+    (base / "schemas").mkdir(parents=True)
+    (base / "sites").mkdir()
+    (base / "templates").mkdir()
 
-    def test_validator_creation(self):
-        """Test creating a ConfigValidator instance."""
-        validator = ConfigValidator()
-        assert validator is not None
+    for schema in (REPO_CONFIG / "schemas").glob("*.json"):
+        shutil.copy(schema, base / "schemas" / schema.name)
 
-    def test_validator_loads_schemas(self):
-        """Test that validator loads JSON schemas."""
-        validator = ConfigValidator()
-        # Validator should have schemas loaded (if schema files exist)
-        assert hasattr(validator, 'validate_site_config')
+    return base
+
+
+def write_site(base: Path, site_id: str, data: dict) -> Path:
+    site_dir = base / "sites" / site_id
+    site_dir.mkdir(parents=True, exist_ok=True)
+    path = site_dir / "plant.yaml"
+    path.write_text(yaml.dump(data, default_flow_style=False))
+    return path
+
+
+class TestSchemaLoading:
+    def test_loads_repo_schemas(self, config_tree):
+        validator = ConfigValidator(str(config_tree))
+
+        assert "site_config" in validator._validators
+        assert "module_templates" in validator._validators
+
+    def test_missing_schemas_are_tolerated(self, tmp_path):
+        """A base path with no schemas loads, but reports schemas unavailable."""
+        validator = ConfigValidator(str(tmp_path))
+
+        is_valid, errors = validator.validate_module_templates()
+        assert is_valid is False
+        assert "schema not available" in errors[0]
+
+    def test_malformed_schema_raises(self, config_tree):
+        (config_tree / "schemas" / "site_config_schema.json").write_text("{not json")
+
+        with pytest.raises(ConfigurationValidationError):
+            ConfigValidator(str(config_tree))
 
 
 class TestSiteConfigValidation:
-    """Test site configuration validation."""
+    def test_valid_site_config_passes(self, config_tree, sample_site_config):
+        write_site(config_tree, "test-site-01", sample_site_config)
+        validator = ConfigValidator(str(config_tree))
 
-    def test_validate_valid_site_config(self, sample_site_config, temp_config_dir, write_yaml_config):
-        """Test validating a valid site configuration."""
-        validator = ConfigValidator()
+        is_valid, errors = validator.validate_site_config("test-site-01")
 
-        # Write valid config
-        config_file = write_yaml_config("test-site.yaml", sample_site_config)
+        assert is_valid is True, errors
+        assert errors == []
 
-        # Should not raise exception
-        try:
-            # Note: Actual validation depends on schema files being present
-            # This test structure is ready for when validation is implemented
-            result = validator.validate_site_config(sample_site_config)
-            assert result is True or result is None  # Depending on implementation
-        except FileNotFoundError:
-            # Schema files may not exist yet - that's ok for now
-            pytest.skip("Schema files not yet created")
+    def test_missing_required_field_is_reported(self, config_tree, sample_site_config):
+        del sample_site_config["site_info"]["name"]
+        write_site(config_tree, "test-site-01", sample_site_config)
+        validator = ConfigValidator(str(config_tree))
 
-    def test_validate_missing_required_field(self):
-        """Test that missing required fields are caught."""
-        validator = ConfigValidator()
+        is_valid, errors = validator.validate_site_config("test-site-01")
 
-        invalid_config = {
-            "site_info": {
-                "site_id": "test-site"
-                # Missing other required fields
-            }
-        }
+        assert is_valid is False
+        assert errors
 
-        # Should raise validation error (when schema validation is active)
-        try:
-            result = validator.validate_site_config(invalid_config)
-            # If no exception, validation may not be implemented yet
-        except FileNotFoundError:
-            pytest.skip("Schema files not yet created")
-        except (ValueError, KeyError):
-            # Expected validation error
-            pass
+    def test_wrong_data_type_is_reported(self, config_tree, sample_site_config):
+        sample_site_config["site_info"]["design_capacity"] = "not_a_number"
+        write_site(config_tree, "test-site-01", sample_site_config)
+        validator = ConfigValidator(str(config_tree))
 
-    def test_validate_invalid_data_types(self):
-        """Test that invalid data types are caught."""
-        validator = ConfigValidator()
+        is_valid, errors = validator.validate_site_config("test-site-01")
 
-        invalid_config = {
-            "site_info": {
-                "site_id": "test-site",
-                "name": "Test Site",
-                "design_capacity": "not_a_number"  # Should be number
-            }
-        }
+        assert is_valid is False
+        assert errors
 
-        try:
-            validator.validate_site_config(invalid_config)
-        except FileNotFoundError:
-            pytest.skip("Schema files not yet created")
-        except (ValueError, TypeError):
-            # Expected validation error
-            pass
+    def test_absent_site_file_is_reported(self, config_tree):
+        validator = ConfigValidator(str(config_tree))
+
+        is_valid, errors = validator.validate_site_config("no-such-site")
+
+        assert is_valid is False
+        assert errors
 
 
 class TestModuleTemplateValidation:
-    """Test module template validation."""
+    def test_valid_templates_pass(self, config_tree, sample_module_templates):
+        (config_tree / "templates" / "modules.yaml").write_text(
+            yaml.dump(sample_module_templates, default_flow_style=False)
+        )
+        validator = ConfigValidator(str(config_tree))
 
-    def test_validate_valid_templates(self, sample_module_templates):
-        """Test validating valid module templates."""
-        validator = ConfigValidator()
+        is_valid, errors = validator.validate_module_templates()
 
-        try:
-            result = validator.validate_module_templates(sample_module_templates)
-            assert result is True or result is None
-        except (FileNotFoundError, AttributeError):
-            pytest.skip("Template validation not yet implemented")
+        assert is_valid is True, errors
 
-    def test_validate_missing_template_fields(self):
-        """Test that incomplete templates are rejected."""
-        validator = ConfigValidator()
+    def test_wrong_shape_is_reported(self, config_tree):
+        (config_tree / "templates" / "modules.yaml").write_text(
+            yaml.dump({"module_templates": ["not", "an", "object"]})
+        )
+        validator = ConfigValidator(str(config_tree))
 
-        invalid_templates = {
-            "module_templates": {
-                "broken_module": {
-                    "type": "intake"
-                    # Missing required fields
-                }
-            }
-        }
+        is_valid, errors = validator.validate_module_templates()
 
-        try:
-            validator.validate_module_templates(invalid_templates)
-        except (FileNotFoundError, AttributeError):
-            pytest.skip("Template validation not yet implemented")
-        except (ValueError, KeyError):
-            # Expected validation error
-            pass
+        assert is_valid is False
+        assert errors
 
 
-class TestParameterSpecValidation:
-    """Test parameter specification validation."""
+class TestValidationSummary:
+    def test_summary_renders_both_outcomes(self, config_tree):
+        validator = ConfigValidator(str(config_tree))
 
-    def test_validate_valid_parameter_specs(self, sample_parameter_specs):
-        """Test validating valid parameter specifications."""
-        validator = ConfigValidator()
+        summary = validator.get_validation_summary(
+            {"site: a": (True, []), "site: b": (False, ["boom"])}
+        )
 
-        try:
-            result = validator.validate_parameter_specs(sample_parameter_specs)
-            assert result is True or result is None
-        except (FileNotFoundError, AttributeError):
-            pytest.skip("Parameter spec validation not yet implemented")
-
-    def test_validate_invalid_units(self):
-        """Test that invalid units are caught."""
-        validator = ConfigValidator()
-
-        invalid_specs = {
-            "parameter_specifications": {
-                "level": {
-                    "measurement_type": "level",
-                    "unit": "invalid_unit",
-                    "data_type": "REAL"
-                }
-            }
-        }
-
-        try:
-            validator.validate_parameter_specs(invalid_specs)
-        except (FileNotFoundError, AttributeError):
-            pytest.skip("Parameter spec validation not yet implemented")
-        except ValueError:
-            # Expected validation error
-            pass
-
-
-class TestConfigurationIntegrity:
-    """Test overall configuration integrity checks."""
-
-    def test_module_references_exist(self, sample_site_config, sample_module_templates):
-        """Test that all module references in site config exist in templates."""
-        validator = ConfigValidator()
-
-        # All modules in site config should exist in templates
-        site_modules = sample_site_config["modules"]
-        template_modules = sample_module_templates["module_templates"].keys()
-
-        for module in site_modules:
-            assert module in template_modules, f"Module {module} not found in templates"
-
-    def test_protocol_client_references_modules(self, sample_site_config):
-        """Test that protocol clients reference valid modules."""
-        site_modules = set(sample_site_config["modules"])
-
-        for client in sample_site_config["protocol_clients"]:
-            assigned_modules = client.get("modules_assigned", [])
-            for module in assigned_modules:
-                assert module in site_modules, \
-                    f"Protocol client references unknown module: {module}"
+        assert "site: a" in summary
+        assert "site: b" in summary
+        assert "boom" in summary

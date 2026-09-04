@@ -10,7 +10,12 @@ from typing import Optional
 
 from aiohttp import web
 
-from services.influxdb_query_service import InfluxDBQueryService
+from services.influxdb_query_service import (
+    MAX_LIMIT,
+    MAX_LOOKBACK_SECONDS,
+    InfluxDBQueryService,
+    clamp_int,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +28,19 @@ class InfluxAPIServer:
         influx_service: InfluxDBQueryService,
         host: str = "0.0.0.0",
         port: int = 8000,
+        allowed_origin: str = "*",
     ):
         self.influx_service = influx_service
         self.host = host
         self.port = port
+        self.allowed_origin = allowed_origin
         self.app: Optional[web.Application] = None
         self.runner: Optional[web.AppRunner] = None
         self.site: Optional[web.TCPSite] = None
 
-    @staticmethod
-    def _cors_headers() -> dict:
+    def _cors_headers(self) -> dict:
         return {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": self.allowed_origin,
             "Access-Control-Allow-Methods": "GET, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
         }
@@ -63,8 +69,10 @@ class InfluxAPIServer:
 
     async def _latest_telemetry(self, request: web.Request) -> web.Response:
         site_id = request.query.get("site_id")
-        lookback_seconds = int(request.query.get("lookback_seconds", "120"))
-        limit = int(request.query.get("limit", "500"))
+        lookback_seconds = clamp_int(
+            request.query.get("lookback_seconds"), 120, 1, MAX_LOOKBACK_SECONDS
+        )
+        limit = clamp_int(request.query.get("limit"), 500, 1, MAX_LIMIT)
 
         observations = await self.influx_service.query_latest_observations(
             site_id=site_id,
@@ -83,8 +91,10 @@ class InfluxAPIServer:
 
     async def _active_alerts(self, request: web.Request) -> web.Response:
         site_id = request.query.get("site_id")
-        lookback_seconds = int(request.query.get("lookback_seconds", "300"))
-        limit = int(request.query.get("limit", "300"))
+        lookback_seconds = clamp_int(
+            request.query.get("lookback_seconds"), 300, 1, MAX_LOOKBACK_SECONDS
+        )
+        limit = clamp_int(request.query.get("limit"), 300, 1, MAX_LIMIT)
 
         alerts = await self.influx_service.query_quality_alerts(
             site_id=site_id,
@@ -102,34 +112,54 @@ class InfluxAPIServer:
         )
 
     async def _snapshot(self, request: web.Request) -> web.Response:
+        """Telemetry and alerts in one response.
+
+        Alerts are derived from the observations already fetched here, so a
+        polling client gets both streams for one Flux query instead of the
+        three that separate /telemetry/latest + /alerts/active cost.
+        """
         site_id = request.query.get("site_id")
-        lookback_seconds = int(request.query.get("lookback_seconds", "120"))
+        lookback_seconds = clamp_int(
+            request.query.get("lookback_seconds"), 120, 1, MAX_LOOKBACK_SECONDS
+        )
+        limit = clamp_int(request.query.get("limit"), 500, 1, MAX_LIMIT)
+        alert_limit = clamp_int(request.query.get("alert_limit"), 300, 1, MAX_LIMIT)
 
         observations = await self.influx_service.query_latest_observations(
             site_id=site_id,
             lookback_seconds=lookback_seconds,
-            limit=500,
+            limit=limit,
         )
-        alerts = await self.influx_service.query_quality_alerts(
-            site_id=site_id,
-            lookback_seconds=max(300, lookback_seconds),
-            limit=300,
-        )
+        alerts = self.influx_service.derive_quality_alerts(observations, limit=alert_limit)
 
         return self._json_response(
             {
                 "site_id": site_id,
                 "lookback_seconds": lookback_seconds,
+                "count": len(observations),
                 "observations": observations,
                 "alerts": alerts,
             }
         )
 
+    @web.middleware
+    async def _error_middleware(self, request: web.Request, handler):
+        """Return JSON (with CORS headers) for unexpected handler failures."""
+        try:
+            return await handler(request)
+        except web.HTTPException:
+            raise
+        except Exception as e:
+            logger.exception("Unhandled error serving %s", request.rel_url)
+            return self._json_response(
+                {"error": "internal_error", "detail": str(e)}, status=500
+            )
+
     async def start(self):
         if self.runner:
             return
 
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[self._error_middleware])
         self.app.router.add_get("/health", self._health)
         self.app.router.add_get("/api/influx/telemetry/latest", self._latest_telemetry)
         self.app.router.add_get("/api/influx/alerts/active", self._active_alerts)

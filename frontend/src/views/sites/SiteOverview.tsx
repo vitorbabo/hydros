@@ -15,6 +15,11 @@ import type { PlantSite, ComponentStatus } from '../../types'
 import { useTelemetryStore } from '../../store/telemetryStore'
 import { useConfigurationStore } from '../../store/configurationStore'
 import { getModuleIconComponent } from '../../utils/moduleIcons'
+import type { Observation } from '../../types/schemas'
+
+// Process thresholds carried over from the plant design example.
+const FINISHED_WATER_TANK_ALARM_LEVEL = 95
+const CHLORINE_RESIDUAL_WARNING_MIN = 2.0
 
 interface SiteOverviewProps {
   site: PlantSite
@@ -22,7 +27,7 @@ interface SiteOverviewProps {
 
 export function SiteOverview({ site }: SiteOverviewProps) {
   const navigate = useNavigate()
-  const { getLatestByAsset, latest } = useTelemetryStore()
+  const latest = useTelemetryStore(state => state.latest)
   const { plantConfigurations, moduleTemplates } = useConfigurationStore()
 
   // Collapse state for sections
@@ -135,20 +140,30 @@ export function SiteOverview({ site }: SiteOverviewProps) {
     }
   }
 
-  // Get module status
-  const getModuleStatus = (moduleId: string): { status: ComponentStatus; metrics: Array<{ label: string; value: string }> } => {
-    const findObservation = (measurement: string) => {
-      const observations = getLatestByAsset(moduleId)
-      return Object.values(observations).find(obs =>
-        obs.site_id === site.id && obs.measurement === measurement
-      )
+  // One pass over `latest` builds asset -> measurement -> observation, instead
+  // of getLatestByAsset() scanning every observation five times per module.
+  const observationsByAsset = useMemo(() => {
+    const index: Record<string, Record<string, Observation>> = {}
+
+    for (const observation of Object.values(latest)) {
+      if (observation.site_id !== site.id) continue
+
+      const byMeasurement = index[observation.asset_id] ?? (index[observation.asset_id] = {})
+      byMeasurement[observation.measurement] = observation
     }
 
-    const flowObs = findObservation('flow_rate')
-    const pressureObs = findObservation('pressure')
-    const levelObs = findObservation('level')
-    const turbidityObs = findObservation('turbidity')
-    const chlorineObs = findObservation('chlorine_residual')
+    return index
+  }, [latest, site.id])
+
+  // Get module status
+  const getModuleStatus = (moduleId: string): { status: ComponentStatus; metrics: Array<{ label: string; value: string }> } => {
+    const moduleObservations = observationsByAsset[moduleId] ?? {}
+
+    const flowObs = moduleObservations.flow_rate
+    const pressureObs = moduleObservations.pressure
+    const levelObs = moduleObservations.level
+    const turbidityObs = moduleObservations.turbidity
+    const chlorineObs = moduleObservations.chlorine_residual
 
     const metrics: Array<{ label: string; value: string }> = []
 
@@ -174,6 +189,16 @@ export function SiteOverview({ site }: SiteOverviewProps) {
     } else if (flowObs?.quality === 'bad' || pressureObs?.quality === 'bad') {
       status = 'alarm'
     } else if (flowObs?.quality === 'uncertain' || pressureObs?.quality === 'uncertain') {
+      status = 'warning'
+    }
+
+    // Process alarms take precedence over signal quality: a tank about to
+    // overflow is an alarm even when the level reading is nominally good.
+    if (moduleId === 'finished_water_tank' && typeof levelObs?.value === 'number' && levelObs.value > FINISHED_WATER_TANK_ALARM_LEVEL) {
+      status = 'alarm'
+    }
+
+    if (moduleId === 'chlorination' && typeof chlorineObs?.value === 'number' && chlorineObs.value < CHLORINE_RESIDUAL_WARNING_MIN && status !== 'alarm') {
       status = 'warning'
     }
 

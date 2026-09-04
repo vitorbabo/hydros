@@ -35,7 +35,7 @@ describe('SiteHeader', () => {
     render(<SiteHeader {...defaultProps} />)
 
     expect(screen.getByText('Test Water Treatment Plant')).toBeInTheDocument()
-    expect(screen.getByText('Test City')).toBeInTheDocument()
+    expect(screen.getByText('Test Region, Test Country')).toBeInTheDocument()
   })
 
   it('displays current flow rate when data is available', () => {
